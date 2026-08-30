@@ -4,7 +4,7 @@
     "startingCapital": 0,
     "startYear": 2027,
     "startCalMonth": 1,
-    "note": "Rain Gibraltar dual-licence base case (Aug-2026): Playmarkets casino scaled to ~$37M NGR in Y3 (non-US perimeter, Gibraltar B2C Gaming Operator Licence, 0.15% duty), Rain B2C prediction markets in parallel (Prediction Market Authorisation), consolidated with shared Gibraltar substance. Anchored to the Excel regulator plan: ~$75M group revenue Y3, group breakeven around early 2029."
+    "note": "Rain Gibraltar dual-licence base case (Aug-2026): Playmarkets as a CRYPTO-FIRST casino (~75-80% of GGR via crypto rails — Crypto global, India, SEA — originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable) scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty); Rain B2C prediction markets in parallel (Prediction Market Authorisation). Each operation runs its own P&L; consolidation adds the shared Gibraltar substance layer."
   },
   "funding": [
     {
@@ -16,18 +16,18 @@
     {
       "name": "Round 2 — Prove & Grow",
       "month": 9,
-      "amount": 7000000,
+      "amount": 6000000,
       "note": "Raised on the first three quarters of live cohort data across both operations."
     },
     {
       "name": "Round 3 — Scale",
-      "month": 16,
-      "amount": 6000000,
-      "note": "Final round through group EBITDA breakeven (~M27); covers the ~$19M peak external need with buffer."
+      "month": 15,
+      "amount": 4000000,
+      "note": "Final round through group EBITDA breakeven; sized to the peak external need with buffer."
     }
   ],
   "global": {
-    "bonusPctGGR": 19,
+    "bonusPctGGR": 17,
     "fraudPctGGR": 2.6,
     "kycPerFTD": 2,
     "supportPerActive": 1.5,
@@ -397,7 +397,7 @@
       "rtp": 95.5,
       "velocity": 400,
       "avgBet": 0.9,
-      "mix": 39
+      "mix": 35
     },
     {
       "id": "jslots",
@@ -467,7 +467,7 @@
       "rtp": 97,
       "velocity": 180,
       "avgBet": 2,
-      "mix": 18
+      "mix": 20
     },
     {
       "id": "inst",
@@ -477,7 +477,7 @@
       "rtp": 98,
       "velocity": 150,
       "avgBet": 1.5,
-      "mix": 19
+      "mix": 21
     }
   ],
   "geos": [
@@ -499,19 +499,19 @@
       "feeWd": 1,
       "resPct": 10,
       "mkStart": 2,
-      "mkInit": 11780,
+      "mkInit": 3887,
       "mkGrowth": 10,
-      "mkCap": 98800,
+      "mkCap": 32604,
       "mixOverride": {
-        "vslots": 38,
+        "vslots": 34,
         "jslots": 6,
         "roul": 6,
         "bj": 4,
         "vpoker": 4,
         "scratch": 4,
-        "live": 16,
-        "crash": 12,
-        "inst": 10
+        "live": 12,
+        "crash": 18,
+        "inst": 14
       }
     },
     {
@@ -532,19 +532,19 @@
       "feeWd": 1,
       "resPct": 10,
       "mkStart": 3,
-      "mkInit": 5130,
+      "mkInit": 1693,
       "mkGrowth": 10,
-      "mkCap": 41800,
+      "mkCap": 13794,
       "mixOverride": {
-        "vslots": 38,
+        "vslots": 34,
         "jslots": 6,
         "roul": 6,
         "bj": 4,
         "vpoker": 4,
         "scratch": 4,
-        "live": 16,
-        "crash": 12,
-        "inst": 10
+        "live": 12,
+        "crash": 18,
+        "inst": 14
       }
     },
     {
@@ -561,13 +561,13 @@
       "m6": 7.1,
       "hold": 45,
       "tax": 0.15,
-      "feeDep": 3,
-      "feeWd": 1,
+      "feeDep": 2,
+      "feeWd": 0.5,
       "resPct": 0,
       "mkStart": 4,
-      "mkInit": 4560,
+      "mkInit": 4815,
       "mkGrowth": 10,
-      "mkCap": 38000,
+      "mkCap": 40128,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -594,13 +594,13 @@
       "m6": 9.5,
       "hold": 45,
       "tax": 0.15,
-      "feeDep": 7,
-      "feeWd": 1,
-      "resPct": 8,
+      "feeDep": 2,
+      "feeWd": 0.5,
+      "resPct": 0,
       "mkStart": 2,
-      "mkInit": 9880,
+      "mkInit": 9129,
       "mkGrowth": 10,
-      "mkCap": 98800,
+      "mkCap": 91291,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -616,7 +616,7 @@
     {
       "id": "br",
       "name": "Brazil",
-      "enabled": true,
+      "enabled": false,
       "cpaAff": 70,
       "cpaMedia": 57,
       "mediaSharePct": 40,
@@ -631,9 +631,9 @@
       "feeWd": 1,
       "resPct": 5,
       "mkStart": 3,
-      "mkInit": 11780,
+      "mkInit": 0,
       "mkGrowth": 10,
-      "mkCap": 117800,
+      "mkCap": 0,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -660,13 +660,13 @@
       "m6": 9.5,
       "hold": 42,
       "tax": 0.15,
-      "feeDep": 5,
+      "feeDep": 3,
       "feeWd": 1,
-      "resPct": 8,
+      "resPct": 3,
       "mkStart": 4,
-      "mkInit": 6270,
+      "mkInit": 4966,
       "mkGrowth": 10,
-      "mkCap": 62700,
+      "mkCap": 49658,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -697,9 +697,9 @@
       "feeWd": 0.5,
       "resPct": 0,
       "mkStart": 1,
-      "mkInit": 7600,
+      "mkInit": 17556,
       "mkGrowth": 10,
-      "mkCap": 76000,
+      "mkCap": 175560,
       "mixOverride": {
         "vslots": 28,
         "jslots": 3,
