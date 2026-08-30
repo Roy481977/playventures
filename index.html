@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rain Gibraltar — Operating Model</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%23eda100'%2F%3E%3Ctext%20x%3D'50'%20y%3D'72'%20font-size%3D'60'%20text-anchor%3D'middle'%3ER%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  :root{
+    color-scheme: light;
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --ink-1:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+    --good-text:#006300;
+    --seq100:#cde2fb; --seq200:#9ec5f4; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95; --seq700:#0d366b;
+    --accent:#2a78d6;
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-1:#1a1a19; --page:#0d0d0d;
+    --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --good-text:#0ca30c;
+    --accent:#3987e5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink-1);font-size:13.5px;line-height:1.45}
+  /* ---------- Top nav ---------- */
+  header{position:sticky;top:0;z-index:50;background:var(--surface-1);border-bottom:1px solid var(--grid);padding:0 20px}
+  .hd-row{display:flex;align-items:center;gap:12px 16px;min-height:52px;flex-wrap:wrap;padding:6px 0}
+  .brand{font-weight:700;font-size:14px;letter-spacing:-0.01em;white-space:nowrap}
+  .brand span{color:var(--accent)}
+  nav{display:flex;gap:2px 1px;flex-wrap:wrap;overflow:visible;flex:1;min-width:0}
+  nav button{appearance:none;border:none;background:none;color:var(--ink-2);font:inherit;font-size:13px;font-weight:500;padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  nav button:hover{background:var(--page)}
+  nav button.on{background:var(--accent);color:#fff}
+  .hd-actions{display:flex;gap:8px;align-items:center}
+  .ghost-btn{appearance:none;border:1px solid var(--grid);background:var(--surface-1);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer}
+  .ghost-btn:hover{border-color:var(--axis);color:var(--ink-1)}
+  main{max-width:1280px;margin:0 auto;padding:20px 20px 80px}
+  .tab{display:none}
+  .tab.on{display:block}
+  h2{font-size:18px;margin:6px 0 2px;letter-spacing:-0.01em}
+  .sub{color:var(--ink-2);margin:0 0 16px;font-size:13px}
+  /* ---------- Cards & grids ---------- */
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .card h3{margin:0 0 4px;font-size:13.5px;font-weight:650}
+  .card .note{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+  /* ---------- Stat tiles ---------- */
+  .tile{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .tile .lbl{color:var(--ink-2);font-size:12px;margin-bottom:4px}
+  .tile .val{font-size:26px;font-weight:600;letter-spacing:-0.02em}
+  .tile .delta{font-size:12px;margin-top:3px;color:var(--ink-3)}
+  .tile .delta.up{color:var(--good-text)} .tile .delta.down{color:var(--crit)}
+  .hero .val{font-size:31px;white-space:nowrap}
+  .story{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+  .story .st{background:var(--surface-1);border:1px solid var(--border);border-top:3px solid var(--ph,var(--accent));border-radius:12px;padding:11px 13px;position:relative}
+  .story .st:not(:last-child)::after{content:"›";position:absolute;right:-10px;top:36%;color:var(--ink-3);font-size:17px;z-index:2}
+  .st-k{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:700}
+  .st-v{font-size:21px;font-weight:700;letter-spacing:-0.02em;margin:2px 0;white-space:nowrap}
+  .st-d{font-size:11px;color:var(--ink-2)}
+  .tiles.mini .tile{padding:9px 12px}
+  .tiles.mini .val{font-size:18px}
+  .tiles.mini .lbl{font-size:11px;margin-bottom:2px}
+  @media(max-width:1000px){.story{grid-template-columns:repeat(3,1fr)}}
+  /* ---------- Inputs ---------- */
+  .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+  .f{display:flex;flex-direction:column;gap:3px}
+  .f label{font-size:11.5px;color:var(--ink-2)}
+  .f input,.f select{font:inherit;padding:6px 8px;border:1px solid var(--grid);border-radius:8px;background:var(--page);color:var(--ink-1);width:100%}
+  .f input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  .f .unit{font-size:10.5px;color:var(--ink-3)}
+  /* ---------- Tables ---------- */
+  .twrap{overflow-x:auto;border:1px solid var(--grid);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{padding:6px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+  th{color:var(--ink-2);font-weight:600;background:var(--surface-1);position:sticky;top:0}
+  td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--surface-1);font-variant-numeric:normal}
+  tr:last-child td{border-bottom:none}
+  tr.total td{font-weight:650;border-top:2px solid var(--axis)}
+  tr.section td{color:var(--ink-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:12px}
+  td.neg{color:var(--crit)}
+  table input.wide{width:118px !important}
+  table input{width:76px;font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--grid);border-radius:6px;background:var(--page);color:var(--ink-1);text-align:right}
+  table input[type=checkbox]{width:auto}
+  table select{font:inherit;font-size:12.5px;padding:4px;border:1px solid var(--grid);border-radius:6px;background:var(--page);color:var(--ink-1)}
+  table input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .editable th,.editable td{text-align:left}
+  /* ---------- Charts ---------- */
+  .chart{position:relative}
+  .chart svg{display:block;width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 2px;font-size:12px;color:var(--ink-2)}
+  .legend .it{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  .tip{position:fixed;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:10px;padding:8px 11px;font-size:12px;z-index:100;display:none;min-width:130px}
+  .tip .t-h{font-weight:650;margin-bottom:4px}
+  .tip .t-r{display:flex;justify-content:space-between;gap:14px}
+  .tip .t-r .k{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+  .tip .t-r .v{font-variant-numeric:tabular-nums;font-weight:550}
+  .badge{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;border:1px solid var(--grid);color:var(--ink-2)}
+  .badge.own{color:var(--good-text);border-color:var(--good-text)}
+  .rowbtns button{appearance:none;border:none;background:none;color:var(--ink-3);cursor:pointer;font-size:14px;padding:2px 5px}
+  .rowbtns button:hover{color:var(--crit)}
+  .addbtn{margin-top:10px}
+  .seg{display:inline-flex;border:1px solid var(--grid);border-radius:9px;overflow:hidden}
+  .seg button{appearance:none;border:none;background:var(--surface-1);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#fff}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .warnbox{border-left:3px solid var(--warn);background:var(--surface-1);border-radius:0 10px 10px 0;padding:10px 14px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+  .sliders .f input[type=range]{padding:0;accent-color:var(--accent)}
+  .kpi-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  footer{text-align:center;color:var(--ink-3);font-size:11.5px;margin-top:30px}
+  /* gamified attention pulse on the Simulation tab (until first visit) */
+  @keyframes simPulse{0%,100%{box-shadow:0 0 0 0 rgba(42,120,214,.5)}60%{box-shadow:0 0 0 9px rgba(42,120,214,0)}}
+  .sim-cta{appearance:none;border:1px solid var(--accent);background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:650;padding:6px 15px;border-radius:99px;cursor:pointer;white-space:nowrap;animation:simPulse 2s ease-out infinite}
+  .sim-cta:hover{background:var(--accent);color:#fff}
+  .sim-cta.on{background:var(--accent);color:#fff;animation:none}
+  @media (prefers-reduced-motion: reduce){.sim-cta{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-row">
+    <div class="brand">Rain <span>Gibraltar</span> — Playmarkets & Rain B2C</div>
+    <nav id="nav"></nav>
+    <div class="hd-actions">
+      <button class="ghost-btn" id="btnTheme" title="Toggle dark mode">◐</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="tab-group" class="tab"></div>
+  <div id="tab-pm" class="tab"></div>
+  <div id="tab-dashboard" class="tab"></div>
+  <div id="tab-assumptions" class="tab"></div>
+  <div id="tab-games" class="tab"></div>
+  <div id="tab-geos" class="tab"></div>
+  <div id="tab-marketing" class="tab"></div>
+  <div id="tab-team" class="tab"></div>
+  <div id="tab-milestones" class="tab"></div>
+  <div id="tab-cohorts" class="tab"></div>
+  <div id="tab-pnl" class="tab"></div>
+  <div id="tab-finance" class="tab"></div>
+  <div id="tab-cash" class="tab"></div>
+  <div id="tab-sim" class="tab"></div>
+  <footer>
+    <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px;margin-bottom:10px">Save current numbers as new default</button>
+    <div>All figures USD · 36-month horizon · Jan-2027 dual launch · Playmarkets (casino) + Rain B2C (prediction markets), one Gibraltar company, two licences · all assumptions editable</div>
+  </footer>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+"use strict";
+/* ============================================================
+   RAIN GAMING — CASINO OPERATING MODEL
+   Engine: cohort-based monthly model, 36 months, USD.
+   ============================================================ */
+
+/* ---------- Default assumptions (from research, Aug 2026) ---------- */
+var defaultAssumptions = function(){ return {
+  meta:{months:36, startingCapital:6500000, startYear:2026, startCalMonth:9},
+  funding:[
+    {name:"Round 1 — Foundation", month:1, amount:2500000, note:"Founding six, platform build, Curaçao LOK, soft launch in 2 GEOs — capped at $2.5M founder commitment"},
+    {name:"Round 2 — Launch",     month:6, amount:4500000, note:"Full launch marketing across all GEOs; prove cohort payback (the smoking gun)"},
+    {name:"Round 3 — Scale-up",   month:10, amount:7000000, note:"The boost: proven ROI → deploy at ×3.5 budgets through break-even. Biggest round because every $ now buys known-payback players"}
+  ],
+  global:{
+    bonusPctGGR:18,          // bonus cost, % of GGR (research 10–25%)
+    fraudPctGGR:3,           // fraud + bonus abuse losses, % of GGR
+    kycPerFTD:2.0,           // $ per new depositor (Sumsub $1.35–1.85 + ops)
+    supportPerActive:1.5,    // $ per active depositor / month (outsourced)
+    crmMonthly:6000,         // Optimove-class CRM
+    toolsMonthly:3000,       // affiliate platform + BI + misc SaaS
+    brandMonthly:30000,      // streamers / sponsorships budget
+    brandStartMonth:4,
+    rsShareAff:40,           // % of affiliate FTDs on revshare deals (rest are CPA deals)
+    affRevsharePct:30,       // % of NGR paid on revshare-acquired players
+    organicPct:15,           // organic/brand FTDs as % of paid FTDs — GLOBAL, not a per-GEO lever
+    retMultAff:1.05,         // retention quality vs GEO base: affiliate traffic (high intent)
+    retMultMedia:0.85,       // media-buy traffic retains worse
+    retMultOrganic:1.25,     // organic retains best
+    jackpotPctWager:0,       // optional jackpot contribution % of turnover
+    feeCompressPP:2,         // PSP deposit-fee reduction (pp) earned at full volume
+    feeCompressAtDep:3000000,// GEO monthly deposits at which full compression is reached
+    scaleMonth:7,            // "smoking gun" month: proven ROI → aggressive scale-up
+    scaleMult:3.5            // marketing budget multiplier from that month (breaks caps)
+  },
+  personnel:[
+    // Minimum viable team → scale. dept groups the Team tab; wk1 marks this-week hires;
+    // note = mandate & first-90-days focus. h = heads in Y1 / Y2 / Y3 (from start month).
+    {role:"CEO (Roy)", dept:"Executive", phase:"core", salary:25000, bonus:0, start:1, h:[1,1,1], wk1:true,
+     note:"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five."},
+    {role:"CTO", dept:"Engineering", phase:"core", salary:20000, bonus:0, start:1, h:[1,1,1], wk1:true,
+     note:"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},
+    {role:"Head of Product", dept:"Product", phase:"core", salary:15000, bonus:0, start:1, h:[1,1,1], wk1:true,
+     note:"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},
+    {role:"Head of User Acquisition", dept:"User Acquisition", phase:"core", salary:9000, bonus:25000, start:1, h:[1,1,1], wk1:true,
+     note:"Base $9K + up to $25K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},
+    {role:"Head of Payments & Risk", dept:"Payments & Risk", phase:"core", salary:11000, bonus:5000, start:1, h:[1,1,1], wk1:true,
+     note:"Base $11K + up to $5K/mo bonus on cashier approval rate and blended processing cost — never on volume. 2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},
+    {role:"Compliance Officer / MLRO", dept:"Compliance", phase:"core", salary:9000, bonus:0, start:1, h:[1,1,2], wk1:true,
+     note:"File Curaçao LOK THIS MONTH (3–5 mo lead time gates launch). KYC/AML program, RG policies, geo-blocking matrix."},
+    {role:"Legal advisor (external retainer)", dept:"Compliance", phase:"core", salary:5000, bonus:0, start:1, h:[1,1,1], wk1:true,
+     note:"External gaming counsel on retainer — entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},
+    {role:"Head of CRM & Monetization", dept:"Monetization/CRM", phase:"growth", salary:8000, bonus:8000, start:2, h:[1,1,1],
+     note:"Base $8K + up to $8K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost ≤ target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention ≥ model M1."},
+    {role:"Casino Manager (curation & integrations)", dept:"Product", phase:"growth", salary:8500, bonus:4000, start:2, h:[1,1,2],
+     note:"Base $8.5K + up to $4K/mo bonus on game-mix GGR vs the Games-sheet targets and lobby conversion. Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},
+    {role:"Platform engineers", dept:"Engineering", phase:"growth", salary:11000, bonus:0, start:2, h:[3,6,8],
+     note:"PAM, wallet, cashier, integrations, site."},
+    {role:"Game devs (in-house studio)", dept:"Games Studio", phase:"growth", salary:11000, bonus:0, start:4, h:[1,2,3],
+     note:"Crash + instant titles = the 20% internal-GGR margin play. Ship title #1 by M6, #2 by M9."},
+    {role:"Affiliate managers", dept:"User Acquisition", phase:"growth", salary:5500, bonus:5000, start:2, h:[1,2,3],
+     note:"Base $5.5K + up to $5K/mo bonus on payback-qualified FTDs (not raw volume). Program ops, deal compliance, affiliate fraud watch."},
+    {role:"Media buyers", dept:"User Acquisition", phase:"growth", salary:5500, bonus:6000, start:3, h:[1,2,3],
+     note:"Base $5.5K + up to $6K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},
+    {role:"CRM executives", dept:"Monetization/CRM", phase:"later", salary:5000, bonus:3500, start:6, h:[1,2,3],
+     note:"Base $5K + up to $3.5K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},
+    {role:"VIP managers", dept:"VIP", phase:"growth", salary:5500, bonus:8000, start:4, h:[1,3,5],
+     note:"Base $5.5K + up to $8K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35–60% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15–25% of VIP GGR; ratio ~1 host per 150–250 VIPs."},
+    {role:"Risk & fraud analysts", dept:"Payments & Risk", phase:"later", salary:7500, bonus:0, start:6, h:[1,2,3],
+     note:"Salary-only by design — bonusing risk staff on volume creates the wrong incentive. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},
+    {role:"Product designer", dept:"Product", phase:"growth", salary:8500, bonus:0, start:3, h:[1,2,2],
+     note:"Site, promos, game art for in-house titles."},
+    {role:"Data analysts", dept:"Data", phase:"growth", salary:9000, bonus:0, start:3, h:[1,2,3],
+     note:"Cohort/LTV tracking vs this model; the smoking-gun dashboard that triggers the marketing scale-up."},
+    {role:"Support leads", dept:"Support", phase:"growth", salary:5000, bonus:0, start:4, h:[1,2,3],
+     note:"Manage outsourced 24/7 agents (variable cost per active)."},
+    {role:"Finance & admin", dept:"Finance & Ops", phase:"growth", salary:8000, bonus:0, start:3, h:[1,1,2],
+     note:"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."}
+  ],
+  bonusAttainPct:50,         // expected attainment of max performance bonuses (% — accrued monthly, paid quarterly)
+  payrollLoad:28,            // employer cost on top of gross: social contributions, benefits, insurance, recruiting
+  platform:{                 // OWN platform (chosen operating model)
+    capexTotal:700000, capexMonths:9,  // external build spend, months 1..capexMonths
+    amortMonths:24                     // straight-line amortization after build (EBIT line)
+  },
+  cogs:{
+    hostingStart:8000, hostingStartMonth:3, hostingGrowthPct:3, hostingCap:45000, // infra
+    softwareMonthly:10000, softwareStartMonth:6,  // PAM components, game servers, certs
+    aggregatorMin:5000,                            // aggregator minimum fees, $/mo
+    antifraudMonthly:2500                          // fraud/bonus-abuse tooling
+  },
+  ga:{ legal:4000, office:5000, travel:4000, misc:5000, contingencyPct:5 },  // legal = ad-hoc beyond the retainer on the team sheet  // G&A $/mo + contingency % of opex
+  corpTaxPct:10,             // corporate income tax on positive EBIT (Curaçao ~0%; onshore entities/substance push blended rate up)
+  wc:{ reserveMonths:4 },    // PSP rolling reserve held N months (per-GEO % below)
+  licenses:[
+    {name:"Curaçao LOK", enabled:true,  upfront:100000,  annual:85000,  startMonth:1},
+    {name:"Brazil SPA (federal)", enabled:false, upfront:5200000, annual:600000, startMonth:6},
+    {name:"Anjouan (backup)", enabled:false, upfront:40000, annual:18000, startMonth:1}
+  ],
+  games:[
+    // source: 'ext' external provider (revshare % of game GGR) | 'own' in-house
+    // Mixes calibrated for the 80/20 structure: NORMAL CASINO (RNG, non-live) ~57% of GGR
+    // + live 19% + tables/poker/scratch ~4% = external 80%; own crash+instant = 20%.
+    // --- Normal casino (RNG, external) ---
+    {id:"vslots", name:"Video slots",             source:"ext", rs:12, rtp:95.5, velocity:400, avgBet:0.90, mix:39},
+    {id:"jslots", name:"Jackpot slots (progressive)", source:"ext", rs:13, rtp:92.0, velocity:350, avgBet:1.00, mix:4},
+    {id:"roul",   name:"RNG roulette",            source:"ext", rs:10, rtp:97.3, velocity:100, avgBet:4.00, mix:4},
+    {id:"bj",     name:"RNG blackjack",           source:"ext", rs:10, rtp:99.0, velocity:180, avgBet:6.00, mix:2.5},
+    {id:"vpoker", name:"Video poker",             source:"ext", rs:10, rtp:99.2, velocity:200, avgBet:2.50, mix:5},
+    {id:"scratch",name:"Scratch & instant win",   source:"ext", rs:12, rtp:95.0, velocity:250, avgBet:1.00, mix:1.5},
+    // --- Live (external) ---
+    {id:"live",   name:"Live casino",             source:"ext", rs:15, rtp:97.5, velocity:60,  avgBet:25.0, mix:7},
+    // --- In-house originals ---
+    {id:"crash",  name:"Crash (own)",             source:"own", rs:0,  rtp:97.0, velocity:180, avgBet:2.00, mix:18},
+    {id:"inst",   name:"Instant — Plinko/Mines (own)", source:"own", rs:0, rtp:98.0, velocity:150, avgBet:1.50, mix:19}
+  ],
+  geos:[
+    // cpa: $ per CPA-deal FTD · betMult: bet-size multiplier vs Tier-1 base ·
+    // hours: play-hours/active/month · m1/m3/m6: % of FTD cohort still depositing ·
+    // hold: GGR as % of deposits · tax: % of GGR · feeDep/feeWd: payment fees %
+    {id:"ca", name:"Canada",        enabled:true, cpaAff:250, cpaMedia:230, mediaSharePct:20, betMult:1.00, hours:9.0,  m1:38, m3:20, m6:12, hold:40, tax:0,  feeDep:7,  feeWd:1, resPct:10, mkStart:2, mkInit:60000, mkGrowth:10, mkCap:500000},
+    {id:"nz", name:"New Zealand",   enabled:true, cpaAff:220, cpaMedia:200, mediaSharePct:20, betMult:0.95, hours:8.5,  m1:38, m3:20, m6:12, hold:40, tax:0,  feeDep:7,  feeWd:1, resPct:10, mkStart:3, mkInit:25000, mkGrowth:10, mkCap:200000},
+    {id:"in", name:"India (crypto)",enabled:true, cpaAff:25, cpaMedia:18, mediaSharePct:45,  betMult:0.13, hours:9.0,  m1:30, m3:12, m6:6,  hold:45, tax:0,  feeDep:3,  feeWd:1, resPct:0,  mkStart:4, mkInit:20000, mkGrowth:10, mkCap:160000},
+    {id:"sea",name:"SEA (TH/VN/ID/PH)",enabled:true, cpaAff:60, cpaMedia:55, mediaSharePct:30, betMult:0.30, hours:9.0, m1:34, m3:16, m6:8, hold:45, tax:0,  feeDep:7,  feeWd:1, resPct:8,  mkStart:2, mkInit:40000, mkGrowth:10, mkCap:400000},
+    {id:"br", name:"Brazil",        enabled:true, cpaAff:80, cpaMedia:65, mediaSharePct:40,  betMult:0.25, hours:9.0,  m1:34, m3:16, m6:9,  hold:42, tax:0,  feeDep:3,  feeWd:1, resPct:5,  mkStart:3, mkInit:50000, mkGrowth:10, mkCap:500000},
+    {id:"lat",name:"LatAm other (MX/CL)",enabled:true, cpaAff:35, cpaMedia:32, mediaSharePct:35, betMult:0.26, hours:8.5, m1:33, m3:15, m6:8, hold:42, tax:2, feeDep:5, feeWd:1, resPct:8, mkStart:4, mkInit:25000, mkGrowth:10, mkCap:250000},
+    {id:"cr", name:"Crypto global", enabled:true, cpaAff:130, cpaMedia:130, mediaSharePct:15, betMult:1.45, hours:10.0, mixOverride:{vslots:25,jslots:3,roul:3,bj:2,vpoker:3,scratch:2,live:6,crash:30,inst:26}, m1:35, m3:18, m6:12, hold:37, tax:0,  feeDep:2,  feeWd:0.5, resPct:0, mkStart:1, mkInit:80000, mkGrowth:10, mkCap:800000}
+  ]
+};};
+
+/* Saved-default overrides: baked in by Claude when you send a saved default file.
+   The durable "DB" lives in the claude.ai project (claude/model-defaults.json). */
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startingCapital":0,"startYear":2027,"startCalMonth":1,"note":"Rain Gibraltar dual-licence base case (Aug-2026): Playmarkets casino scaled to ~$37M NGR in Y3 (non-US perimeter, Gibraltar B2C Gaming Operator Licence, 0.15% duty), Rain B2C prediction markets in parallel (Prediction Market Authorisation), consolidated with shared Gibraltar substance. Anchored to the Excel regulator plan: ~$75M group revenue Y3, group breakeven around early 2029."},"funding":[{"name":"Round 1 — Build & Launch","month":1,"amount":8000000,"note":"Gibraltar setup (both licence applications, local office & team), platform build, Jan-2027 dual launch of Playmarkets and Rain B2C."},{"name":"Round 2 — Prove & Grow","month":9,"amount":7000000,"note":"Raised on the first three quarters of live cohort data across both operations."},{"name":"Round 3 — Scale","month":16,"amount":6000000,"note":"Final round through group EBITDA breakeven (~M27); covers the ~$19M peak external need with buffer."}],"global":{"bonusPctGGR":19,"fraudPctGGR":2.6,"kycPerFTD":2,"supportPerActive":1.5,"crmMonthly":6000,"toolsMonthly":3000,"brandMonthly":10000,"brandStartMonth":6,"rsShareAff":40,"affRevsharePct":30,"organicPct":15,"retMultAff":1.05,"retMultMedia":0.85,"retMultOrganic":1.25,"jackpotPctWager":0,"scaleMonth":11,"scaleMult":2,"feeCompressPP":2,"feeCompressAtDep":3000000},"personnel":[{"role":"CEO (Roy)","dept":"Executive","phase":"core","salary":25000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five. Also owns cohort analytics & the smoking-gun dashboard (with Claude) until the analyst hire at M8 — the M7 scale-up call is the CEO's number."},{"role":"CTO","dept":"Engineering","phase":"core","salary":20000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},{"role":"Head of Product","dept":"Product","phase":"core","salary":15000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},{"role":"Head of User Acquisition","dept":"User Acquisition","phase":"core","salary":10500,"bonus":23000,"start":1,"h":[1,1,1],"wk1":true,"note":"Base $10.5K + up to $23K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},{"role":"Head of Payments & Risk","dept":"Payments & Risk","phase":"growth","salary":6500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},{"role":"Compliance Officer / MLRO","dept":"Compliance","phase":"growth","salary":6000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Gibraltar licence applications (gaming + prediction markets) filed pre-launch. KYC/AML program, RG policies, geo-blocking matrix."},{"role":"Legal advisor (external retainer)","dept":"Compliance","phase":"core","salary":4500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"External gaming counsel on retainer — entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},{"role":"Head of CRM & Monetization","dept":"Monetization/CRM","phase":"growth","salary":7500,"bonus":5000,"start":4,"h":[1,1,1],"note":"Base $7.5K + up to $5K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost ≤ target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention ≥ model M1."},{"role":"Casino Manager (curation & integrations)","dept":"Product","phase":"growth","salary":7500,"bonus":0,"start":3,"h":[1,1,1],"note":"Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},{"role":"Platform engineers","dept":"Engineering","phase":"growth","salary":11000,"bonus":0,"start":2,"h":[3,3,4],"note":"PAM, wallet, cashier, integrations, site."},{"role":"Game devs (in-house studio)","dept":"Games Studio","phase":"growth","salary":11000,"bonus":0,"start":5,"h":[1,1,2],"note":"Crash + instant titles = the 20% internal-GGR margin play. Launch runs on external content; ship own title #1 by M9, #2 by M12."},{"role":"Affiliate managers","dept":"User Acquisition","phase":"growth","salary":5500,"bonus":11000,"start":3,"h":[1,1,2],"note":"Base $5.5K + up to $11K/mo bonus on payback-qualified FTDs (not raw volume). Pre-launch deal pipeline from M3, then program ops, deal compliance, affiliate fraud watch."},{"role":"Media buyers","dept":"User Acquisition","phase":"growth","salary":5000,"bonus":4000,"start":5,"h":[1,1,2],"note":"Base $5K + up to $4K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},{"role":"CRM executives","dept":"Monetization/CRM","phase":"later","salary":5000,"bonus":0,"start":6,"h":[1,1,2],"note":"Base $5K + up to $3K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},{"role":"VIP managers","dept":"VIP","phase":"growth","salary":4500,"bonus":13000,"start":6,"h":[1,2,4],"note":"Base $4.5K + up to $13K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35–60% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15–25% of VIP GGR; ratio ~1 host per 150–250 VIPs."},{"role":"Payment ops & payouts","dept":"Payments & Risk","phase":"growth","salary":5500,"bonus":0,"start":6,"h":[2,2,4],"note":"Payout review, PSP reconciliation, chargeback representment, rail failover. Partially automated; scales with deposit volume (~$95M/mo at M36)."},{"role":"Risk & fraud analysts","dept":"Payments & Risk","phase":"later","salary":5000,"bonus":0,"start":7,"h":[2,3,5],"note":"Salary-only by design — bonusing risk staff on volume creates the wrong incentive. Scales with FTD volume: ~1 analyst per 20–25K monthly FTDs. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},{"role":"Product designer","dept":"Product","phase":"growth","salary":6000,"bonus":0,"start":3,"h":[1,1,1],"note":"Site, promos, game art for in-house titles."},{"role":"Data analysts","dept":"Data","phase":"growth","salary":8000,"bonus":0,"start":8,"h":[1,1,2],"note":"Takes over the cohort/LTV dashboard from the CEO at M8. Cohort tracking vs this model; owns actual-vs-model on every base KPI from then on."},{"role":"Support leads","dept":"Support","phase":"growth","salary":5000,"bonus":0,"start":5,"h":[1,2,3],"note":"Manage the outsourced 24/7 agent pool (the $-per-active variable line ≈ 110–150 agents at M36). ~1 lead per 25–35 agents."},{"role":"Finance & admin","dept":"Finance & Ops","phase":"growth","salary":8000,"bonus":0,"start":4,"h":[1,1,1],"note":"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."}],"bonusAttainPct":50,"payrollLoad":28,"platform":{"capexTotal":500000,"capexMonths":9,"amortMonths":24},"cogs":{"hostingStart":8000,"hostingStartMonth":3,"hostingGrowthPct":3,"hostingCap":45000,"softwareMonthly":10000,"softwareStartMonth":4,"aggregatorMin":5000,"antifraudMonthly":2500,"aggregatorStartMonth":3},"ga":{"legal":4000,"office":5000,"travel":4000,"misc":5000,"contingencyPct":5},"corpTaxPct":15,"wc":{"reserveMonths":4},"licenses":[{"name":"Gibraltar B2C Gaming Operator Licence","enabled":true,"upfront":39000,"annual":129000,"startMonth":1}],"games":[{"id":"vslots","name":"Video slots","source":"ext","rs":9,"rtp":95.5,"velocity":400,"avgBet":0.9,"mix":39},{"id":"jslots","name":"Jackpot slots (progressive)","source":"ext","rs":11,"rtp":92,"velocity":350,"avgBet":1,"mix":4},{"id":"roul","name":"RNG roulette","source":"ext","rs":8,"rtp":97.3,"velocity":100,"avgBet":4,"mix":4},{"id":"bj","name":"RNG blackjack","source":"ext","rs":8,"rtp":99,"velocity":180,"avgBet":6,"mix":2.5},{"id":"vpoker","name":"Video poker","source":"ext","rs":8,"rtp":99.2,"velocity":200,"avgBet":2.5,"mix":5},{"id":"scratch","name":"Scratch & instant win","source":"ext","rs":9,"rtp":95,"velocity":250,"avgBet":1,"mix":1.5},{"id":"live","name":"Live casino","source":"ext","rs":14,"rtp":97.5,"velocity":60,"avgBet":25,"mix":7},{"id":"crash","name":"Crash (own)","source":"own","rs":0,"rtp":97,"velocity":180,"avgBet":2,"mix":18},{"id":"inst","name":"Instant — Plinko/Mines (own)","source":"own","rs":0,"rtp":98,"velocity":150,"avgBet":1.5,"mix":19}],"geos":[{"id":"ca","name":"Canada","enabled":true,"cpaAff":220,"cpaMedia":202,"mediaSharePct":20,"betMult":1,"hours":9,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":2,"mkInit":11780,"mkGrowth":10,"mkCap":98800,"mixOverride":{"vslots":38,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":16,"crash":12,"inst":10}},{"id":"nz","name":"New Zealand","enabled":true,"cpaAff":194,"cpaMedia":176,"mediaSharePct":20,"betMult":0.95,"hours":8.5,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":3,"mkInit":5130,"mkGrowth":10,"mkCap":41800,"mixOverride":{"vslots":38,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":16,"crash":12,"inst":10}},{"id":"in","name":"India (crypto)","enabled":true,"cpaAff":22,"cpaMedia":15,"mediaSharePct":45,"betMult":0.13,"hours":9,"m1":27,"m3":13.8,"m6":7.1,"hold":45,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":0,"mkStart":4,"mkInit":4560,"mkGrowth":10,"mkCap":38000,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"sea","name":"SEA (TH/VN/ID/PH)","enabled":true,"cpaAff":53,"cpaMedia":48,"mediaSharePct":30,"betMult":0.3,"hours":9,"m1":31,"m3":18.4,"m6":9.5,"hold":45,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":8,"mkStart":2,"mkInit":9880,"mkGrowth":10,"mkCap":98800,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"br","name":"Brazil","enabled":true,"cpaAff":70,"cpaMedia":57,"mediaSharePct":40,"betMult":0.25,"hours":9,"m1":31,"m3":18.4,"m6":10.7,"hold":42,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":5,"mkStart":3,"mkInit":11780,"mkGrowth":10,"mkCap":117800,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"lat","name":"LatAm other (MX/CL)","enabled":true,"cpaAff":31,"cpaMedia":29,"mediaSharePct":35,"betMult":0.26,"hours":8.5,"m1":30,"m3":17.3,"m6":9.5,"hold":42,"tax":0.15,"feeDep":5,"feeWd":1,"resPct":8,"mkStart":4,"mkInit":6270,"mkGrowth":10,"mkCap":62700,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"cr","name":"Crypto global","enabled":true,"cpaAff":150,"cpaMedia":150,"mediaSharePct":15,"betMult":1.45,"hours":10,"m1":31,"m3":18,"m6":12,"hold":37,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":1,"mkInit":7600,"mkGrowth":10,"mkCap":76000,"mixOverride":{"vslots":28,"jslots":3,"roul":3,"bj":2,"vpoker":3,"scratch":2,"live":9,"crash":28,"inst":22}}],"pm":{"seedUsers":12500,"spend1":200000,"growth":[{"m":6,"pct":21},{"m":6,"pct":8},{"m":6,"pct":8},{"m":6,"pct":2},{"m":12,"pct":1}],"organic0":20,"organicStep1":1,"organicStep2":0.5,"ltvCore":175,"ltvHV":400,"hvSharePct":10,"lifetimeMonths":24,"cpaCore":75,"cpaHV":200,"takeRatePct":1.795,"overallFeePct":3.625,"cogsPctNPR":8,"buildersPctVol":0.1,"brand1":15000,"brandGrowthPct":5,"tvl0":10000000,"tvlCapturePct":20,"treasuryYieldPct":1.7,"dutyPct":0.15,"licence":{"upfront":39000,"annual":129000},"psp":{"feePct":0.5,"absorbedPct":0,"depositMultiple":2},"personnel":{"prodEng":[40000,75000,130000]}},"shared":{"mgmtCompliance":[60000,90000,140000],"externalProviders":[25000,35000,45000],"localOps":[54000,40000,30000]}}/*__END_DEFAULTS__*/;
+const _baseDefaults = defaultAssumptions;
+defaultAssumptions = function(){
+  if(DEFAULT_OVERRIDES){ try{ return JSON.parse(JSON.stringify(DEFAULT_OVERRIDES)); }catch(e){} }
+  return _baseDefaults();
+};
+
+let A = defaultAssumptions();
+let M = null, MPM = null, MG = null;   // computed models: casino, prediction markets, group
+let SIM = {on:false, cpaMult:1, retMult:1, betMult:1, mktMult:1, bonusPct:null, holdMult:1, rsMult:1};
+let simLabels={};
+
+/* ============================================================
+   ENGINE — pure functions
+   ============================================================ */
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+
+// Retention curve r[age] = share of FTD cohort still active-depositing, r[0]=1
+function retentionCurve(g, months, retMult){
+  const m1=clamp(g.m1/100*retMult,0,0.95), m3=clamp(g.m3/100*retMult,0,m1), m6=clamp(g.m6/100*retMult,0.001,m3);
+  const r=[1];
+  r[1]=m1;
+  r[2]=m1*Math.pow(m3/m1,1/2);
+  r[3]=m3;
+  const f36=Math.pow(m6/m3,1/3);
+  r[4]=m3*f36; r[5]=m3*f36*f36; r[6]=m6;
+  const f=clamp(f36,0.01,0.985); // continued monthly decay after m6
+  for(let a=7;a<months;a++) r[a]=r[a-1]*f;
+  return r;
+}
+
+// Per-game per-hour economics at Tier-1 base bet
+function gameHourly(games, betMult, mixOv){
+  let turn=0, ggr=0, content=0;
+  const per=[];
+  const mval=g=> (mixOv && mixOv[g.id]!=null) ? +mixOv[g.id] : (+g.mix||0);
+  const mixSum=games.reduce((s,g)=>s+mval(g),0)||1;
+  for(const g of games){
+    const mix=mval(g)/mixSum;
+    const t=mix*g.velocity*g.avgBet;                 // turnover/hr
+    const e=t*(1-g.rtp/100);                          // GGR/hr
+    const c=e*(g.source==="ext"?g.rs/100:0);          // content cost/hr
+    per.push({id:g.id,name:g.name,turn:t,ggr:e,content:c,source:g.source});
+    turn+=t; ggr+=e; content+=c;
+  }
+  return {turn:turn*betMult, ggr:ggr*betMult, content:content*betMult, per, contentPct: ggr>0?content/ggr:0};
+}
+
+function marketingSpend(g, t, mktMult, glob){ // t is 1-based month
+  if(t < g.mkStart) return 0;
+  const raw = g.mkInit*Math.pow(1+g.mkGrowth/100, t-g.mkStart);
+  let v = Math.min(raw, g.mkCap);
+  if(glob && glob.scaleMonth && t>=glob.scaleMonth) v*= (glob.scaleMult||1); // post-ROI-proof scale-up
+  return v*mktMult;
+}
+
+function headsAt(p, t){ // t is 1-based month
+  if(t < p.start) return 0;
+  const y = t<=12?0:(t<=24?1:2);
+  return +p.h[Math.min(y, p.h.length-1)]||0;
+}
+function personnelAt(A, t){
+  const load=1+(A.payrollLoad||0)/100;
+  const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
+  let v=0, heads=0;
+  for(const p of A.personnel){ const h=headsAt(p,t); heads+=h; v+=h*(p.salary+(+p.bonus||0)*attain); }
+  return {cost:v*load, heads};
+}
+function platformCapexAt(pl, t){
+  return (t>=1 && t<=pl.capexMonths) ? pl.capexTotal/pl.capexMonths : 0;
+}
+function amortAt(pl, t){
+  const s=pl.capexMonths+1, e=pl.capexMonths+pl.amortMonths;
+  return (t>=s && t<=e) ? pl.capexTotal/pl.amortMonths : 0;
+}
+function hostingAt(c, t){
+  if(t<c.hostingStartMonth) return 0;
+  return Math.min(c.hostingStart*Math.pow(1+c.hostingGrowthPct/100, t-c.hostingStartMonth), c.hostingCap);
+}
+
+function licenseCost(licenses, t){
+  let upfront=0, annual=0;
+  for(const l of licenses){
+    if(!l.enabled) continue;
+    if(t===+l.startMonth) upfront+=+l.upfront;
+    if(t>=+l.startMonth) annual+=+l.annual/12;
+  }
+  return {upfront, annual};
+}
+
+const CHANNELS=[
+  {key:"affcpa", name:"Affiliates — CPA deals", retMult:()=>(A.global.retMultAff!=null?A.global.retMultAff:1.05)},
+  {key:"affrs",  name:"Affiliates — revshare",  retMult:()=>(A.global.retMultAff!=null?A.global.retMultAff:1.05)},
+  {key:"media",  name:"Media buying",           retMult:()=>(A.global.retMultMedia!=null?A.global.retMultMedia:0.85)},
+  {key:"organic",name:"Organic & brand",        retMult:()=>(A.global.retMultOrganic!=null?A.global.retMultOrganic:1.25)}
+];
+
+/* Core model computation. sim = multipliers or null */
+function compute(A, sim){
+  const S = sim || {cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1};
+  const N = A.meta.months;
+  const bonusPct = (S.bonusPct!=null?S.bonusPct:A.global.bonusPctGGR)/100;
+  const affRS = A.global.affRevsharePct/100 * S.rsMult;
+  const orgPct = (A.global.organicPct!=null?A.global.organicPct:15)/100;
+  const rsShare = clamp((A.global.rsShareAff!=null?A.global.rsShareAff:40),0,90)/100;
+
+  const geos = A.geos.filter(g=>g.enabled);
+  const perGeo = [];
+  // company-level monthly aggregates
+  const agg = { turnover:Array(N).fill(0), ggr:Array(N).fill(0), bonus:Array(N).fill(0), ngr:Array(N).fill(0),
+    content:Array(N).fill(0), pay:Array(N).fill(0), tax:Array(N).fill(0), affrs:Array(N).fill(0),
+    contribution:Array(N).fill(0), marketing:Array(N).fill(0), ftds:Array(N).fill(0), actives:Array(N).fill(0),
+    deposits:Array(N).fill(0), withdrawals:Array(N).fill(0), reserveIn:Array(N).fill(0) };
+  const ggrByGame = {}; A.games.forEach(g=>ggrByGame[g.id]=Array(N).fill(0));
+
+  for(const g of geos){
+    // migration from single-CPA exports
+    if(g.cpaAff==null) g.cpaAff = g.cpa!=null? g.cpa : 100;
+    if(g.cpaMedia==null) g.cpaMedia = Math.round(g.cpaAff*0.7);
+    if(g.mediaSharePct==null) g.mediaSharePct = 40;
+    const gh = gameHourly(A.games, g.betMult*S.betMult, g.mixOverride);
+    const ggrPerActive = gh.ggr * g.hours;
+    const turnPerActive = gh.turn * g.hours;
+    const contentPct = gh.contentPct;
+    const hold = clamp(g.hold/100*S.holdMult, 0.05, 0.95);
+    const mShare = clamp((g.mediaSharePct||0)/100, 0, 1);
+
+    const spend=Array(N).fill(0);
+    for(let t=0;t<N;t++) spend[t]=marketingSpend(g, t+1, S.mktMult, A.global);
+
+    // channel-level FTDs: budget splits into media buy + affiliate CPA; revshare
+    // affiliates add players at no upfront cost; organic rides on paid volume (global %)
+    const fCh={}; CHANNELS.forEach(c=>fCh[c.key]=Array(N).fill(0));
+    for(let t=0;t<N;t++){
+      const fm = g.cpaMedia>0 ? spend[t]*mShare/(g.cpaMedia*S.cpaMult) : 0;
+      const fa = g.cpaAff>0 ? spend[t]*(1-mShare)/(g.cpaAff*S.cpaMult) : 0;
+      const fr = fa*rsShare/(1-rsShare);
+      const fo = (fm+fa+fr)*orgPct;
+      fCh.media[t]=fm; fCh.affcpa[t]=fa; fCh.affrs[t]=fr; fCh.organic[t]=fo;
+    }
+    const ftds=Array(N).fill(0);
+    for(let t=0;t<N;t++) ftds[t]=fCh.media[t]+fCh.affcpa[t]+fCh.affrs[t]+fCh.organic[t];
+
+    // per-channel retention curves and actives (each channel ages on its own curve)
+    const rCh={}, aCh={};
+    const actives=Array(N).fill(0), activesRS=Array(N).fill(0);
+    for(const c of CHANNELS){
+      rCh[c.key]=retentionCurve(g, N, S.retMult*c.retMult());
+      const a=Array(N).fill(0);
+      for(let t=0;t<N;t++) for(let cm=0;cm<=t;cm++) a[t]+=fCh[c.key][cm]*rCh[c.key][t-cm];
+      aCh[c.key]=a;
+      for(let t=0;t<N;t++) actives[t]+=a[t];
+      if(c.key==="affrs") for(let t=0;t<N;t++) activesRS[t]+=a[t];
+    }
+
+    const row={ id:g.id, name:g.name, ggrPerActive, turnPerActive, contentPct, hold,
+      spend, ftds, ftdsCh:fCh, activesCh:aCh, rCh, actives,
+      ggr:Array(N).fill(0), bonus:Array(N).fill(0), ngr:Array(N).fill(0), content:Array(N).fill(0),
+      pay:Array(N).fill(0), tax:Array(N).fill(0), affrs:Array(N).fill(0), contribution:Array(N).fill(0),
+      deposits:Array(N).fill(0), withdrawals:Array(N).fill(0), turnover:Array(N).fill(0) };
+
+    for(let t=0;t<N;t++){
+      const ggr = actives[t]*ggrPerActive;
+      const turnover = actives[t]*turnPerActive;
+      const deposits = ggr/hold;
+      const withdrawals = Math.max(0, deposits-ggr);
+      const bonus = ggr*bonusPct;
+      const jackpot = turnover*(A.global.jackpotPctWager/100);
+      const ngr = ggr - bonus - jackpot;
+      const content = ggr*contentPct;
+      // PSP fee compression: negotiated down as the GEO's monthly volume grows
+      const _comp=A.global.feeCompressPP||0, _thr=A.global.feeCompressAtDep||0;
+      const effDepFee=Math.max(1, g.feeDep - (_thr>0? _comp*Math.min(1,deposits/_thr) : 0));
+      const pay = deposits*(effDepFee/100) + withdrawals*(g.feeWd/100);
+      const tax = ggr*(g.tax/100);
+      const rsActiveShare = actives[t]>0 ? activesRS[t]/actives[t] : 0;
+      const affrs = ngr*rsActiveShare*affRS;   // revshare paid on RS-acquired players' NGR
+      const contribution = ngr - content - pay - tax - affrs;
+      row.turnover[t]=turnover; row.ggr[t]=ggr; row.bonus[t]=bonus+jackpot; row.ngr[t]=ngr;
+      row.content[t]=content; row.pay[t]=pay; row.tax[t]=tax; row.affrs[t]=affrs;
+      row.contribution[t]=contribution; row.deposits[t]=deposits; row.withdrawals[t]=withdrawals;
+      agg.turnover[t]+=turnover; agg.ggr[t]+=ggr; agg.bonus[t]+=bonus+jackpot; agg.ngr[t]+=ngr;
+      agg.content[t]+=content; agg.pay[t]+=pay; agg.tax[t]+=tax; agg.affrs[t]+=affrs;
+      agg.contribution[t]+=contribution; agg.marketing[t]+=spend[t]; agg.ftds[t]+=ftds[t]; agg.actives[t]+=actives[t];
+      agg.deposits[t]+=deposits; agg.withdrawals[t]+=withdrawals;
+      agg.reserveIn[t]+=deposits*((g.resPct||0)/100);
+    }
+    // game split for this geo (constant proportions)
+    const ghSplit = gameHourly(A.games, 1, g.mixOverride);
+    for(const p of ghSplit.per){
+      const share = ghSplit.ggr>0 ? p.ggr/ghSplit.ggr : 0;
+      for(let t=0;t<N;t++) ggrByGame[p.id][t]+= row.ggr[t]*share;
+    }
+
+    /* ---- unit economics per FTD, channel-blended ---- */
+    const fTot={}; let fSum=0;
+    CHANNELS.forEach(c=>{ fTot[c.key]=fCh[c.key].reduce((a,b)=>a+b,0); fSum+=fTot[c.key]; });
+    const w={}; CHANNELS.forEach(c=>w[c.key]=fSum>0?fTot[c.key]/fSum:0.25);
+    row.r=Array.from({length:N},(_,a2)=>CHANNELS.reduce((sm,c)=>sm+w[c.key]*rCh[c.key][a2],0));
+    const spendTot=spend.reduce((a,b)=>a+b,0);
+    const effCAC = fSum>0 ? spendTot/fSum : 0;   // paid spend ÷ ALL new depositors (incl. RS + organic)
+    const ngrPA = ggrPerActive*(1-bonusPct);
+    const varPA = ngrPA - ggrPerActive*contentPct
+      - (ggrPerActive/hold)*(g.feeDep/100) - Math.max(0,ggrPerActive/hold-ggrPerActive)*(g.feeWd/100)
+      - ggrPerActive*(g.tax/100);
+    const cum=[]; let acc=0, payback=null, ltv36=0, ltv6=0, ltv12=0;
+    for(let a2=0;a2<N;a2++){
+      let c_a=0, n_a=0;
+      for(const c of CHANNELS){
+        const rr=w[c.key]*rCh[c.key][a2];
+        c_a += rr*(varPA - (c.key==="affrs"? ngrPA*affRS : 0));
+        n_a += rr*ngrPA;
+      }
+      acc+=c_a; cum.push(acc);
+      ltv36+=n_a; if(a2<6)ltv6+=n_a; if(a2<12)ltv12+=n_a;
+      if(payback===null && acc>=effCAC) payback=a2;
+    }
+    row.unit={effCAC, contribPerFTD: cum.length?cum[0]:0, cumContrib:cum, payback, ltvNGR36:ltv36, ltvNGR6:ltv6, ltvNGR12:ltv12,
+      ltvCac: effCAC>0? cum[N-1]/effCAC : Infinity };
+    perGeo.push(row);
+  }
+
+  /* ---- COGS, Opex, EBITDA, EBIT ---- */
+  const Z=()=>Array(N).fill(0);
+  const opex={ personnel:Z(), heads:Z(), hosting:Z(), software:Z(), aggregator:Z(), antifraud:Z(),
+    legal:Z(), office:Z(), travel:Z(), gaMisc:Z(), contingency:Z(),
+    platformCapex:Z(), amort:Z(), licAnnual:Z(), licUpfront:Z(), kyc:Z(), support:Z(),
+    crmTools:Z(), brand:Z(), fraud:Z() };
+  const grossProfit=Z(), mktTotal=Z(), contribAfterMkt=Z(), opexTotal=Z(),
+        ebitda=Z(), ebit=Z(), corpTax=Z(), netIncome=Z(), cash=Z(), netcf=Z(), cumEbitdaArr=Z(),
+        reserveBal=Z(), reserveDelta=Z(), cogsTotal=Z();
+  // Funding rounds (migration: old exports carry only startingCapital)
+  if(!A.funding || !A.funding.length)
+    A.funding=[{name:"Founding capital", month:1, amount:A.meta.startingCapital||0, note:""}];
+  const fundingIn=Z();
+  for(const f of A.funding){ const m=Math.round(+f.month)-1; if(m>=0&&m<N) fundingIn[m]+=(+f.amount||0); }
+  const totalFunding=fundingIn.reduce((a,b)=>a+b,0);
+  let bal=0, cumOp=0, maxNeed=0, breakeven=null, minCash=Infinity, minCashMonth=0, cumEbitda=0;
+  const K=Math.max(0,Math.round(A.wc.reserveMonths||0));
+  for(let t=0;t<N;t++){
+    const per=personnelAt(A,t+1);
+    opex.personnel[t]=per.cost; opex.heads[t]=per.heads;
+    opex.hosting[t]=hostingAt(A.cogs,t+1);
+    opex.software[t]=(t+1>=A.cogs.softwareStartMonth)?A.cogs.softwareMonthly:0;
+    opex.aggregator[t]=(t+1>=(A.cogs.aggregatorStartMonth||1))?A.cogs.aggregatorMin:0;
+    opex.antifraud[t]=A.cogs.antifraudMonthly;
+    opex.legal[t]=A.ga.legal; opex.office[t]=A.ga.office; opex.travel[t]=A.ga.travel; opex.gaMisc[t]=A.ga.misc;
+    opex.platformCapex[t]=platformCapexAt(A.platform,t+1);
+    opex.amort[t]=amortAt(A.platform,t+1);
+    const lc=licenseCost(A.licenses,t+1);
+    opex.licAnnual[t]=lc.annual; opex.licUpfront[t]=lc.upfront;
+    opex.kyc[t]=agg.ftds[t]*A.global.kycPerFTD;
+    opex.support[t]=agg.actives[t]*A.global.supportPerActive;
+    opex.crmTools[t]=A.global.crmMonthly+A.global.toolsMonthly;
+    opex.brand[t]= (t+1>=A.global.brandStartMonth)? A.global.brandMonthly*S.mktMult : 0;
+    opex.fraud[t]=agg.ggr[t]*(A.global.fraudPctGGR/100);
+    // COGS: direct cost of delivering the gaming service
+    cogsTotal[t]=agg.content[t]+agg.pay[t]+agg.tax[t]+opex.kyc[t]
+      +opex.hosting[t]+opex.software[t]+opex.aggregator[t];
+    grossProfit[t]=agg.ngr[t]-cogsTotal[t];
+    // Marketing all-in
+    mktTotal[t]=agg.marketing[t]+agg.affrs[t]+opex.brand[t];
+    contribAfterMkt[t]=grossProfit[t]-mktTotal[t];
+    // Opex below the line
+    const opexSub=opex.personnel[t]+opex.support[t]+opex.crmTools[t]+opex.antifraud[t]
+      +opex.legal[t]+opex.office[t]+opex.travel[t]+opex.gaMisc[t]
+      +opex.licAnnual[t]+opex.fraud[t];
+    opex.contingency[t]=opexSub*((A.ga.contingencyPct||0)/100);
+    opexTotal[t]=opexSub+opex.contingency[t];
+    ebitda[t]=contribAfterMkt[t]-opexTotal[t];
+    ebit[t]=ebitda[t]-opex.amort[t];
+    corpTax[t]=Math.max(0,ebit[t])*((A.corpTaxPct||0)/100);
+    netIncome[t]=ebit[t]-corpTax[t];
+    cumEbitda+=ebitda[t]; cumEbitdaArr[t]=cumEbitda;
+    // Working capital: rolling PSP reserve (held K months, then released)
+    const released = (t-K>=0)? agg.reserveIn[t-K] : 0;
+    reserveDelta[t]=agg.reserveIn[t]-released;
+    reserveBal[t]=(t>0?reserveBal[t-1]:0)+reserveDelta[t];
+    netcf[t]=ebitda[t]-corpTax[t]-opex.platformCapex[t]-opex.licUpfront[t]-reserveDelta[t];
+    cumOp+=netcf[t]; if(-cumOp>maxNeed)maxNeed=-cumOp;   // true external cash the business consumes
+    bal+=netcf[t]+fundingIn[t]; cash[t]=bal;
+    if(bal<minCash){minCash=bal;minCashMonth=t;}
+  }
+  for(let t=0;t<N;t++){ if(ebitda[t]>0 && (t===N-1||ebitda[t+1]>0)){breakeven=t;break;} }
+  const peakNeed = Math.max(0, maxNeed);
+
+  return {N, perGeo, agg, opex, ebitda, ebit, corpTax, netIncome, cumEbitdaArr, netcf, cash, breakeven, minCash, minCashMonth, peakNeed, ggrByGame, fundingIn, totalFunding,
+    grossProfit, mktTotal, contribAfterMkt, opexTotal, cogsTotal, reserveBal, reserveDelta,
+    bonusPct, affRS, channels:CHANNELS.map(c=>({key:c.key,name:c.name}))};
+}
+
+/* ============================================================
+   RAIN B2C (PREDICTION MARKETS) ENGINE + GROUP CONSOLIDATION
+   Parallel model to the casino engine above. Pure functions.
+   ============================================================ */
+function pmDefaults(){
+  return {
+    seedUsers:12500, spend1:200000,
+    growth:[{m:6,pct:21},{m:6,pct:8},{m:6,pct:8},{m:6,pct:2},{m:12,pct:1}],
+    organic0:20, organicStep1:1, organicStep2:0.5,
+    ltvCore:175, ltvHV:400, hvSharePct:10, lifetimeMonths:24,
+    cpaCore:75, cpaHV:200,
+    takeRatePct:1.795, overallFeePct:3.625,
+    cogsPctNPR:8, buildersPctVol:0.1, brand1:15000, brandGrowthPct:5,
+    tvl0:10000000, tvlCapturePct:20, treasuryYieldPct:1.7,
+    dutyPct:0.15,
+    licence:{upfront:39000, annual:129000},
+    psp:{feePct:0.5, absorbedPct:0, depositMultiple:2},
+    personnel:{prodEng:[40000,75000,130000]}
+  };
+}
+function sharedDefaults(){
+  return {
+    mgmtCompliance:[60000,90000,140000],
+    externalProviders:[25000,35000,45000],
+    localOps:[54000,40000,30000]
+  };
+}
+function computePM(A){
+  if(!A.pm) A.pm=pmDefaults();
+  if(!A.pm.personnel) A.pm.personnel={prodEng:[40000,75000,130000]};
+  const p=A.pm, N=A.meta.months;
+  const hv=p.hvSharePct/100;
+  const ltv=p.ltvHV*hv+p.ltvCore*(1-hv), cpa=p.cpaHV*hv+p.cpaCore*(1-hv);
+  const marpu=ltv/Math.max(1,p.lifetimeMonths), churn=1/Math.max(1,p.lifetimeMonths);
+  const Z=()=>Array(N).fill(0);
+  const spend=Z(),organic=Z(),newU=Z(),actives=Z(),npr=Z(),vol=Z(),fees=Z(),deposits=Z(),psp=Z(),
+        tvl=Z(),treasury=Z(),totalRev=Z(),cogs=Z(),builders=Z(),brand=Z(),duty=Z(),prodEng=Z(),
+        mkt=Z(),ebitda=Z(),netcf=Z(),cumE=Z(),licAnnual=Z(),licUpfront=Z();
+  const gv=[]; (p.growth||[]).forEach(ph=>{ for(let k=0;k<(+ph.m||0)&&gv.length<N;k++) gv.push(+ph.pct||0); });
+  while(gv.length<N) gv.push(gv.length?gv[gv.length-1]:0);
+  let prev=+p.seedUsers||0, ptvl=+p.tvl0||0, pvol=0, o=(+p.organic0||0)/100, cum=0, be=null;
+  for(let t=0;t<N;t++){
+    spend[t]= t===0? (+p.spend1||0) : spend[t-1]*(1+gv[t-1]/100);
+    organic[t]=o;
+    newU[t]= cpa>0? spend[t]/cpa*(1+o) : 0;
+    actives[t]=prev*(1-churn)+newU[t];
+    npr[t]=actives[t]*marpu;
+    vol[t]= p.takeRatePct>0? npr[t]/(p.takeRatePct/100) : 0;
+    fees[t]=vol[t]*p.overallFeePct/100;
+    deposits[t]=fees[t]*(p.psp.depositMultiple||0);
+    psp[t]=deposits[t]*(p.psp.feePct/100)*((p.psp.absorbedPct||0)/100);
+    tvl[t]=ptvl+(vol[t]-pvol)*(p.tvlCapturePct/100);
+    treasury[t]=tvl[t]*(p.treasuryYieldPct/100)/12;
+    totalRev[t]=npr[t]+treasury[t];
+    cogs[t]=npr[t]*(p.cogsPctNPR/100)+psp[t];
+    builders[t]=vol[t]*(p.buildersPctVol/100);
+    brand[t]=(+p.brand1||0)*Math.pow(1+(+p.brandGrowthPct||0)/100,t);
+    duty[t]=npr[t]*(p.dutyPct/100);
+    prodEng[t]=+p.personnel.prodEng[Math.min(2,Math.floor(t/12))]||0;
+    licAnnual[t]=(+p.licence.annual||0)/12;
+    licUpfront[t]= t===0? (+p.licence.upfront||0) : 0;
+    mkt[t]=spend[t]+builders[t]+brand[t];
+    ebitda[t]=totalRev[t]-cogs[t]-mkt[t]-duty[t]-licAnnual[t]-prodEng[t];
+    netcf[t]=ebitda[t]-licUpfront[t];
+    cum+=ebitda[t]; cumE[t]=cum;
+    prev=actives[t]; ptvl=tvl[t]; pvol=vol[t];
+    o+=(t<11?(+p.organicStep1||0):(+p.organicStep2||0))/100;
+  }
+  for(let t=0;t<N;t++){ if(ebitda[t]>0&&(t===N-1||ebitda[t+1]>0)){ be=t; break; } }
+  return {N,spend,organic,newU,actives,npr,vol,fees,deposits,psp,tvl,treasury,totalRev,cogs,builders,
+          brand,duty,prodEng,mkt,ebitda,netcf,cumE,licAnnual,licUpfront,breakeven:be,
+          unit:{ltv,cpa,marpu,churn}};
+}
+function computeGroup(A,MC,MP){
+  if(!A.shared) A.shared=sharedDefaults();
+  const N=A.meta.months, Z=()=>Array(N).fill(0);
+  const shared=Z(),revenue=Z(),ebitda=Z(),netcf=Z(),cash=Z(),cumE=Z(),fundingIn=Z();
+  (A.funding||[]).forEach(f=>{ const m=Math.round(+f.month)-1; if(m>=0&&m<N) fundingIn[m]+=(+f.amount||0); });
+  let bal=0,cum=0,cumOp=0,maxNeed=0,be=null,minCash=Infinity,minCashM=0;
+  for(let t=0;t<N;t++){
+    const y=Math.min(2,Math.floor(t/12));
+    shared[t]=(+A.shared.mgmtCompliance[y]||0)+(+A.shared.externalProviders[y]||0)+(+A.shared.localOps[y]||0);
+    revenue[t]=MC.agg.ngr[t]+MP.totalRev[t];
+    ebitda[t]=MC.ebitda[t]+MP.ebitda[t]-shared[t];
+    netcf[t]=MC.netcf[t]+MP.netcf[t]-shared[t];
+    cum+=ebitda[t]; cumE[t]=cum;
+    cumOp+=netcf[t]; if(-cumOp>maxNeed) maxNeed=-cumOp;
+    bal+=netcf[t]+fundingIn[t]; cash[t]=bal;
+    if(bal<minCash){ minCash=bal; minCashM=t; }
+  }
+  for(let t=0;t<N;t++){ if(ebitda[t]>0&&(t===N-1||ebitda[t+1]>0)){ be=t; break; } }
+  return {N,shared,revenue,ebitda,netcf,cash,cumE,fundingIn,breakeven:be,
+          peakNeed:Math.max(0,maxNeed),minCash,minCashM,
+          totalFunding:fundingIn.reduce((a,b)=>a+b,0)};
+}
+
+/* ============================================================
+   FORMATTING
+   ============================================================ */
+const fmt = {
+  usd(v,dec){ if(v==null||!isFinite(v))return "—";
+    const a=Math.abs(v), s=v<0?"−$":"$";
+    if(a>=1e9) return s+(a/1e9).toFixed(dec==null?2:dec)+"B";
+    if(a>=1e6) return s+(a/1e6).toFixed(dec==null?2:dec)+"M";
+    if(a>=1e4) return s+(a/1e3).toFixed(0)+"K";
+    if(a>=1e3) return s+(a/1e3).toFixed(1)+"K";
+    return s+a.toFixed(a<10?1:0); },
+  usdFull(v){ if(v==null||!isFinite(v))return "—"; const s=v<0?"−":""; return s+"$"+Math.round(Math.abs(v)).toLocaleString("en-US"); },
+  num(v){ if(v==null||!isFinite(v))return "—"; const a=Math.abs(v);
+    if(a>=1e6) return (v/1e6).toFixed(1)+"M"; if(a>=1e3) return (v/1e3).toFixed(1)+"K"; return Math.round(v).toLocaleString(); },
+  pct(v,d){ return (v*100).toFixed(d==null?1:d)+"%"; },
+  x(v){ return !isFinite(v)?"—":v.toFixed(2)+"×"; },
+  mo(t){ return "M"+(t+1); }
+};
+const SERIES=["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+function cssv(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function sColor(i){ return cssv(SERIES[i%SERIES.length]); }
+function gameColor(g){ if(g.source==="own") return cssv("--s3");
+  return (g.id==="live"||/live/i.test(g.name||"")) ? cssv("--s2") : cssv("--s1"); }
+
+/* ============================================================
+   MICRO CHART LIBRARY (SVG, hand-rolled per dataviz spec)
+   ============================================================ */
+const tip=document.getElementById("tip");
+function showTip(html,x,y){ tip.innerHTML=html; tip.style.display="block";
+  const r=tip.getBoundingClientRect();
+  let px=x+14, py=y+14;
+  if(px+r.width>window.innerWidth-8) px=x-r.width-14;
+  if(py+r.height>window.innerHeight-8) py=y-r.height-14;
+  tip.style.left=px+"px"; tip.style.top=py+"px"; }
+function hideTip(){ tip.style.display="none"; }
+
+function niceTicks(min,max,n){
+  if(min===max){max=min+1;}
+  const span=max-min, step0=span/Math.max(1,n), mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  let step=mag; for(const m of [1,2,2.5,5,10]) if(step0<=m*mag){step=m*mag;break;}
+  const lo=Math.floor(min/step)*step, hi=Math.ceil(max/step)*step, ticks=[];
+  for(let v=lo;v<=hi+1e-9;v+=step) ticks.push(v);
+  return ticks;
+}
+function svgEl(tag,attrs){ const el=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(const k in attrs) el.setAttribute(k,attrs[k]); return el; }
+
+/* Generic xy chart: series=[{name,color,values,kind:'line'|'area'|'bar'}] over months */
+function xyChart(el, series, opts){
+  opts=opts||{};
+  const W=opts.w||620, H=opts.h||260, padL=54, padR=14, padT=14, padB=26;
+  const N=series[0].values.length;
+  const stacked=opts.stacked;
+  let min=0,max=-Infinity;
+  if(stacked){
+    for(let t=0;t<N;t++){ let s=0; for(const sr of series) s+=Math.max(0,sr.values[t]); max=Math.max(max,s);}
+    min=0;
+  } else {
+    for(const sr of series) for(const v of sr.values){ if(v<min)min=v; if(v>max)max=v; }
+  }
+  if(max===-Infinity)max=1;
+  const ticks=niceTicks(Math.min(min,0),max,5);
+  min=ticks[0]; max=ticks[ticks.length-1];
+  const X=t=>padL+(t/(N-1))*(W-padL-padR);
+  const Y=v=>padT+(1-(v-min)/(max-min))*(H-padT-padB);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img"});
+  // grid
+  for(const tv of ticks){
+    svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(tv),y2:Y(tv),stroke:"var(--grid)","stroke-width":1}));
+    const lbl=svgEl("text",{x:padL-8,y:Y(tv)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,style:"font-variant-numeric:tabular-nums"});
+    lbl.textContent=opts.fmt?opts.fmt(tv):fmt.usd(tv,0); svg.appendChild(lbl);
+  }
+  // zero baseline emphasized
+  if(min<0&&max>0) svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(0),y2:Y(0),stroke:"var(--axis)","stroke-width":1}));
+  // x labels
+  const step=N>24?6:(N>12?3:2);
+  for(let t=0;t<N;t+=step){
+    const lbl=svgEl("text",{x:X(t),y:H-8,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10.5});
+    lbl.textContent="M"+(t+1); svg.appendChild(lbl);
+  }
+  if(stacked){
+    const base=Array(N).fill(0);
+    series.forEach((sr,si)=>{
+      let d="",d2="";
+      const tops=[];
+      for(let t=0;t<N;t++){ const v=base[t]+Math.max(0,sr.values[t]); tops.push(v); }
+      d="M"+X(0)+" "+Y(base[0]);
+      for(let t=0;t<N;t++) d+=" L"+X(t)+" "+Y(tops[t]);
+      for(let t=N-1;t>=0;t--) d+=" L"+X(t)+" "+Y(base[t]);
+      d+=" Z";
+      svg.appendChild(svgEl("path",{d,fill:sr.color,"fill-opacity":0.55,stroke:"var(--surface-1)","stroke-width":1.5}));
+      for(let t=0;t<N;t++) base[t]=tops[t];
+    });
+  } else {
+    series.forEach(sr=>{
+      if(sr.kind==="bar"){
+        const bw=Math.min(14,(W-padL-padR)/N*0.62);
+        for(let t=0;t<N;t++){
+          const v=sr.values[t], y0=Y(Math.max(0,v)), h=Math.abs(Y(v)-Y(0));
+          const rct=svgEl("rect",{x:X(t)-bw/2,y:v>=0?y0:Y(0),width:bw,height:Math.max(0.5,h),
+            fill:v>=0?sr.color:"var(--crit)",rx:2});
+          svg.appendChild(rct);
+        }
+      } else {
+        if(sr.kind==="area"){
+          let d="M"+X(0)+" "+Y(Math.max(0,min));
+          for(let t=0;t<N;t++) d+=" L"+X(t)+" "+Y(sr.values[t]);
+          d+=" L"+X(N-1)+" "+Y(Math.max(0,min))+" Z";
+          svg.appendChild(svgEl("path",{d,fill:sr.color,"fill-opacity":0.10}));
+        }
+        let d="";
+        for(let t=0;t<N;t++) d+=(t?" L":"M")+X(t)+" "+Y(sr.values[t]);
+        svg.appendChild(svgEl("path",{d,fill:"none",stroke:sr.color,"stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"}));
+      }
+    });
+  }
+  // optional vertical event markers (e.g. funding rounds)
+  if(opts.marks) for(const mk of opts.marks){
+    if(mk.t<0||mk.t>=N) continue;
+    svg.appendChild(svgEl("line",{x1:X(mk.t),x2:X(mk.t),y1:padT+10,y2:H-padB,stroke:"var(--axis)","stroke-width":1}));
+    const flip=X(mk.t)>(W-padR)*0.72;
+    const tl=svgEl("text",{x:X(mk.t)+(flip?-4:3),y:padT+9,fill:"var(--ink-2)","font-size":9.5,"font-weight":600,"text-anchor":flip?"end":"start"});
+    tl.textContent=mk.label; svg.appendChild(tl);
+  }
+  // optional horizontal reference line (e.g. target margin)
+  if(opts.href!=null && opts.href.v>=min && opts.href.v<=max){
+    svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(opts.href.v),y2:Y(opts.href.v),stroke:"var(--s2)","stroke-width":1.3,"stroke-dasharray":"5 4"}));
+    const rl=svgEl("text",{x:W-padR-4,y:Y(opts.href.v)-5,"text-anchor":"end",fill:"var(--s2)","font-size":10,"font-weight":650});
+    rl.textContent=opts.href.label||""; svg.appendChild(rl);
+  }
+  // crosshair + tooltip
+  const hover=svgEl("line",{x1:0,x2:0,y1:padT,y2:H-padB,stroke:"var(--axis)","stroke-width":1,visibility:"hidden"});
+  svg.appendChild(hover);
+  const dots=series.map(sr=>{ const c=svgEl("circle",{r:4.5,fill:sr.color,stroke:"var(--surface-1)","stroke-width":2,visibility:"hidden"}); svg.appendChild(c); return c; });
+  svg.addEventListener("mousemove",e=>{
+    const pt=svg.getBoundingClientRect();
+    const sx=(e.clientX-pt.left)*(W/pt.width);
+    let t=Math.round(((sx-padL)/(W-padL-padR))*(N-1)); t=clamp(t,0,N-1);
+    hover.setAttribute("x1",X(t)); hover.setAttribute("x2",X(t)); hover.setAttribute("visibility","visible");
+    let rows="";
+    if(stacked){ let base=0;
+      series.forEach((sr,si)=>{ base+=Math.max(0,sr.values[t]); dots[si].setAttribute("visibility","hidden"); });
+      let acc=0;
+      series.forEach((sr,si)=>{ acc+=Math.max(0,sr.values[t]);
+        rows+=`<div class="t-r"><span class="k"><span class="sw" style="background:${sr.color};width:8px;height:8px;border-radius:2px;display:inline-block"></span>${sr.name}</span><span class="v">${(opts.fmt||fmt.usd)(sr.values[t])}</span></div>`;});
+      rows+=`<div class="t-r" style="border-top:1px solid var(--grid);margin-top:4px;padding-top:4px"><span class="k">Total</span><span class="v">${(opts.fmt||fmt.usd)(base)}</span></div>`;
+    } else {
+      series.forEach((sr,si)=>{
+        dots[si].setAttribute("cx",X(t)); dots[si].setAttribute("cy",Y(sr.values[t])); dots[si].setAttribute("visibility","visible");
+        rows+=`<div class="t-r"><span class="k"><span class="sw" style="background:${sr.color};width:8px;height:8px;border-radius:2px;display:inline-block"></span>${sr.name}</span><span class="v">${(opts.fmt||fmt.usd)(sr.values[t])}</span></div>`;});
+    }
+    showTip(`<div class="t-h">Month ${t+1}</div>${rows}`, e.clientX, e.clientY);
+  });
+  svg.addEventListener("mouseleave",()=>{ hideTip(); hover.setAttribute("visibility","hidden"); dots.forEach(d=>d.setAttribute("visibility","hidden")); });
+  el.innerHTML="";
+  el.appendChild(svg);
+  if(series.length>1){
+    const lg=document.createElement("div"); lg.className="legend";
+    series.forEach(sr=>{ const it=document.createElement("div"); it.className="it";
+      it.innerHTML=`<span class="sw" style="background:${sr.color}"></span>${sr.name}`; lg.appendChild(it); });
+    el.appendChild(lg);
+  }
+}
+
+/* Horizontal bars with reference line */
+function hbarChart(el, items, opts){
+  opts=opts||{};
+  const W=opts.w||620, rowH=opts.rowH||30, padL=opts.padL||150, padR=opts.padR||60, padT=6;
+  const H=padT+items.length*rowH+10;
+  let max=Math.max(...items.map(i=>i.value),opts.ref||0)*1.08||1;
+  const X=v=>padL+(v/max)*(W-padL-padR);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`});
+  if(opts.ref!=null){
+    svg.appendChild(svgEl("line",{x1:X(opts.ref),x2:X(opts.ref),y1:padT,y2:H-8,stroke:"var(--axis)","stroke-width":1,"stroke-dasharray":"none"}));
+    const t=svgEl("text",{x:X(opts.ref)+4,y:padT+8,fill:"var(--ink-3)","font-size":10}); t.textContent=opts.refLabel||""; svg.appendChild(t);
+  }
+  items.forEach((it,i)=>{
+    const y=padT+i*rowH+6, bh=16;
+    const lbl=svgEl("text",{x:padL-8,y:y+bh-4,"text-anchor":"end",fill:"var(--ink-2)","font-size":11.5});
+    lbl.textContent=it.name; svg.appendChild(lbl);
+    const w=Math.max(1,X(it.value)-padL);
+    const r=svgEl("path",{d:`M${padL} ${y} h${w-4} a4 4 0 0 1 4 4 v${bh-8} a4 4 0 0 1 -4 4 h${-(w-4)} Z`,fill:it.color});
+    svg.appendChild(r);
+    const val=svgEl("text",{x:padL+w+6,y:y+bh-4,fill:"var(--ink-1)","font-size":11,"font-weight":600,style:"font-variant-numeric:tabular-nums"});
+    val.textContent=(opts.fmt||fmt.x)(it.value); svg.appendChild(val);
+    r.addEventListener("mousemove",e=>showTip(`<div class="t-h">${it.name}</div><div class="t-r"><span class="k">${opts.label||"Value"}</span><span class="v">${(opts.fmt||fmt.x)(it.value)}</span></div>${it.extra||""}`,e.clientX,e.clientY));
+    r.addEventListener("mouseleave",hideTip);
+  });
+  el.innerHTML=""; el.appendChild(svg);
+}
+
+/* P&L waterfall: GGR 100% -> EBITDA, each step labeled as % of GGR */
+function waterfallChart(el){
+  const t=M.N-1, g=M.agg.ggr[t]||1;
+  const techKyc=M.opex.kyc[t]+M.opex.hosting[t]+M.opex.software[t]+M.opex.aggregator[t];
+  const steps=[
+    {n:"GGR",total:true,set:g},
+    {n:"Bonuses &\njackpots",v:-M.agg.bonus[t]},
+    {n:"NGR",total:true},
+    {n:"Content\nrevshare",v:-M.agg.content[t]},
+    {n:"Payment\nprocessing",v:-M.agg.pay[t]},
+    {n:"KYC &\ntech",v:-techKyc},
+    {n:"Gaming\ntax",v:-M.agg.tax[t]},
+    {n:"GROSS\nPROFIT",total:true},
+    {n:"Affiliate\nrevshare*",v:-M.agg.affrs[t]},
+    {n:"CPA\nbudgets",v:-M.agg.marketing[t]},
+    {n:"Brand &\nstreamers",v:-M.opex.brand[t]},
+    {n:"CONTRIB.\nafter mktg",total:true},
+    {n:"Personnel",v:-M.opex.personnel[t]},
+    {n:"Other\nopex",v:-(M.opexTotal[t]-M.opex.personnel[t])},
+    {n:"EBITDA",total:true,final:true}
+  ];
+  const W=1240,H=300,padL=16,padR=16,padT=30,padB=44;
+  const n=steps.length, slot=(W-padL-padR)/n, bw=Math.min(58,slot*0.66);
+  const Y=v=>padT+(1-v/g)*(H-padT-padB);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`});
+  // baseline + gridlines at 0/25/50/75/100%
+  for(const q of [0,0.25,0.5,0.75,1]){
+    svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(g*q),y2:Y(g*q),stroke:"var(--grid)","stroke-width":1}));
+    const tl=svgEl("text",{x:W-padR,y:Y(g*q)-3,"text-anchor":"end",fill:"var(--ink-3)","font-size":9});
+    tl.textContent=Math.round(q*100)+"%"; svg.appendChild(tl);
+  }
+  let run=0;
+  steps.forEach((st,i)=>{
+    const x=padL+i*slot+(slot-bw)/2;
+    let y0,y1,fill,valTxt,val;
+    if(st.total){
+      if(st.set!=null) run=st.set;
+      val=run; y0=Y(run); y1=Y(0);
+      fill=st.final?cssv("--good"):cssv("--s1");
+      valTxt=fmt.pct(run/g,run/g<0.1?1:0);
+    } else {
+      val=st.v; const from=run, to=run+st.v; run=to;
+      y0=Y(Math.max(from,to)); y1=Y(Math.min(from,to));
+      fill=cssv("--s2");
+      valTxt="\u2212"+fmt.pct(Math.abs(st.v)/g,Math.abs(st.v)/g<0.02?1:0);
+      // connector from previous level
+      svg.appendChild(svgEl("line",{x1:x-((slot-bw)/2)-bw/2+2,x2:x,y1:Y(from),y2:Y(from),stroke:"var(--axis)","stroke-width":1}));
+    }
+    const rect=svgEl("rect",{x:x,y:y0,width:bw,height:Math.max(1.5,y1-y0),rx:3,fill,
+      stroke:"var(--surface-1)","stroke-width":1});
+    svg.appendChild(rect);
+    const vt=svgEl("text",{x:x+bw/2,y:y0-4,"text-anchor":"middle",fill:"var(--ink-1)","font-size":10,"font-weight":st.total?700:600});
+    vt.textContent=valTxt; svg.appendChild(vt);
+    st.n.split("\n").forEach((ln,li)=>{
+      const nt=svgEl("text",{x:x+bw/2,y:H-padB+13+li*11,"text-anchor":"middle",fill:st.total?"var(--ink-1)":"var(--ink-3)","font-size":9.5,"font-weight":st.total?700:400});
+      nt.textContent=ln; svg.appendChild(nt);
+    });
+    rect.addEventListener("mousemove",e=>showTip(
+      `<div class="t-h">${st.n.replace("\n"," ")}</div>
+       <div class="t-r"><span class="k">Month 36</span><span class="v">${fmt.usd(Math.abs(st.total?val:st.v))}/mo</span></div>
+       <div class="t-r"><span class="k">% of GGR</span><span class="v">${fmt.pct(Math.abs(st.total?val:st.v)/g,1)}</span></div>`,
+      e.clientX,e.clientY));
+    rect.addEventListener("mouseleave",hideTip);
+  });
+  el.innerHTML=""; el.appendChild(svg);
+}
+
+/* Project timeline: phases + funding markers + break-even */
+function timelineChart(el){
+  const N=M.N, W=1240, H=138, padL=20, padR=20, yBar=66;
+  const sy=A.meta.startYear||2026, smc=A.meta.startCalMonth||9;
+  const MOS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const cal=t=>{ const ab=(smc-1)+t; return MOS[ab%12]+"-"+String(sy+Math.floor(ab/12)).slice(2); };
+  const X=t=>padL+(clamp(t,0,N-1)/(N-1))*(W-padL-padR);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`});
+  const launch=Math.max(0,Math.min(...A.geos.filter(g=>g.enabled).map(g=>g.mkStart))-1);
+  const scale=Math.max(launch+1,(A.global.scaleMonth||7)-1);
+  const be=M.breakeven!=null?M.breakeven:N-1;
+  const phases=[
+    {a:0,b:launch,label:"BUILD",c:"--s4"},
+    {a:launch,b:scale,label:"LAUNCH & PROVE",c:"--s1"},
+    {a:scale,b:Math.max(scale+1,be),label:"SCALE ×"+(A.global.scaleMult||1),c:"--s2"},
+    {a:Math.max(scale+1,be),b:N-1,label:"PROFITABLE",c:"--good"}
+  ];
+  for(const ph of phases){
+    if(ph.b<=ph.a) continue;
+    svg.appendChild(svgEl("rect",{x:X(ph.a),y:yBar-5,width:X(ph.b)-X(ph.a),height:10,rx:5,fill:cssv(ph.c),"fill-opacity":0.3}));
+    const lb=svgEl("text",{x:(X(ph.a)+X(ph.b))/2,y:yBar-14,"text-anchor":"middle",fill:"var(--ink-2)","font-size":10,"font-weight":700,"letter-spacing":"0.06em"});
+    lb.textContent=ph.label; svg.appendChild(lb);
+  }
+  // funding rounds above the bar (alternating heights)
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  rounds.forEach((f,i)=>{
+    const x=X(Math.round(f.month)-1), hy=i%2?26:40;
+    svg.appendChild(svgEl("line",{x1:x,x2:x,y1:H-yBar-18+hy,y2:yBar-5,stroke:"var(--axis)","stroke-width":1}));
+    svg.appendChild(svgEl("circle",{cx:x,cy:yBar,r:6,fill:cssv("--s1"),stroke:"var(--surface-1)","stroke-width":2}));
+    const lx=Math.max(52,Math.min(W-52,x));
+    const t1=svgEl("text",{x:lx,y:hy-8,"text-anchor":"middle",fill:"var(--ink-1)","font-size":11,"font-weight":700});
+    t1.textContent="R"+(i+1)+" "+fmt.usd(f.amount); svg.appendChild(t1);
+    const t2=svgEl("text",{x:lx,y:hy+3,"text-anchor":"middle",fill:"var(--ink-3)","font-size":9.5});
+    t2.textContent="M"+f.month+" · "+cal(Math.round(f.month)-1); svg.appendChild(t2);
+  });
+  // break-even diamond
+  if(M.breakeven!=null){
+    const x=X(be);
+    svg.appendChild(svgEl("path",{d:`M${x} ${yBar-9} L${x+7} ${yBar} L${x} ${yBar+9} L${x-7} ${yBar} Z`,fill:cssv("--good"),stroke:"var(--surface-1)","stroke-width":2}));
+    const t=svgEl("text",{x:x,y:yBar+26,"text-anchor":"middle",fill:"var(--good-text)","font-size":10,"font-weight":700});
+    t.textContent="BREAK-EVEN M"+(be+1); svg.appendChild(t);
+  }
+  // month + calendar ticks
+  for(const t of [0,5,11,17,23,29,35]){
+    if(t>=N) continue;
+    const x=X(t);
+    svg.appendChild(svgEl("line",{x1:x,x2:x,y1:yBar+7,y2:yBar+12,stroke:"var(--axis)","stroke-width":1}));
+    const m1=svgEl("text",{x:x,y:yBar+40,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10}); m1.textContent="M"+(t+1); svg.appendChild(m1);
+    const m2=svgEl("text",{x:x,y:yBar+52,"text-anchor":"middle",fill:"var(--ink-3)","font-size":9}); m2.textContent=cal(t); svg.appendChild(m2);
+  }
+  el.innerHTML=""; el.appendChild(svg);
+}
+
+/* Heatmap: rows × cols matrix, sequential blue */
+function heatmap(el, rows, cols, get, opts){
+  opts=opts||{};
+  const cw=Math.max(26,Math.min(44, Math.floor(760/cols.length))), ch=24, padL=90, padT=24;
+  const W=padL+cols.length*cw+10, H=padT+rows.length*ch+8;
+  let mx=0; for(let i=0;i<rows.length;i++) for(let j=0;j<cols.length;j++){ const v=get(i,j); if(v!=null&&v>mx)mx=v; }
+  if(mx<=0)mx=1;
+  const ramp=["--seq100","--seq200","--seq300","--seq400","--seq500","--seq600","--seq700"];
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`});
+  cols.forEach((c,j)=>{ const t=svgEl("text",{x:padL+j*cw+cw/2,y:14,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10}); t.textContent=c; svg.appendChild(t); });
+  rows.forEach((rname,i)=>{
+    const t=svgEl("text",{x:padL-8,y:padT+i*ch+ch/2+4,"text-anchor":"end",fill:"var(--ink-2)","font-size":10.5}); t.textContent=rname; svg.appendChild(t);
+    cols.forEach((c,j)=>{
+      const v=get(i,j);
+      if(v==null) return;
+      const k=Math.min(ramp.length-1, Math.floor((v/mx)*ramp.length));
+      const rc=svgEl("rect",{x:padL+j*cw+1,y:padT+i*ch+1,width:cw-2,height:ch-2,rx:4,fill:cssv(ramp[k])});
+      svg.appendChild(rc);
+      rc.addEventListener("mousemove",e=>showTip(`<div class="t-h">${rname} · ${c}</div><div class="t-r"><span class="k">${opts.label||"Value"}</span><span class="v">${(opts.fmt||fmt.usd)(v)}</span></div>`,e.clientX,e.clientY));
+      rc.addEventListener("mouseleave",hideTip);
+    });
+  });
+  el.innerHTML=""; el.appendChild(svg);
+}
+</script>
+<script>
+/* ============================================================
+   UI — tabs, rendering, binding
+   ============================================================ */
+const TABS=[
+  ["group","Consolidated"],["pm","Rain B2C"],
+  ["dashboard","Playmarkets"],["assumptions","Casino Assumptions"],
+  ["games","Games"],["geos","GEOs"],["marketing","Marketing"],["cohorts","Cohorts"],
+  ["pnl","Casino P&L"],["finance","Finance"],["cash","Cash Flow"],
+  ["team","Team"],["milestones","Milestones"],["sim","Simulate"]
+];
+let activeTab="group";
+const nav=document.getElementById("nav");
+TABS.forEach(([id,label])=>{
+  const b=document.createElement("button"); b.textContent=label; b.dataset.tab=id;
+  b.onclick=()=>{ activeTab=id; document.querySelectorAll("button[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===id));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="tab-"+id));
+    renderTab(id); };
+  if(id==="sim"){ b.classList.add("sim-cta"); document.querySelector(".hd-actions").insertBefore(b, document.getElementById("btnTheme")); }
+  else nav.appendChild(b);
+});
+
+function recompute(){ M=compute(A,null); MPM=computePM(A); MG=computeGroup(A,M,MPM); }
+function refresh(){ recompute(); renderTab(activeTab); }
+
+/* debounce for input-driven recompute */
+let _t=null;
+function queueRefresh(){ clearTimeout(_t); _t=setTimeout(refresh,250); }
+
+/* helper: numeric input bound to object path */
+function numInput(obj,key,opts){
+  opts=opts||{};
+  const inp=document.createElement("input");
+  inp.type="number"; inp.value=obj[key];
+  if(opts.step)inp.step=opts.step; if(opts.min!=null)inp.min=opts.min;
+  inp.addEventListener("input",()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ obj[key]=v; queueRefresh(); } });
+  return inp;
+}
+function field(labelTxt,inputEl,unit){
+  const f=document.createElement("div"); f.className="f";
+  const l=document.createElement("label"); l.textContent=labelTxt; f.appendChild(l);
+  f.appendChild(inputEl);
+  if(unit){ const u=document.createElement("div"); u.className="unit"; u.textContent=unit; f.appendChild(u); }
+  return f;
+}
+
+/* ============================================================
+   TAB: DASHBOARD
+   ============================================================ */
+function renderDashboard(){
+  const el=document.getElementById("tab-dashboard");
+  const N=M.N;
+  const sy=A.meta.startYear||2026, smc=A.meta.startCalMonth||9;
+  const MOS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const cal=t=>{ const ab=(smc-1)+t; return MOS[ab%12]+"-"+String(sy+Math.floor(ab/12)).slice(2); };
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  const totalRaise=rounds.reduce((s2,f)=>s2+(+f.amount||0),0);
+  const y3run=M.agg.ggr[N-1]*12, ebitdaRun=M.ebitda[N-1]*12;
+  const blend=(()=>{ let l=0,c=0,pb=0,f=0; M.perGeo.forEach(g=>{ const ft=g.ftds.reduce((a,b)=>a+b,0);
+    l+=g.unit.ltvNGR36*ft; c+=g.unit.effCAC*ft; pb+=(g.unit.payback!=null?g.unit.payback+1:36)*ft; f+=ft; });
+    return {roi:c>0?l/c:0, cac:f>0?c/f:0, ltv:f>0?l/f:0, payback:f>0?pb/f:0, ftds:f}; })();
+  const gh0=gameHourly(A.games,1);
+  const ownShare=gh0.ggr>0?gh0.per.filter(p=>p.source==="own").reduce((s2,p)=>s2+p.ggr,0)/gh0.ggr:0;
+  const launchIdx=Math.max(0,Math.min(...A.geos.filter(g=>g.enabled).map(g=>g.mkStart))-1);
+  el.innerHTML=`
+    <div class="tiles" style="margin-top:10px">
+      <div class="tile hero"><div class="lbl">Year-3 GGR run-rate</div><div class="val">${fmt.usd(y3run)}</div><div class="delta">EBITDA run-rate ${fmt.usd(ebitdaRun)}/yr</div></div>
+      <div class="tile"><div class="lbl">Cumulative EBITDA (36 mo)</div><div class="val">${fmt.usd(M.cumEbitdaArr[N-1])}</div><div class="delta ${M.cumEbitdaArr[N-1]>=0?'up':'down'}">${M.cumEbitdaArr[N-1]>=0?"profitable horizon":"below breakeven"}</div></div>
+      <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">${M.breakeven!=null?cal(M.breakeven)+" · min cash "+fmt.usd(M.minCash):"not within horizon"}</div></div>
+      <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(totalRaise)}</div><div class="delta">${rounds.length} rounds · R1 ${fmt.usd(rounds[0]?rounds[0].amount:0)} committed</div></div>
+      <div class="tile"><div class="lbl">Marketing ROI (blended)</div><div class="val">${fmt.x(blend.roi)}</div><div class="delta">CAC ${fmt.usd(blend.cac,0)} → LTV ${fmt.usd(blend.ltv,0)} · payback M${Math.round(blend.payback)}</div></div>
+      <div class="tile"><div class="lbl">Active depositors M36</div><div class="val">${fmt.num(M.agg.actives[N-1])}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])} new FTDs / mo</div></div>
+    </div>
+    <div class="card" style="padding:8px 14px 0"><div class="chart" id="ch-timeline"></div></div>
+    <div class="tiles mini">
+      <div class="tile"><div class="lbl">GGR / active / mo</div><div class="val">${fmt.usd(M.agg.actives[N-1]>0?M.agg.ggr[N-1]/M.agg.actives[N-1]:0,0)}</div></div>
+      <div class="tile"><div class="lbl">Gross margin (% NGR)</div><div class="val">${fmt.pct(M.agg.ngr[N-1]>0?M.grossProfit[N-1]/M.agg.ngr[N-1]:0,0)}</div></div>
+      <div class="tile"><div class="lbl">Content cost (% GGR)</div><div class="val">${fmt.pct(gh0.contentPct,1)}</div></div>
+      <div class="tile"><div class="lbl">Own-content GGR share</div><div class="val">${fmt.pct(ownShare,0)}</div></div>
+      <div class="tile"><div class="lbl">Headcount Y3</div><div class="val">${fmt.num(M.opex.heads[N-1])}</div></div>
+      <div class="tile"><div class="lbl">Cash at M36</div><div class="val">${fmt.usd(M.cash[N-1])}</div></div>
+    </div>
+    <div class="card"><h3>The P&amp;L waterfall — how a GGR dollar becomes EBITDA (month 36)</h3>
+    <p class="note">Shared jargon, one picture: GGR = players' losses. NGR = GGR − bonuses. Gross profit = NGR − direct costs of running the casino (content, payments, KYC/tech, tax). Contribution = gross profit − all marketing (affiliates are paid twice: CPA budgets up front + ${A.global.affRevsharePct}% revshare on their players' NGR). EBITDA = contribution − people &amp; overhead. Hover any bar for $/month. <b>Note the basis:</b> this is the M36 exit month (margin ${(100*M.ebitda[N-1]/(M.agg.ggr[N-1]||1)).toFixed(0)}%); the year-3 <i>average</i> margin is ${(100*M.ebitda.slice(24,36).reduce((a,b)=>a+b,0)/(M.agg.ggr.slice(24,36).reduce((a,b)=>a+b,0)||1)).toFixed(1)}% — margin climbs through the year as cohorts stack.</p>
+    <div class="chart" id="ch-waterfall"></div>
+    <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">* Affiliate revshare is contractually ${A.global.affRevsharePct}% of <b>NGR</b>, not GGR — affiliates share the bonus cost. Every bonus dollar given to their players (including big VIP bonuses) reduces the affiliate's cut too; that alignment is why NGR-based deals are the industry norm. Shown as % of GGR here only so the waterfall adds up.</div></div>
+    <div class="grid2">
+      <div class="card"><h3>Monthly GGR by GEO</h3><div class="chart" id="ch-ggr"></div></div>
+      <div class="card"><h3>Cash & funding (casino-standalone view — group cash on Consolidated)</h3><div class="chart" id="ch-cash"></div></div>
+      <div class="card"><h3>Monthly EBITDA</h3><div class="chart" id="ch-ebitda"></div></div>
+      <div class="card"><h3>EBITDA margin (% of GGR)</h3><p class="note">Dashed = target steady-state ~21% · marker = where the plan moves onto it and stays.</p><div class="chart" id="ch-margin"></div></div>
+      <div class="card"><h3>Marketing ROI by GEO</h3><p class="note">36-mo player value ÷ acquisition cost · 3× = healthy.</p><div class="chart" id="ch-ltv"></div></div>
+      <div class="card"><h3>GGR by game vertical — M36</h3><p class="note">Blue = normal casino · orange = live · green = own games.</p><div class="chart" id="ch-games"></div></div>
+      <div class="card"><h3>Where the GGR goes — M36</h3><div class="chart" id="ch-water"></div></div>
+    </div>`;
+  timelineChart(document.getElementById("ch-timeline"));
+  waterfallChart(document.getElementById("ch-waterfall"));
+  xyChart(document.getElementById("ch-ggr"),
+    M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.ggr})), {stacked:true,h:250});
+  xyChart(document.getElementById("ch-cash"),
+    [{name:"Cash balance",color:sColor(0),values:M.cash,kind:"area"}],
+    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+  xyChart(document.getElementById("ch-ebitda"),
+    [{name:"EBITDA",color:sColor(2),values:M.ebitda,kind:"bar"}],{h:250});
+  const marginPct=M.agg.ggr.map((g,t)=>g>1000?clamp(100*M.ebitda[t]/g,-60,60):-60);
+  let settleT=null;
+  for(let t=0;t<N;t++){ if(marginPct[t]>=20 && marginPct.slice(t).every(v=>v>=20)){ settleT=t; break; } }
+  xyChart(document.getElementById("ch-margin"),
+    [{name:"EBITDA margin",color:sColor(4),values:marginPct}],
+    {h:250,fmt:v=>Math.round(v)+"%",href:{v:21,label:"21% steady state"},
+     marks:settleT!=null?[{t:settleT,label:"\u2192 ~21% from M"+(settleT+1)}]:[]});
+  hbarChart(document.getElementById("ch-ltv"),
+    M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),value:Math.min(g.unit.effCAC>0?g.unit.ltvNGR36/g.unit.effCAC:0,12),
+      extra:`<div class="t-r"><span class="k">Player LTV (36 mo)</span><span class="v">${fmt.usd(g.unit.ltvNGR36)}</span></div><div class="t-r"><span class="k">Cost to acquire</span><span class="v">${fmt.usd(g.unit.effCAC)}</span></div><div class="t-r"><span class="k">Money back in</span><span class="v">${g.unit.payback!=null?(g.unit.payback+1)+" months":"&gt;36 months"}</span></div>`})),
+    {ref:3,refLabel:"3× healthy",label:"ROI"});
+  const gm=A.games.map(g=>({name:g.name,color:gameColor(g),value:M.ggrByGame[g.id][N-1]}));
+  hbarChart(document.getElementById("ch-games"),gm,{fmt:v=>fmt.usd(v),label:"GGR / mo"});
+  const ggrM=M.agg.ggr[N-1]||1;
+  const stack=[
+    {name:"Bonuses & jackpots",v:M.agg.bonus[N-1]},
+    {name:"COGS (content, tech, payments, KYC, tax)",v:M.cogsTotal[N-1]},
+    {name:"Marketing (CPA + revshare + brand)",v:M.mktTotal[N-1]},
+    {name:"Opex (personnel, ops, G&A)",v:M.opexTotal[N-1]},
+    {name:"EBITDA",v:Math.max(0,M.ebitda[N-1])}
+  ];
+  hbarChart(document.getElementById("ch-water"),
+    stack.map((x,i)=>({name:x.name,color:i===stack.length-1?cssv("--good"):sColor(i),value:Math.max(0,x.v/ggrM)})),
+    {fmt:v=>fmt.pct(v,0),label:"% of GGR"});
+}
+
+/* ============================================================
+   SHARED EDITORS (used on Assumptions and on Games/GEOs tabs)
+   ============================================================ */
+function buildGamesEditor(){
+  const gh=gameHourly(A.games,1);
+  const card=document.createElement("div"); card.className="card";
+  card.innerHTML=`<h3>Gaming KPIs — game library</h3><p class="note">Bar colors group the verticals: normal casino (RNG) · live · in-house. Normal-casino benchmarks: video slots RTP 94–96.5% configured, 400–500 spins/hr, avg bet $0.75–0.90; jackpot slots ~92% player RTP (rest feeds the pool), revshare +2pt; RNG roulette 97.3% / blackjack 99% / video poker 99%+ at much higher avg bets; scratch ~95%. Revshare calibrated to negotiated direct-deal experience (~7% GGR achievable on RNG content) + a thin aggregator layer at launch; driving to 7% via direct deals is the Casino Manager\u2019s mandate. Live is priced separately \u2014 premium studios don\u2019t negotiate like slots. These parameters ARE the revenue engine: GGR per player-hour = mix × velocity × avg bet × (1 − RTP), scaled per GEO by bet multiplier × play-hours. External content pays its revshare % of GGR; own games keep 100%. Research: slots RTP 94–96.5% configured, ~400–500 spins/hr, avg bet €0.75–0.90; live avg bet ~€50 ($25 blended prefill), Evolution ≈10–15% revshare; crash (Aviator) RTP 97%; own originals = 0% content cost.</p>
+  <div class="twrap"><table class="editable"><thead><tr>
+    <th>Game</th><th>Source</th><th>Revshare % GGR</th><th>RTP %</th><th>Velocity /hr</th><th>Avg bet $</th><th>Mix %</th><th>GGR/hr</th><th>GGR share</th><th></th>
+  </tr></thead><tbody></tbody></table></div>
+  <button class="ghost-btn addbtn">+ Add game</button>`;
+  const tb=card.querySelector("tbody");
+  A.games.forEach((g,gi)=>{
+    const tr=document.createElement("tr");
+    const tdName=document.createElement("td");
+    const nameInp=document.createElement("input"); nameInp.type="text"; nameInp.value=g.name; nameInp.style.width="180px";
+    nameInp.addEventListener("input",()=>{g.name=nameInp.value; queueRefresh();});
+    tdName.appendChild(nameInp); tr.appendChild(tdName);
+    const tdSrc=document.createElement("td");
+    const sel=document.createElement("select");
+    [["own","In-house"],["ext","External"]].forEach(([v,l])=>{ const o=document.createElement("option"); o.value=v;o.textContent=l; if(g.source===v)o.selected=true; sel.appendChild(o); });
+    sel.onchange=()=>{ g.source=sel.value; if(g.source==="own")g.rs=0; refresh(); };
+    tdSrc.appendChild(sel); tr.appendChild(tdSrc);
+    [["rs",0.5],["rtp",0.1],["velocity",10],["avgBet",0.1],["mix",1]].forEach(([k,st])=>{
+      const td=document.createElement("td"); const inp=numInput(g,k,{step:st});
+      if(k==="rs"&&g.source==="own") inp.disabled=true;
+      td.appendChild(inp); tr.appendChild(td); });
+    const per=gh.per[gi];
+    const tdG=document.createElement("td"); tdG.textContent=per?fmt.usd(per.ggr,2):"—"; tdG.style.textAlign="right"; tr.appendChild(tdG);
+    const tdS=document.createElement("td"); tdS.textContent=per&&gh.ggr>0?fmt.pct(per.ggr/gh.ggr,1):"—"; tdS.style.textAlign="right"; tdS.style.fontWeight="600"; tr.appendChild(tdS);
+    const tdX=document.createElement("td"); tdX.className="rowbtns";
+    const del=document.createElement("button"); del.textContent="✕"; del.title="Remove game";
+    del.onclick=()=>{ A.games.splice(gi,1); refresh(); };
+    tdX.appendChild(del); tr.appendChild(tdX);
+    tb.appendChild(tr);
+  });
+  card.querySelector(".addbtn").onclick=()=>{
+    A.games.push({id:"g"+Date.now()%100000,name:"New game",source:"ext",rs:12,rtp:96,velocity:200,avgBet:1,mix:5});
+    refresh();
+  };
+  return card;
+}
+
+function buildGeoEditor(){
+  const card=document.createElement("div"); card.className="card";
+  card.innerHTML=`<h3>GEO KPIs — market parameters</h3><p class="note">Aff CPA = per affiliate-CPA-deal FTD; Media CPA = per media-buy FTD; Media % = budget share to media buying — kept low: no whitehat Google/Meta without a recognized local license; media = push/native/PWA/ASO with ban-churn overhead priced into the CPA · bet mult & hrs/mo calibrate ARPU vs the Tier-1 game engine · M1/M3/M6 = % of an FTD cohort still depositing after 1/3/6 months (curve interpolates, decays beyond M6) · hold = GGR as % of deposits · reserve % = PSP rolling reserve withheld on deposits (working capital, released after ${A.wc.reserveMonths} months).</p>
+  <div class="twrap"><table class="editable"><thead><tr>
+    <th>On</th><th>GEO</th><th>Aff CPA $</th><th>Media CPA $</th><th>Media %</th><th>Bet mult</th><th>Hrs/mo</th><th>M1 %</th><th>M3 %</th><th>M6 %</th><th>Hold %</th><th>Tax % GGR</th><th>Fee dep %</th><th>Fee wd %</th><th>Reserve %</th><th>Mkt start</th><th>Mkt $ init/mo</th><th>Growth %/mo</th><th>Cap $/mo</th><th>Mix</th>
+  </tr></thead><tbody></tbody></table></div>`;
+  const tb=card.querySelector("tbody");
+  A.geos.forEach(g=>{
+    const tr=document.createElement("tr");
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=g.enabled;
+    cb.onchange=()=>{ g.enabled=cb.checked; queueRefresh(); };
+    const td0=document.createElement("td"); td0.appendChild(cb); tr.appendChild(td0);
+    const td1=document.createElement("td"); td1.textContent=g.name; td1.style.fontWeight=600; tr.appendChild(td1);
+    [["cpaAff",5],["cpaMedia",5],["mediaSharePct",5],["betMult",0.05],["hours",0.5],["m1",1],["m3",1],["m6",1],["hold",1],["tax",1],["feeDep",0.5],["feeWd",0.25],["resPct",1],["mkStart",1],["mkInit",5000],["mkGrowth",1],["mkCap",10000]].forEach(([k,st])=>{
+      const td=document.createElement("td"); const inp=numInput(g,k,{step:st});
+      if(k==="mkInit"||k==="mkCap") inp.classList.add("wide");
+      td.appendChild(inp); tr.appendChild(td); });
+    // per-GEO game-mix override (advanced — tucked behind a toggle)
+    const tdMix=document.createElement("td");
+    const mixBtn=document.createElement("button");
+    mixBtn.className="ghost-btn"; mixBtn.style.cssText="font-size:11px;padding:4px 8px";
+    const setMixLbl=()=>{ mixBtn.textContent = g.mixOverride ? "custom ▾" : "global ▾"; 
+      mixBtn.style.color = g.mixOverride ? "var(--accent)" : "var(--ink-3)"; };
+    setMixLbl();
+    tdMix.appendChild(mixBtn); tr.appendChild(tdMix);
+    tb.appendChild(tr);
+    const trD=document.createElement("tr"); trD.style.display="none";
+    const tdD=document.createElement("td"); tdD.colSpan=20; tdD.style.textAlign="left"; tdD.style.background="var(--page)";
+    trD.appendChild(tdD); tb.appendChild(trD);
+    const buildPanel=()=>{
+      tdD.innerHTML=`<div style="font-size:11.5px;color:var(--ink-3);margin:2px 0 6px">Wallet-time mix for ${g.name} — overrides the global Games-sheet mix for this GEO only. The blended company mix is shown on the Games tab.</div>`;
+      const wrap=document.createElement("div"); wrap.style.cssText="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end";
+      A.games.forEach(gm=>{
+        const f=document.createElement("div"); f.className="f"; f.style.width="110px";
+        const l=document.createElement("label"); l.textContent=gm.name; l.style.fontSize="10.5px"; f.appendChild(l);
+        const inp=document.createElement("input"); inp.type="number"; inp.step=1; inp.min=0;
+        inp.value=(g.mixOverride&&g.mixOverride[gm.id]!=null)?g.mixOverride[gm.id]:gm.mix;
+        inp.addEventListener("input",()=>{ 
+          if(!g.mixOverride) g.mixOverride=Object.fromEntries(A.games.map(x=>[x.id,x.mix]));
+          const v=parseFloat(inp.value); if(!isNaN(v)){ g.mixOverride[gm.id]=v; setMixLbl(); queueRefresh(); } });
+        f.appendChild(inp); wrap.appendChild(f);
+      });
+      const rst=document.createElement("button"); rst.className="ghost-btn"; rst.textContent="Use global mix";
+      rst.style.cssText="font-size:11.5px;padding:5px 10px";
+      rst.onclick=()=>{ g.mixOverride=null; setMixLbl(); buildPanel(); queueRefresh(); };
+      wrap.appendChild(rst);
+      tdD.appendChild(wrap);
+    };
+    mixBtn.onclick=()=>{ const open=trD.style.display==="none";
+      if(open){ buildPanel(); trD.style.display=""; } else trD.style.display="none"; };
+  });
+  return card;
+}
+
+function buildPersonnelEditor(){
+  const card=document.createElement("div"); card.className="card";
+  const now=personnelAt(A,1), y2=personnelAt(A,13), y3=personnelAt(A,25);
+  card.innerHTML=`<h3>Personnel assumptions — roles, salaries & bonuses</h3><p class="note">Role-based, fully loaded via the load % (payroll taxes, benefits, recruiting). Bonus = max monthly performance bonus; the model accrues it at the expected-attainment % (cash is paid quarterly on results — monthly accrual is the right P&L view). Heads step up by year; a role costs nothing before its start month. Benchmarks: Pentasia 2025 / iGameers 2026 — MLRO €50–80K/yr, CRM mgr €28–62K, VIP mgr €28–58K, backend dev €30–75K.</p>
+  <div class="twrap"><table class="editable"><thead><tr>
+    <th>Role</th><th>Department</th><th>Phase</th><th>Salary $/mo/head</th><th>Bonus $/mo max</th><th>Start month</th><th>Heads Y1</th><th>Heads Y2</th><th>Heads Y3</th><th></th>
+  </tr></thead><tbody></tbody></table></div>
+  <button class="ghost-btn addbtn">+ Add role</button>
+  <div class="fields" style="margin-top:12px"></div>`;
+  const tb=card.querySelector("tbody");
+  A.personnel.forEach((p,pi)=>{
+    const tr=document.createElement("tr");
+    const tdR=document.createElement("td");
+    const ri=document.createElement("input"); ri.type="text"; ri.value=p.role; ri.style.width="200px";
+    ri.addEventListener("input",()=>{p.role=ri.value; queueRefresh();});
+    tdR.appendChild(ri); tr.appendChild(tdR);
+    const tdD=document.createElement("td");
+    const ds=document.createElement("select");
+    [...new Set([...DEPT_ORDER,(p.dept||"Other")])].forEach(dn=>{ const o=document.createElement("option");
+      o.value=dn;o.textContent=dn; if((p.dept||"Other")===dn)o.selected=true; ds.appendChild(o); });
+    ds.onchange=()=>{ p.dept=ds.value; queueRefresh(); };
+    tdD.appendChild(ds); tr.appendChild(tdD);
+    const tdPh=document.createElement("td");
+    const ps=document.createElement("select");
+    PHASES.forEach(([k,l])=>{ const o=document.createElement("option"); o.value=k; o.textContent=l;
+      if(phaseOf(p)===k)o.selected=true; ps.appendChild(o); });
+    ps.onchange=()=>{ p.phase=ps.value; queueRefresh(); };
+    tdPh.appendChild(ps); tr.appendChild(tdPh);
+    if(p.bonus==null)p.bonus=0;
+    [["salary",500],["bonus",500],["start",1]].forEach(([k,st])=>{
+      const td=document.createElement("td"); td.appendChild(numInput(p,k,{step:st,min:k==="start"?1:0})); tr.appendChild(td); });
+    [0,1,2].forEach(yi=>{
+      const td=document.createElement("td");
+      const inp=document.createElement("input"); inp.type="number"; inp.step=1; inp.min=0; inp.value=p.h[yi];
+      inp.addEventListener("input",()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ p.h[yi]=v; queueRefresh(); } });
+      td.appendChild(inp); tr.appendChild(td); });
+    const tdX=document.createElement("td"); tdX.className="rowbtns";
+    const del=document.createElement("button"); del.textContent="✕"; del.title="Remove role";
+    del.onclick=()=>{ A.personnel.splice(pi,1); refresh(); };
+    tdX.appendChild(del); tr.appendChild(tdX);
+    tb.appendChild(tr);
+  });
+  card.querySelector(".addbtn").onclick=()=>{
+    A.personnel.push({role:"New role",dept:"Other",salary:6000,start:1,h:[1,1,1]}); refresh();
+  };
+  const lf=card.querySelector(".fields");
+  lf.appendChild(field("Payroll load (% on salaries)",numInput(A,"payrollLoad",{step:1})));
+  lf.appendChild(field("Expected bonus attainment (%)",numInput(A,"bonusAttainPct",{step:5,min:0}),"share of max bonuses actually earned; paid quarterly"));
+  const info=document.createElement("div"); info.className="f";
+  info.innerHTML=`<label>Computed monthly payroll (loaded)</label><div style="font-weight:650;padding:6px 0">M1 ${fmt.usd(now.cost)} (${now.heads} heads) → M13 ${fmt.usd(y2.cost)} (${y2.heads}) → M25 ${fmt.usd(y3.cost)} (${y3.heads})</div>`;
+  lf.appendChild(info);
+  return card;
+}
+
+function buildLicenseEditor(){
+  const card=document.createElement("div"); card.className="card";
+  card.innerHTML=`<h3>Licenses</h3><p class="note">Curaçao LOK ≈ $100K yr-1, $85K/yr after, 0% GGR tax. Brazil: R$30M grant (~$5.2M) + ~26% effective tax — if you enable it, also set Brazil GEO tax in the GEO table. India RMG is banned (Aug 2025): crypto-only, flagged high-risk. Liberia is already held (via Rain Trade) — kept opted out to keep this entity at arm’s length; enabling it books the $2K/mo sublicense fee.</p>
+  <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th></tr></thead><tbody></tbody></table></div>`;
+  const ltb=card.querySelector("tbody");
+  A.licenses.forEach(l=>{
+    const tr=document.createElement("tr");
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=l.enabled;
+    cb.onchange=()=>{ l.enabled=cb.checked; queueRefresh(); };
+    const td0=document.createElement("td"); td0.appendChild(cb); tr.appendChild(td0);
+    const td1=document.createElement("td"); td1.textContent=l.name; tr.appendChild(td1);
+    [["upfront",1000],["annual",1000],["startMonth",1]].forEach(([k,st])=>{
+      const td=document.createElement("td"); const inp=numInput(l,k,{step:st});
+      if(k!=="startMonth") inp.classList.add("wide");
+      td.appendChild(inp); tr.appendChild(td); });
+    ltb.appendChild(tr);
+  });
+  return card;
+}
+
+/* ============================================================
+   TAB: ASSUMPTIONS — the single master input hub
+   ============================================================ */
+function renderAssumptions(){
+  const el=document.getElementById("tab-assumptions");
+  el.innerHTML=`<h2>Assumptions</h2>
+  <p class="sub">The single source of truth — every input in the model lives on this page (personnel & salaries live on the Team &amp; Assumptions tab), and the results flow from it. Prefilled from Aug-2026 industry research (full sourced write-up saved in your project as <em>assumptions-research.md</em>). Changes recalculate everything instantly; when you're happy, scroll to the bottom and save as the new default.</p>
+  <div id="asm"></div>`;
+  const root=el.querySelector("#asm");
+  const addCard=(html,fieldsDefs,noteClass)=>{
+    const c=document.createElement("div"); c.className="card"; c.innerHTML=html;
+    if(fieldsDefs){ const f=document.createElement("div"); f.className="fields";
+      fieldsDefs.forEach(d=>f.appendChild(d)); c.appendChild(f); }
+    root.appendChild(c); return c;
+  };
+
+  // 1 — Funding & horizon
+  const fCard=addCard(`<h3>1 · Funding rounds & horizon</h3><p class="note">Staged capital raises — each round lands in the cash flow in its month. The Cash Flow tab shows the timing against the burn curve; keep the lowest cash point comfortably above zero (rule of thumb: 3 months of burn as buffer). The model's true external need ("peak funding need") is computed independently of this plan.</p>
+  <div class="twrap"><table class="editable"><thead><tr><th>Round</th><th>Month</th><th>Amount $</th><th></th></tr></thead><tbody id="fundTb"></tbody></table></div>
+  <button class="ghost-btn addbtn" id="addRound">+ Add round</button>`,[
+    field("Horizon (months)",numInput(A.meta,"months",{step:1,min:12})),
+    field("Model starts — year",numInput(A.meta,"startYear",{step:1,min:2024})),
+    field("Model starts — month (1–12)",numInput(A.meta,"startCalMonth",{step:1,min:1}),"M1 = this calendar month; drives the Finance tab quarters")
+  ]);
+  const ftb=fCard.querySelector("#fundTb");
+  (A.funding||[]).forEach((f,fi)=>{
+    const tr=document.createElement("tr");
+    const tdN=document.createElement("td");
+    const ni=document.createElement("input"); ni.type="text"; ni.value=f.name; ni.style.width="220px";
+    ni.addEventListener("input",()=>{f.name=ni.value; queueRefresh();});
+    tdN.appendChild(ni); tr.appendChild(tdN);
+    [["month",1],["amount",250000]].forEach(([k,st])=>{
+      const td=document.createElement("td"); const inp=numInput(f,k,{step:st,min:k==="month"?1:0});
+      if(k==="amount") inp.classList.add("wide");
+      td.appendChild(inp); tr.appendChild(td); });
+    const tdX=document.createElement("td"); tdX.className="rowbtns";
+    const del=document.createElement("button"); del.textContent="✕"; del.title="Remove round";
+    del.onclick=()=>{ A.funding.splice(fi,1); refresh(); };
+    tdX.appendChild(del); tr.appendChild(tdX);
+    ftb.appendChild(tr);
+  });
+  fCard.querySelector("#addRound").onclick=()=>{
+    A.funding.push({name:"Round "+(A.funding.length+1), month:12, amount:1000000, note:""}); refresh();
+  };
+
+  // 2 — Gaming KPIs (games)
+  root.appendChild(buildGamesEditor());
+
+  // 3 — GEO KPIs
+  root.appendChild(buildGeoEditor());
+
+  // 4 — Acquisition & funnel
+  addCard(`<h3>4 · Acquisition structure — channels</h3><p class="note">Per-GEO channel pricing lives in the GEO table (affiliate CPA, media-buy CPA, media share of budget). Globals here: revshare-deal share of affiliate volume, organic uplift, and per-channel retention quality (affiliate ~1.05× the GEO base, media-buy ~0.85×, organic ~1.25× — each channel ages on its own cohort curve). Research: affiliates drive 30–60% of new players; revshare norm 25–45% of NGR; streamers ~£5–6 back per £1. ⚠ Media buying is structurally limited for an offshore/Curaçao license: Google & Meta only certify advertisers with recognized local licenses, so "media" here means push/pop/native networks (PropellerAds/RichAds-class), PWA & webview apps, ASO and Telegram — or blackhat cloaking with account-ban churn. Media CPAs are prefilled with that overhead and media share is capped low; affiliates and streamers carry the volume.</p>`,[
+    field("Affiliate FTDs on revshare deals (%)",numInput(A.global,"rsShareAff",{step:5,min:0}),"no upfront cost; pay % of their NGR forever"),
+    field("Affiliate revshare (% of NGR)",numInput(A.global,"affRevsharePct",{step:1})),
+    field("Organic FTDs (% of paid — global)",numInput(A.global,"organicPct",{step:1,min:0}),"brand/SEO/word-of-mouth; deliberately global, not a per-GEO lever"),
+    field("Retention × — affiliate traffic",numInput(A.global,"retMultAff",{step:0.05})),
+    field("Retention × — media-buy traffic",numInput(A.global,"retMultMedia",{step:0.05})),
+    field("Retention × — organic traffic",numInput(A.global,"retMultOrganic",{step:0.05})),
+    field("Brand / streamers budget ($/mo)",numInput(A.global,"brandMonthly",{step:5000})),
+    field("Brand budget starts (month)",numInput(A.global,"brandStartMonth",{step:1,min:1})),
+    field("Scale-up month (ROI proven)",numInput(A.global,"scaleMonth",{step:1,min:1}),"the smoking gun: budgets jump when cohort payback is proven"),
+    field("Scale-up multiplier (×)",numInput(A.global,"scaleMult",{step:0.25,min:1}),"applied to all GEO marketing budgets from that month")
+  ]);
+
+  // 5 — Promo & risk
+  addCard(`<h3>5 · Bonus, promo & risk</h3><p class="note">Research: bonus cost 10–25% of GGR (18% prefill; healthy NGR = 40–60% of GGR); fraud + bonus abuse ~3% of GGR; jackpot pools 0.5–2% of wagers on enabled titles (off by default). VIP top-1% = 35–60% of GGR — stress it on the Simulation tab.</p>`,[
+    field("Bonus cost (% of GGR)",numInput(A.global,"bonusPctGGR",{step:0.5})),
+    field("Fraud & bonus abuse (% of GGR)",numInput(A.global,"fraudPctGGR",{step:0.5})),
+    field("Jackpot contribution (% of turnover)",numInput(A.global,"jackpotPctWager",{step:0.1}))
+  ]);
+
+  // 6 — Platform & COGS
+  addCard(`<h3>6 · Own platform & technology COGS</h3><p class="note">Own platform + licenses (your chosen model). Benchmarks: basic build $200–600K (institutional $5–15M); aggregator minimums ~€5K/mo; hosting scales with volume. Build capex amortizes over ${A.platform.amortMonths} months for the EBIT line; engineering salaries live in the Personnel plan below.</p>`,[
+    field("Platform build capex ($)",numInput(A.platform,"capexTotal",{step:50000})),
+    field("Capex spread over (months)",numInput(A.platform,"capexMonths",{step:1,min:1})),
+    field("Amortization period (months)",numInput(A.platform,"amortMonths",{step:1,min:1})),
+    field("Hosting/infra at start ($/mo)",numInput(A.cogs,"hostingStart",{step:1000})),
+    field("Hosting starts (month)",numInput(A.cogs,"hostingStartMonth",{step:1,min:1})),
+    field("Hosting growth (%/mo)",numInput(A.cogs,"hostingGrowthPct",{step:0.5})),
+    field("Hosting cap ($/mo)",numInput(A.cogs,"hostingCap",{step:1000})),
+    field("Platform software/licenses ($/mo)",numInput(A.cogs,"softwareMonthly",{step:1000})),
+    field("Software starts (month)",numInput(A.cogs,"softwareStartMonth",{step:1,min:1})),
+    field("Aggregator minimum fees ($/mo)",numInput(A.cogs,"aggregatorMin",{step:500})),
+    field("Aggregator fees start (month)",numInput(A.cogs,"aggregatorStartMonth",{step:1,min:1}),"when content contracts are signed"),
+    field("KYC cost per FTD ($)",numInput(A.global,"kycPerFTD",{step:0.25}))
+  ]);
+
+  // 7 — Variable ops & G&A (personnel moved to the Team & Assumptions tab)
+  addCard(`<h3>7 · Variable ops, tools & G&A</h3><p class="note">Outsourced 24/7 support (PH $7–16/hr) ≈ $1.50 per active/mo; CRM (Optimove-class) from ~$4K/mo; anti-fraud tooling; legal & professional retainers typically $3–20K/mo in this industry.</p>`,[
+    field("Support per active/mo ($)",numInput(A.global,"supportPerActive",{step:0.25})),
+    field("CRM ($/mo)",numInput(A.global,"crmMonthly",{step:500})),
+    field("Other martech/BI tools ($/mo)",numInput(A.global,"toolsMonthly",{step:500})),
+    field("Anti-fraud tools ($/mo)",numInput(A.cogs,"antifraudMonthly",{step:500})),
+    field("Legal & professional ($/mo)",numInput(A.ga,"legal",{step:1000})),
+    field("Office & facilities ($/mo)",numInput(A.ga,"office",{step:500})),
+    field("Travel & events ($/mo)",numInput(A.ga,"travel",{step:500})),
+    field("Insurance & misc G&A ($/mo)",numInput(A.ga,"misc",{step:500})),
+    field("Contingency (% of opex)",numInput(A.ga,"contingencyPct",{step:1,min:0}),"unbudgeted costs buffer"),
+    field("Corporate income tax (% of EBIT)",numInput(A,"corpTaxPct",{step:1,min:0}),"Curaçao ~0%; blended rate rises with onshore entities/substance")
+  ]);
+
+  // 9 — Licenses
+  root.appendChild(buildLicenseEditor());
+
+  // 10 — Working capital
+  addCard(`<h3>9 · Payments — rolling reserve & fee compression</h3><p class="note">High-risk fiat PSPs withhold 5–15% of deposit volume for 90–180 days (per-GEO reserve % in the GEO table; crypto rails carry none — cash flow impact only). Deposit fees start at the GEO table rates (day-one, no-negotiation) and compress linearly as each GEO's monthly deposit volume grows — the payments head's mandate. Floor 1%.</p>`,[
+    field("Reserve held for (months)",numInput(A.wc,"reserveMonths",{step:1,min:0})),
+    field("Fee compression at full volume (pp)",numInput(A.global,"feeCompressPP",{step:0.25,min:0}),"e.g. 2 = a 7% rate negotiates down to 5%"),
+    field("Full compression at monthly deposits ($/GEO)",numInput(A.global,"feeCompressAtDep",{step:500000,min:0}))
+  ]);
+
+  // payroll & headcount chart
+  const chc=document.createElement("div"); chc.className="card";
+  chc.innerHTML=`<h3>Resulting cost base</h3><p class="note">Monthly personnel cost (loaded) and total fixed cost base (personnel + tech COGS + tools + G&A + licenses) implied by the inputs above.</p><div class="chart" id="ch-costbase"></div>`;
+  root.appendChild(chc);
+  const N=M.N;
+  const fixed=Array.from({length:N},(_,t)=>M.opex.personnel[t]+M.opex.hosting[t]+M.opex.software[t]+M.opex.aggregator[t]
+    +M.opex.crmTools[t]+M.opex.antifraud[t]+M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]+M.opex.licAnnual[t]);
+  xyChart(document.getElementById("ch-costbase"),[
+    {name:"Personnel (loaded)",color:sColor(0),values:M.opex.personnel.slice()},
+    {name:"Total fixed cost base",color:sColor(1),values:fixed}
+  ],{h:240});
+}
+
+/* ============================================================
+   TAB: GAMES
+   ============================================================ */
+function renderGames(){
+  const el=document.getElementById("tab-games");
+  const gh=gameHourly(A.games,1);
+  el.innerHTML=`<h2>Games</h2>
+  <p class="sub">Each game's parameters drive the engine: GGR per player-hour = mix × velocity × avg bet × (1 − RTP). External content pays a revshare % of its GGR; own games keep 100% — that's the Stake margin play. Per-GEO bet sizes scale via the GEO bet multiplier.</p>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Blended GGR per player-hour (Tier-1 base)</div><div class="val">${fmt.usd(gh.ggr,2)}</div><div class="delta">turnover ${fmt.usd(gh.turn,0)}/hr</div></div>
+    <div class="tile"><div class="lbl">Blended content cost</div><div class="val">${fmt.pct(gh.contentPct)}</div><div class="delta">of GGR, paid to external providers</div></div>
+    <div class="tile"><div class="lbl">Own-content share of GGR</div><div class="val">${fmt.pct(gh.per.filter(p=>p.source==="own").reduce((s,p)=>s+p.ggr,0)/(gh.ggr||1),0)}</div><div class="delta">margin kept in-house</div></div>
+  </div>
+  <div class="card"><h3>Calculated blended GGR mix — company-wide</h3><p class="note">Weighted across all GEOs over the 36 months, including per-GEO mix overrides (crypto global ~56% own content; fiat GEOs 22&ndash;42% own since the diversification package). The table below sets the base mix; per-GEO overrides live behind the "Mix" toggle on the GEOs sheet.</p><div class="chart" id="ch-blendmix"></div></div>
+  <div id="gamesEd"></div>
+  <div class="grid2">
+    <div class="card"><h3>GGR per player-hour by game (Tier-1 base)</h3><div class="chart" id="ch-gph"></div></div>
+    <div class="card"><h3>Content cost by game (% of its GGR)</h3><div class="chart" id="ch-cc"></div></div>
+  </div>`;
+  el.querySelector("#gamesEd").appendChild(buildGamesEditor());
+  const totG=A.games.map(g=>({g, v:M.ggrByGame[g.id].reduce((x,y)=>x+y,0)}));
+  const totSum=totG.reduce((x,y)=>x+y.v,0)||1;
+  hbarChart(document.getElementById("ch-blendmix"),
+    totG.map(x=>({name:x.g.name,color:gameColor(x.g),value:x.v/totSum,
+      extra:`<div class="t-r"><span class="k">36-mo GGR</span><span class="v">${fmt.usd(x.v)}</span></div>`})),
+    {fmt:v=>fmt.pct(v,1),label:"Share of GGR",w:1240,padL:210,padR:90});
+  hbarChart(document.getElementById("ch-gph"),
+    gh.per.map((p,i)=>({name:p.name,color:gameColor(A.games[i]),value:p.ggr,extra:`<div class="t-r"><span class="k">Source</span><span class="v">${p.source==="own"?"In-house":"External"}</span></div><div class="t-r"><span class="k">GGR share</span><span class="v">${fmt.pct(gh.ggr>0?p.ggr/gh.ggr:0,1)}</span></div>`})),
+    {fmt:v=>"$"+v.toFixed(2),label:"GGR / player-hr"});
+  hbarChart(document.getElementById("ch-cc"),
+    A.games.map(g=>({name:g.name,color:gameColor(g),value:(g.source==="ext"?g.rs:0)/100})),
+    {fmt:v=>fmt.pct(v,0),label:"Revshare"});
+}
+
+/* ============================================================
+   TAB: GEOS
+   ============================================================ */
+function renderGeos(){
+  const el=document.getElementById("tab-geos");
+  el.innerHTML=`<h2>GEOs</h2>
+  <p class="sub">Per-market acquisition, monetization, retention and cost parameters — every cell propagates through the whole model. Acquisition is channel-level: affiliate CPA deals, affiliate revshare (no upfront, ${A.global.affRevsharePct}% of NGR), media buying, and organic (global uplift). Effective CAC = paid spend ÷ all new depositors. Each channel ages on its own retention curve.</p>
+  <div class="warnbox">⚠ Brazil is prefilled as served offshore/crypto (0% tax) — flip its tax to ~26% and enable the Brazil license (Assumptions tab) to model licensed entry. India real-money gaming is banned (Aug 2025); the model treats it as crypto-only, high-risk volume.</div>
+  <div id="geoEd"></div>
+  <div class="card"><h3>Unit economics (computed)</h3><p class="note">GGR/active/month comes from the game engine × bet multiplier × play-hours. LTV = 36-month NGR per FTD; contribution LTV nets content, payments, tax and affiliate revshare. Payback = months until cumulative contribution per FTD covers effective CAC.</p>
+  <div class="twrap"><table id="geoUnit"><thead><tr>
+    <th>GEO</th><th>GGR / active / mo</th><th>Eff. CAC</th><th>LTV (NGR, 6mo)</th><th>LTV (NGR, 36mo)</th><th>Contribution LTV</th><th>LTV:CAC</th><th>Payback</th><th>Spend 36mo</th><th>FTDs 36mo</th>
+  </tr></thead><tbody></tbody></table></div></div>
+  <div class="card"><h3>Active depositors by GEO</h3><div class="chart" id="ch-act"></div></div>`;
+  el.querySelector("#geoEd").appendChild(buildGeoEditor());
+  const ub=el.querySelector("#geoUnit tbody");
+  M.perGeo.forEach((g,i)=>{
+    const tr=document.createElement("tr");
+    const spend=g.spend.reduce((a,b)=>a+b,0), f=g.ftds.reduce((a,b)=>a+b,0);
+    tr.innerHTML=`<td><span class="sw" style="background:${sColor(i)};display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px"></span>${g.name}</td>
+      <td>${fmt.usd(g.ggrPerActive,0)}</td><td>${fmt.usd(g.unit.effCAC,0)}</td>
+      <td>${fmt.usd(g.unit.ltvNGR6,0)}</td><td>${fmt.usd(g.unit.ltvNGR36,0)}</td>
+      <td>${fmt.usd(g.unit.cumContrib[M.N-1],0)}</td>
+      <td style="font-weight:650">${fmt.x(g.unit.ltvCac)}</td>
+      <td>${g.unit.payback!=null?"M"+(g.unit.payback+1):">36"}</td>
+      <td>${fmt.usd(spend)}</td><td>${fmt.num(f)}</td>`;
+    ub.appendChild(tr);
+  });
+  xyChart(document.getElementById("ch-act"),
+    M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.actives})),{fmt:v=>fmt.num(v),h:250});
+}
+
+/* ============================================================
+   TAB: MARKETING
+   ============================================================ */
+function renderMarketing(){
+  const el=document.getElementById("tab-marketing");
+  const N=M.N;
+  const geoMeta=Object.fromEntries(A.geos.map(g=>[g.id,g]));
+  // cash-spend split per channel
+  const media=Array(N).fill(0), affcpa=Array(N).fill(0);
+  M.perGeo.forEach(g=>{ const ms=clamp((geoMeta[g.id].mediaSharePct||0)/100,0,1);
+    for(let t=0;t<N;t++){ media[t]+=g.spend[t]*ms; affcpa[t]+=g.spend[t]*(1-ms); } });
+  const brand=M.opex.brand, rs=M.agg.affrs;
+  const S=arr=>arr.reduce((a,b)=>a+b,0);
+  const cpaBudget36=S(M.agg.marketing), brand36=S(brand), rs36=S(rs), all36=cpaBudget36+brand36+rs36;
+  const ftds36=S(M.agg.ftds);
+  const blendedCAC=ftds36>0?cpaBudget36/ftds36:0;
+  const ggr36=S(M.agg.ggr);
+  const ratio=Array.from({length:N},(_,t)=>M.agg.ggr[t]>0?Math.min(3,M.mktTotal[t]/M.agg.ggr[t]):0);
+  el.innerHTML=`<h2>Marketing</h2>
+  <p class="sub">The acquisition machine end to end: what is spent, where it goes (GEO × channel), what it buys, and what it costs per depositor. Budgets ramp per GEO from launch (M${Math.min(...A.geos.filter(g=>g.enabled).map(g=>g.mkStart))}), then jump ×${A.global.scaleMult} at the M${A.global.scaleMonth} smoking gun. Media buying is structurally capped for an offshore license (no whitehat Google/Meta) — affiliates and streamers carry the volume.</p>
+  <div class="tiles">
+    <div class="tile hero"><div class="lbl">Total marketing (36 mo)</div><div class="val">${fmt.usd(all36)}</div><div class="delta">CPA budgets ${fmt.usd(cpaBudget36)} · revshare ${fmt.usd(rs36)} · brand ${fmt.usd(brand36)}</div></div>
+    <div class="tile"><div class="lbl">Monthly spend at M36</div><div class="val">${fmt.usd(M.mktTotal[N-1])}</div><div class="delta">${fmt.pct(M.agg.ggr[N-1]>0?M.mktTotal[N-1]/M.agg.ggr[N-1]:0,0)} of GGR</div></div>
+    <div class="tile"><div class="lbl">New depositors (36 mo)</div><div class="val">${fmt.num(ftds36)}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])}/mo at M36</div></div>
+    <div class="tile"><div class="lbl">Blended CAC</div><div class="val">${fmt.usd(blendedCAC,0)}</div><div class="delta">paid budgets ÷ all depositors (incl. organic & revshare)</div></div>
+    <div class="tile"><div class="lbl">Marketing ÷ 36-mo GGR</div><div class="val">${fmt.pct(ggr36>0?all36/ggr36:0,0)}</div><div class="delta">industry band 20–40%</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Monthly spend by GEO</h3><p class="note">CPA budgets only; ramps + the ×${A.global.scaleMult} scale-up step.</p><div class="chart" id="ch-mspend"></div></div>
+    <div class="card"><h3>Where the marketing money goes</h3><p class="note">Cash budgets split by channel, plus revshare (paid from NGR) and brand/streamers.</p><div class="chart" id="ch-mcomp"></div></div>
+    <div class="card"><h3>New depositors by channel</h3><p class="note">Organic is the free ${A.global.organicPct}% riding on paid volume; revshare affiliates cost nothing upfront but pay ${A.global.affRevsharePct}% of their players\u2019 NGR.</p><div class="chart" id="ch-mftd"></div></div>
+    <div class="card"><h3>Marketing as % of GGR</h3><p class="note">High during launch (buying ahead of revenue), settling as cohorts stack.</p><div class="chart" id="ch-mratio"></div></div>
+  </div>
+  <div class="card"><h3>Channel economics by GEO</h3>
+  <div class="twrap"><table><thead><tr>
+    <th>GEO</th><th>Spend 36 mo</th><th>Share</th><th>Aff CPA</th><th>Media CPA</th><th>Media %</th><th>FTDs 36 mo</th><th>Eff. CAC</th><th>ROI (NGR)</th><th>Payback</th>
+  </tr></thead><tbody id="mkTb"></tbody></table></div></div>`;
+  xyChart(document.getElementById("ch-mspend"),
+    M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.spend})),{stacked:true,h:250});
+  xyChart(document.getElementById("ch-mcomp"),[
+    {name:"Affiliate CPA budgets",color:sColor(0),values:affcpa},
+    {name:"Media buying",color:sColor(2),values:media},
+    {name:"Affiliate revshare",color:sColor(1),values:rs.slice()},
+    {name:"Brand & streamers",color:sColor(4),values:brand.slice()}
+  ],{stacked:true,h:250});
+  xyChart(document.getElementById("ch-mftd"),
+    M.channels.map((c,i)=>({name:c.name,color:sColor(i),values:Array.from({length:N},(_,t)=>
+      M.perGeo.reduce((s2,g)=>s2+(g.ftdsCh[c.key][t]||0),0))})),{stacked:true,fmt:v=>fmt.num(v),h:250});
+  xyChart(document.getElementById("ch-mratio"),
+    [{name:"Marketing / GGR",color:sColor(6),values:ratio,kind:"area"}],{fmt:v=>fmt.pct(v,0),h:250});
+  const tb=el.querySelector("#mkTb");
+  const spendTot=M.perGeo.reduce((x,g)=>x+S(g.spend),0)||1;
+  M.perGeo.forEach((g,i)=>{
+    const gm=geoMeta[g.id], sp=S(g.spend), f=S(g.ftds);
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><span class="sw" style="background:${sColor(i)};display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px"></span>${g.name}</td>
+      <td>${fmt.usd(sp)}</td><td>${fmt.pct(sp/spendTot,0)}</td>
+      <td>${fmt.usd(gm.cpaAff,0)}</td><td>${fmt.usd(gm.cpaMedia,0)}</td><td>${gm.mediaSharePct}%</td>
+      <td>${fmt.num(f)}</td><td>${fmt.usd(g.unit.effCAC,0)}</td>
+      <td style="font-weight:650">${fmt.x(g.unit.effCAC>0?g.unit.ltvNGR36/g.unit.effCAC:0)}</td>
+      <td>${g.unit.payback!=null?"M"+(g.unit.payback+1):">36"}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ============================================================
+   TAB: TEAM
+   ============================================================ */
+const PHASES=[["core","Core team"],["growth","Growth"],["later","Later"]];
+function phaseOf(p){ return p.phase || (p.wk1?"core":(p.start<=4?"growth":"later")); }
+function phaseLabel(k){ const f=PHASES.find(x=>x[0]===k); return f?f[1]:k; }
+function phaseColor(k){ return sColor(PHASES.findIndex(x=>x[0]===k)>=0?PHASES.findIndex(x=>x[0]===k):2); }
+const DEPT_ORDER=["Executive","Product","Engineering","Games Studio","User Acquisition","Monetization/CRM","VIP","Payments & Risk","Compliance","Data","Support","Finance & Ops"];
+function renderTeam(){
+  const el=document.getElementById("tab-team");
+  const N=M.N;
+  const load=1+(A.payrollLoad||0)/100;
+  const at=(t)=>personnelAt(A,t);
+  const m1=at(1), m12=at(12), m24=at(24), m36=at(Math.min(36,N));
+  const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
+  const wk1=A.personnel.filter(p=>p.wk1 && phaseOf(p)==="core");
+  const wk1Cost=wk1.reduce((s,p)=>s+(p.salary+(+p.bonus||0)*attain)*(+p.h[0]||1),0)*load;
+  const depts=[...new Set([...DEPT_ORDER.filter(d=>A.personnel.some(p=>(p.dept||"Other")===d)),
+    ...A.personnel.map(p=>p.dept||"Other")])];
+  el.innerHTML=`<h2>Team &amp; Employment phases</h2>
+  <p class="sub">Minimum viable team → scale plan. All personnel assumptions (roles, salaries, bonuses, headcount ramp) are edited in the table at the bottom of this page — everything above recomputes from it. You are CEO; ${wk1.length} seats total in week 1 (week-1 signings = core-phase roles; set phase per role in the table below). Structure follows the money: monetization, product, VIP, user acquisition, payments & risk, compliance.</p>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Founding team (week 1)</div><div class="val">${wk1.length}</div><div class="delta">${fmt.usd(wk1Cost)}/mo loaded, incl. you</div></div>
+    <div class="tile"><div class="lbl">End of year 1</div><div class="val">${m12.heads}</div><div class="delta">${fmt.usd(m12.cost)}/mo</div></div>
+    <div class="tile"><div class="lbl">End of year 2</div><div class="val">${m24.heads}</div><div class="delta">${fmt.usd(m24.cost)}/mo</div></div>
+    <div class="tile"><div class="lbl">End of year 3</div><div class="val">${m36.heads}</div><div class="delta">${fmt.usd(m36.cost)}/mo</div></div>
+  </div>
+  <div class="card"><h3>Sign these ${wk1.filter(p=>!/CEO/.test(p.role)).length} this week</h3>
+  <p class="note">Every one of them gates the critical path. ${wk1.some(p=>/MLRO/.test(p.role))?"The MLRO files Curaçao LOK immediately — its 3–5 month lead time sets your launch date; everything else parallelizes behind it.":"The LOK filing still gates the launch date — the MLRO (growth phase, starts M1) files it; these signings parallelize the build behind it."}</p>
+  <div id="wk1List"></div></div>
+  <div class="card" style="padding:12px 18px"><div class="legend" style="margin:0">
+    <span style="font-weight:650;margin-right:6px">Hiring phases:</span>
+    ${PHASES.map(([k,l])=>`<span class="it"><span class="sw" style="background:${phaseColor(k)}"></span>${l}</span>`).join("")}
+    <span style="color:var(--ink-3);font-size:11.5px">— set per role in the table at the bottom of this page</span>
+  </div></div>
+  <div class="grid2">
+    <div class="card"><h3>Headcount ramp by phase</h3><div class="chart" id="ch-phase"></div></div>
+    <div class="card"><h3>Headcount ramp by department</h3><div class="chart" id="ch-heads"></div></div>
+  </div>
+  <div id="deptCards"></div>
+  <div class="card"><h3>Week-1 checklist beyond hiring</h3><div class="note" style="font-size:12.5px;color:var(--ink-2)">
+  1 · Engage a Curaçao corporate-services firm and start the LOK application pack (entity, UBO files, policies).&nbsp;
+  2 · CTO + Head of Product lock make-vs-buy per platform component and shortlist 2 game aggregators — content contracts take 4–8 weeks.&nbsp;
+  3 · Head of Payments opens talks with 2 crypto processors and 2 high-risk PSPs; target both crypto rails live before soft launch.&nbsp;
+  4 · Head of UA maps the top 20 affiliate programs in the launch GEOs and starts CPA/hybrid negotiations.&nbsp;
+  5 · Book CRM-platform demos (Optimove-class) so the M2 CRM head starts with a decision memo, not a search.&nbsp;
+  6 · Data analyst brief (starts M3): build the cohort dashboard that proves the smoking gun — it triggers the M${A.global.scaleMonth} marketing scale-up (${A.global.scaleMult}×).
+  </div></div>`;
+  // personnel assumptions editor (moved from the Assumptions tab)
+  el.appendChild(buildPersonnelEditor());
+  // week-1 hire cards
+  const wl=el.querySelector("#wk1List");
+  wk1.filter(p=>!/CEO/.test(p.role)).forEach(p=>{
+    const d=document.createElement("div");
+    d.style.cssText=`display:flex;gap:12px;align-items:baseline;padding:8px 0 8px 10px;border-bottom:1px solid var(--grid);border-left:3px solid ${phaseColor("core")}`;
+    d.innerHTML=`<div style="min-width:220px;font-weight:650">${p.role}</div>
+      <div style="min-width:150px;color:var(--ink-2)">${fmt.usd(p.salary)}/mo${p.bonus?` <span style="color:var(--good-text)">+ ${fmt.usd(p.bonus)} max bonus</span>`:""}</div>
+      <div style="color:var(--ink-2);font-size:12.5px">${p.note||""}</div>`;
+    wl.appendChild(d);
+  });
+  // headcount stacked chart: top 7 depts by Y3 heads, rest folded to "Other" (8-slot palette, never cycled)
+  const deptHeads=d=>Array.from({length:N},(_,t)=>
+    A.personnel.filter(p=>(p.dept||"Other")===d).reduce((s,p)=>s+headsAt(p,t+1),0));
+  const ranked=depts.map(d=>({d,v:deptHeads(d),end:0})).map(x=>({...x,end:x.v[N-1]}))
+    .sort((a,b)=>b.end-a.end);
+  const top=ranked.slice(0,7), rest=ranked.slice(7);
+  const series=top.map((x,i)=>({name:x.d,color:sColor(i),values:x.v}));
+  if(rest.length){
+    const other=Array(N).fill(0);
+    rest.forEach(x=>x.v.forEach((v,t)=>other[t]+=v));
+    series.push({name:"Other ("+rest.map(x=>x.d).join(", ")+")",color:sColor(7),values:other});
+  }
+  xyChart(document.getElementById("ch-heads"),series,{stacked:true,fmt:v=>fmt.num(v),h:260});
+  // headcount by phase (3 series, phase colors)
+  const phaseSeries=PHASES.map(([k,l])=>({name:l,color:phaseColor(k),values:Array.from({length:N},(_,t)=>
+    A.personnel.filter(p=>phaseOf(p)===k).reduce((s,p)=>s+headsAt(p,t+1),0))}));
+  xyChart(document.getElementById("ch-phase"),phaseSeries,{stacked:true,fmt:v=>fmt.num(v),h:260});
+  // dept cards
+  const dc=el.querySelector("#deptCards");
+  const grid=document.createElement("div"); grid.className="grid2"; dc.appendChild(grid);
+  depts.forEach((d,i)=>{
+    const roles=A.personnel.filter(p=>(p.dept||"Other")===d);
+    if(!roles.length) return;
+    const cost12=roles.reduce((s,p)=>s+headsAt(p,12)*(p.salary+(+p.bonus||0)*attain),0)*load;
+    const c=document.createElement("div"); c.className="card";
+    let rows=roles.map(p=>`<div style="padding:7px 0 7px 10px;border-bottom:1px solid var(--grid);border-left:3px solid ${phaseColor(phaseOf(p))}">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <span style="font-weight:600">${p.role} <span class="badge"><span class="sw" style="background:${phaseColor(phaseOf(p))};width:7px;height:7px;border-radius:2px;display:inline-block;margin-right:4px"></span>${phaseLabel(phaseOf(p))}</span>${p.wk1?' <span class="badge own">week 1</span>':""}</span>
+        <span style="color:var(--ink-2);white-space:nowrap">M${p.start} · ${fmt.usd(p.salary)}/mo${p.bonus?` +${fmt.usd(p.bonus)} bns`:""} · ${p.h[0]}→${p.h[1]}→${p.h[2]}</span>
+      </div>
+      ${p.note?`<div style="color:var(--ink-3);font-size:12px;margin-top:2px">${p.note}</div>`:""}
+    </div>`).join("");
+    c.innerHTML=`<h3><span class="sw" style="background:${sColor(i)};display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px"></span>${d}</h3>
+      <p class="note">${fmt.usd(cost12)}/mo at end of year 1 · heads Y1→Y2→Y3 per role below</p>${rows}`;
+    grid.appendChild(c);
+  });
+}
+
+/* ============================================================
+   TAB: MILESTONES — the evidence case for each next round
+   ============================================================ */
+function renderMilestones(){
+  const el=document.getElementById("tab-milestones");
+  const N=M.N;
+  const sy=A.meta.startYear||2026, smc=A.meta.startCalMonth||9;
+  const MOS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const calLabel=t=>{ const abs=(smc-1)+t; const y=sy+Math.floor(abs/12), mo=abs%12; return MOS[mo]+"-"+String(y).slice(2); };
+  const cum=(arr,idx)=>arr.slice(0,idx+1).reduce((a,b)=>a+b,0);
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  // company-blended unit economics
+  const blend=(()=>{ let l=0,c=0,pb=0,f=0; M.perGeo.forEach(g=>{ const ft=g.ftds.reduce((a,b)=>a+b,0);
+    l+=g.unit.ltvNGR36*ft; c+=g.unit.effCAC*ft; pb+=(g.unit.payback!=null?g.unit.payback+1:36)*ft; f+=ft; });
+    return {roi:c>0?l/c:0, payback:f>0?pb/f:0}; })();
+  const gates=[];
+  rounds.slice(1).forEach((r,i)=>{ gates.push({n:i+1, title:"Unlock "+r.name, month:Math.max(1,Math.round(r.month)-1), amount:r.amount,
+    purpose:"Close "+fmt.usd(r.amount)+" landing M"+r.month+" — start conversations by M"+Math.max(1,Math.round(r.month)-3)+"."}); });
+  gates.push({n:gates.length+1, title:"EBITDA break-even", month:M.breakeven!=null?M.breakeven+1:Math.min(14,N), amount:null,
+    purpose:"Self-funding operations — every later raise becomes optional growth capital, not survival."});
+  gates.push({n:gates.length+1, title:"Scale proof — exit / Series window", month:N, amount:null,
+    purpose:"The numbers that price the company: run-rate, margin, and a marketing machine with proven ROI."});
+  const metricRow=(name,base,bar,why)=>`<tr><td>${name}</td><td style="font-weight:650">${base}</td><td>${bar}</td><td style="text-align:left;white-space:normal;color:var(--ink-2);font-size:12px">${why}</td></tr>`;
+  let cards="";
+  for(const g of gates){
+    const idx=Math.min(N-1,Math.max(0,g.month-1));
+    const cf=cum(M.agg.ftds,idx), spendC=cum(M.agg.marketing,idx);
+    const cac=cf>0?spendC/cf:0;
+    const ggrRun=M.agg.ggr[idx]*12;
+    const rows=
+      metricRow("New depositors (cumulative)",fmt.num(cf),"≥ "+fmt.num(cf*0.7),"Volume proves the acquisition machine works at plan scale.")+
+      metricRow("GGR run-rate (annualized)",fmt.usd(ggrRun),"≥ "+fmt.usd(ggrRun*0.7),"The revenue engine: actives × game economics, not projections.")+
+      metricRow("Blended CAC (all channels)",fmt.usd(cac,0),"≤ "+fmt.usd(cac*1.2,0),"CPA discipline — the assumption most likely to slip at scale.")+
+      metricRow("Cohort payback (blended)","M"+Math.round(blend.payback),"≤ M"+(Math.round(blend.payback)+2),"THE smoking gun: observed cohorts must repay CAC on schedule.")+
+      metricRow("Marketing ROI (36-mo LTV basis)",fmt.x(blend.roi),"≥ 2.0×","Below 2× the growth story doesn\'t underwrite the next round.")+
+      metricRow("Monthly EBITDA",fmt.usd(M.ebitda[idx]),M.ebitda[idx]<0?"loss narrowing q/q":"positive & growing","Trajectory matters more than the absolute number pre-break-even.")+
+      metricRow("Cash on hand",fmt.usd(M.cash[idx]),"≥ 3 months of burn","Never negotiate a round from an empty tank.");
+    cards+=`<div class="card">
+      <h3>Gate ${g.n} · ${g.title} <span class="badge" style="margin-left:8px">M${g.month} · ${calLabel(idx)}</span></h3>
+      <p class="note">${g.purpose}</p>
+      <div class="twrap"><table><thead><tr><th style="text-align:left">Metric</th><th>Base plan @ M${g.month}</th><th>Pass bar</th><th style="text-align:left">Why it matters</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }
+  el.innerHTML=`<h2>Investment KPI Milestones</h2>
+  <p class="sub">The evidence case for each funding round — every "base plan" number is computed live from the model, so when assumptions change, the bar you have to clear changes with them. Pass bars: volume/revenue ≥ 70% of plan, CAC ≤ 120%, payback within 2 months of plan. Hit the bars → raise on your terms; miss them → the same sheet tells you to cut burn or re-price before you\'re forced to.</p>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Founder commitment (R1)</div><div class="val">${fmt.usd(rounds[0]?rounds[0].amount:0)}</div><div class="delta">capped — later rounds are earned by the gates below</div></div>
+    <div class="tile"><div class="lbl">Gates to clear</div><div class="val">${gates.length}</div><div class="delta">${gates.map(g=>"M"+g.month).join(" · ")}</div></div>
+    <div class="tile"><div class="lbl">Break-even target</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">${M.breakeven!=null?calLabel(M.breakeven):""}</div></div>
+    <div class="tile"><div class="lbl">Blended payback (plan)</div><div class="val">M${Math.round(blend.payback)}</div><div class="delta">marketing ROI ${fmt.x(blend.roi)}</div></div>
+  </div>
+  ${cards}
+  <div class="card"><h3>Operating cadence</h3><div class="note" style="font-size:12.5px;color:var(--ink-2)">
+  Weekly: CPA and FTDs per channel per GEO vs this model (UA head owns it).&nbsp;
+  Monthly: cohort curves vs the GEO retention assumptions — data analyst publishes actual-vs-model on every base KPI.&nbsp;
+  Quarterly: this Milestones sheet becomes the board pack — each gate table with an "actual" column next to base plan and pass bar. Save the numbers as default at each gate so the record of what was promised is frozen in the project.
+  </div></div>`;
+}
+
+/* ============================================================
+   TAB: COHORTS
+   ============================================================ */
+let cohortGeo="all";
+function blendedCohort(){
+  const N=M.N;
+  const f=M.perGeo.map(g=>g.ftds.reduce((a,b)=>a+b,0));
+  const F=f.reduce((a,b)=>a+b,0)||1;
+  const w=f.map(x=>x/F);
+  const r=Array.from({length:N},(_,a)=>M.perGeo.reduce((s,g,i)=>s+w[i]*g.r[a],0));
+  const cum=Array.from({length:N},(_,a)=>M.perGeo.reduce((s,g,i)=>s+w[i]*g.unit.cumContrib[a],0));
+  const spend=M.perGeo.reduce((s,g)=>s+g.spend.reduce((a,b)=>a+b,0),0);
+  const effCAC=F>0?spend/F:0;
+  let payback=null; for(let a=0;a<N;a++) if(cum[a]>=effCAC){payback=a;break;}
+  return {id:"all", name:"All (blended)", r,
+    ggrPerActive:M.perGeo.reduce((s,g,i)=>s+w[i]*g.ggrPerActive,0),
+    unit:{effCAC, contribPerFTD:M.perGeo.reduce((s,g,i)=>s+w[i]*g.unit.contribPerFTD,0),
+      cumContrib:cum, payback,
+      ltvNGR36:M.perGeo.reduce((s,g,i)=>s+w[i]*g.unit.ltvNGR36,0),
+      ltvCac:effCAC>0?cum[N-1]/effCAC:0}};
+}
+function renderCohorts(){
+  const el=document.getElementById("tab-cohorts");
+  if(!M.perGeo.length){ el.innerHTML="<h2>Cohorts</h2><p class='sub'>Enable at least one GEO.</p>"; return; }
+  if(cohortGeo!=="all" && !M.perGeo.find(g=>g.id===cohortGeo)) cohortGeo="all";
+  const g = cohortGeo==="all" ? blendedCohort() : M.perGeo.find(x=>x.id===cohortGeo);
+  el.innerHTML=`<h2>Cohorts</h2>
+  <p class="sub">How a month's acquired depositors behave as they age: retention decay, cumulative payback vs CAC, and the contribution each cohort generates over time.</p>
+  <div class="toolbar"><div class="seg" id="geoSeg"></div></div>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Effective CAC</div><div class="val">${fmt.usd(g.unit.effCAC,0)}</div><div class="delta">paid spend ÷ all new depositors (incl. organic & revshare)</div></div>
+    <div class="tile"><div class="lbl">Contribution / FTD / active-month</div><div class="val">${fmt.usd(g.unit.contribPerFTD,0)}</div><div class="delta">GGR/active ${fmt.usd(g.ggrPerActive,0)}/mo</div></div>
+    <div class="tile"><div class="lbl">Payback</div><div class="val">${g.unit.payback!=null?"M"+(g.unit.payback+1):"&gt;36m"}</div><div class="delta">cohort age when CAC is covered</div></div>
+    <div class="tile"><div class="lbl">36-mo contribution LTV</div><div class="val">${fmt.usd(g.unit.cumContrib[M.N-1],0)}</div><div class="delta">${fmt.x(g.unit.ltvCac)} of CAC — strictest basis: after ALL variable costs, at day-one PSP fees</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Retention curve — ${g.name}</h3><p class="note">Share of the FTD cohort still depositing at each age.</p><div class="chart" id="ch-ret"></div></div>
+    <div class="card"><h3>Cumulative contribution per FTD vs CAC — ${g.name}</h3><p class="note">Where the line crosses CAC is payback.</p><div class="chart" id="ch-pb"></div></div>
+  </div>
+  <div class="card"><h3>Cohort contribution triangle — company level ($/month)</h3><p class="note">Rows = acquisition quarter; columns = cohort age in quarters; cell = total contribution that cohort generates in that quarter. Hover cells for values.</p><div class="chart" id="ch-tri"></div></div>`;
+  const seg=el.querySelector("#geoSeg");
+  [{id:"all",name:"All (blended)"},...M.perGeo].forEach(x=>{ const b=document.createElement("button"); b.textContent=x.name; if(x.id===cohortGeo)b.className="on";
+    b.onclick=()=>{cohortGeo=x.id; renderCohorts();}; seg.appendChild(b); });
+  xyChart(document.getElementById("ch-ret"),
+    [{name:"Retention",color:sColor(0),values:g.r.slice(0,Math.min(24,M.N)),kind:"area"}],{fmt:v=>fmt.pct(v,0),h:240});
+  const cacLine=Array(Math.min(24,M.N)).fill(g.unit.effCAC);
+  xyChart(document.getElementById("ch-pb"),
+    [{name:"Cumulative contribution / FTD",color:sColor(2),values:g.unit.cumContrib.slice(0,Math.min(24,M.N)),kind:"area"},
+     {name:"Effective CAC",color:sColor(7),values:cacLine}],{h:240});
+  // triangle: quarterly cohorts × age quarters, company level
+  const Q=Math.floor(M.N/3);
+  const rows=[],get=(i,j)=>{
+    // cohort quarter i (months 3i..3i+2), age quarter j
+    let sum=0,has=false;
+    for(const pg of M.perGeo){
+      for(let cm=3*i;cm<3*i+3;cm++){
+        if(cm>=M.N)continue;
+        for(let am=3*j;am<3*j+3;am++){
+          const t=cm+am; if(t>=M.N)continue; has=true;
+          // contribution of cohort cm at month t = ftds*retention*contribPerFTD
+          sum+=pg.ftds[cm]*pg.r[am]*pg.unit.contribPerFTD;
+        }
+      }
+    }
+    return has?sum:null;
+  };
+  for(let i=0;i<Q;i++)rows.push("Q"+(i+1)+" cohort");
+  heatmap(document.getElementById("ch-tri"),rows,
+    Array.from({length:Q},(_,j)=>"Age Q"+j),get,{label:"Contribution",fmt:v=>fmt.usd(v)});
+}
+
+/* ============================================================
+   TAB: P&L
+   ============================================================ */
+let pnlView="quarterly";
+function renderPnl(){
+  const el=document.getElementById("tab-pnl");
+  el.innerHTML=`<h2>P&amp;L</h2>
+  <p class="sub">Full waterfall: Turnover → GGR (via RTP) → NGR (after bonuses) → Gross profit (after COGS: content, platform tech, payments, KYC, tax) → Contribution after marketing (CPA + affiliate revshare + brand) → EBITDA (after personnel & opex) → EBIT (after platform amortization).</p>
+  <div class="toolbar"><div class="seg">
+    <button id="pv-m" class="${pnlView==='monthly'?'on':''}">Monthly</button>
+    <button id="pv-q" class="${pnlView==='quarterly'?'on':''}">Quarterly</button>
+    <button id="pv-y" class="${pnlView==='yearly'?'on':''}">Yearly</button>
+  </div></div>
+  <div class="card"><div class="twrap" style="max-height:640px;overflow:auto"><table id="pnlTable"></table></div></div>`;
+  el.querySelector("#pv-m").onclick=()=>{pnlView="monthly";renderPnl();};
+  el.querySelector("#pv-q").onclick=()=>{pnlView="quarterly";renderPnl();};
+  el.querySelector("#pv-y").onclick=()=>{pnlView="yearly";renderPnl();};
+  const N=M.N;
+  let buckets=[];
+  if(pnlView==="monthly") buckets=Array.from({length:N},(_,i)=>({label:"M"+(i+1),idx:[i]}));
+  else if(pnlView==="quarterly") { for(let q=0;q*3<N;q++){ const idx=[]; for(let i=q*3;i<Math.min(N,q*3+3);i++)idx.push(i); buckets.push({label:"Q"+(q+1),idx}); } }
+  else { for(let y=0;y*12<N;y++){ const idx=[]; for(let i=y*12;i<Math.min(N,y*12+12);i++)idx.push(i); buckets.push({label:"Year "+(y+1),idx}); } }
+  const S=(arr,b)=>b.idx.reduce((s,i)=>s+arr[i],0);
+  const gaArr=Array.from({length:N},(_,t)=>M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]);
+  const techArr=Array.from({length:N},(_,t)=>M.opex.hosting[t]+M.opex.software[t]+M.opex.aggregator[t]);
+  const rowsDef=[
+    {s:"Volume"},
+    {n:"Turnover (wagers)",a:M.agg.turnover},
+    {n:"Deposits",a:M.agg.deposits},
+    {n:"Active depositors (avg)",a:M.agg.actives,f:"num",avg:true},
+    {n:"New FTDs",a:M.agg.ftds,f:"num"},
+    {n:"Headcount (end)",custom:b=>fmt.num(M.opex.heads[b.idx[b.idx.length-1]])},
+    {s:"Revenue"},
+    {n:"GGR",a:M.agg.ggr,b:true},
+    {n:"Bonuses & jackpots",a:M.agg.bonus,neg:true},
+    {n:"NGR",a:M.agg.ngr,b:true},
+    {s:"COGS"},
+    {n:"Content revshare (external games)",a:M.agg.content,neg:true},
+    {n:"Platform tech (hosting, software, aggregator)",a:techArr,neg:true},
+    {n:"Payment processing",a:M.agg.pay,neg:true},
+    {n:"KYC verifications",a:M.opex.kyc,neg:true},
+    {n:"Gaming tax",a:M.agg.tax,neg:true},
+    {n:"Gross profit",a:M.grossProfit,total:true},
+    {n:"Gross margin (% NGR)",custom:b=>{const ngr=S(M.agg.ngr,b);return ngr>0?fmt.pct(S(M.grossProfit,b)/ngr,0):"—";}},
+    {s:"Marketing"},
+    {n:"Performance marketing (CPA budgets)",a:M.agg.marketing,neg:true},
+    {n:"Affiliate revshare",a:M.agg.affrs,neg:true},
+    {n:"Brand & streamers",a:M.opex.brand,neg:true},
+    {n:"Contribution after marketing",a:M.contribAfterMkt,total:true},
+    {s:"Operating expenses"},
+    {n:"Personnel (loaded)",a:M.opex.personnel,neg:true},
+    {n:"Support ops (outsourced)",a:M.opex.support,neg:true},
+    {n:"CRM & martech tools",a:M.opex.crmTools,neg:true},
+    {n:"Anti-fraud tools",a:M.opex.antifraud,neg:true},
+    {n:"Legal, office, travel & misc G&A",a:gaArr,neg:true},
+    {n:"Licenses (annual fees)",a:M.opex.licAnnual,neg:true},
+    {n:"Fraud & bonus-abuse losses",a:M.opex.fraud,neg:true},
+    {n:"Contingency (unbudgeted opex)",a:M.opex.contingency,neg:true},
+    {n:"EBITDA",a:M.ebitda,total:true},
+    {n:"EBITDA margin (% NGR)",custom:b=>{const ngr=S(M.agg.ngr,b);return ngr>0?fmt.pct(S(M.ebitda,b)/ngr,0):"—";}},
+    {n:"Platform amortization",a:M.opex.amort,neg:true},
+    {n:"EBIT",a:M.ebit,total:true},
+    {n:"Corporate income tax",a:M.corpTax,neg:true},
+    {n:"Net income",a:M.netIncome,total:true},
+    {n:"Cumulative EBITDA",custom:b=>fmt.usd(M.cumEbitdaArr[b.idx[b.idx.length-1]])}
+  ];
+  const tbl=el.querySelector("#pnlTable");
+  let html="<thead><tr><th>Line</th>"+buckets.map(b=>`<th>${b.label}</th>`).join("")+"</tr></thead><tbody>";
+  for(const r of rowsDef){
+    if(r.s){ html+=`<tr class="section"><td colspan="${buckets.length+1}">${r.s}</td></tr>`; continue; }
+    const cls=r.total?"total":"";
+    html+=`<tr class="${cls}"><td>${r.n}</td>`;
+    for(const b of buckets){
+      let txt;
+      if(r.custom) txt=r.custom(b);
+      else {
+        let v=S(r.a,b); if(r.avg)v=v/b.idx.length;
+        if(r.f==="num") txt=fmt.num(v);
+        else txt=(r.neg&&v>0?"−":"")+fmt.usd(r.neg?Math.abs(v):v).replace("−$","$");
+        if(!r.neg && !r.f && v<0) txt=fmt.usd(v);
+      }
+      const negCls=(!r.f&&!r.custom&&((r.neg&&S(r.a,b)>0)||(!r.neg&&S(r.a,b)<0)))?"neg":"";
+      html+=`<td class="${negCls}">${txt}</td>`;
+    }
+    html+="</tr>";
+  }
+  html+="</tbody>";
+  tbl.innerHTML=html;
+}
+
+/* ============================================================
+   TAB: FINANCE — quarterly financial statements, Q4 2026 – Q3 2028
+   ============================================================ */
+function renderFinance(){
+  const el=document.getElementById("tab-finance");
+  const N=M.N;
+  const sy=A.meta.startYear||2026, sm=A.meta.startCalMonth||9;
+  const idxFor=(y,mo)=>(y-sy)*12+(mo-sm); // model month index (0-based) for a calendar month
+  // fixed reporting window: Q4 2026 → Q3 2028 inclusive
+  const quarters=[]; let qy=2026,qq=4;
+  for(let i=0;i<8;i++){ quarters.push({y:qy,q:qq}); qq++; if(qq>4){qq=1;qy++;} }
+  const buckets=quarters.map(({y,q})=>{
+    const idx=[3*q-2,3*q-1,3*q].map(mo=>idxFor(y,mo)).filter(t=>t>=0&&t<N);
+    return {label:`Q${q}-${String(y).slice(2)}`, y,q, idx, partial:idx.length>0&&idx.length<3};
+  });
+  const S=(arr,b)=>b.idx.length?b.idx.reduce((s,i)=>s+arr[i],0):null;
+  const gaArr=Array.from({length:N},(_,t)=>M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]);
+  const persArr=M.opex.personnel;
+  const otherOpex=Array.from({length:N},(_,t)=>M.opex.support[t]+M.opex.crmTools[t]+M.opex.antifraud[t]
+    +gaArr[t]+M.opex.licAnnual[t]+M.opex.fraud[t]+M.opex.contingency[t]);
+  const cogsArr=M.cogsTotal, smArr=M.mktTotal;
+  const capexArr=M.opex.platformCapex, licUpArr=M.opex.licUpfront;
+  const anyPartial=buckets.some(b=>b.partial);
+  const cell=(v,opts)=>{
+    opts=opts||{};
+    if(v===null||v===undefined) return `<td style="color:var(--ink-3)">—</td>`;
+    if(opts.pct) return `<td style="color:var(--ink-2)">${v}</td>`;
+    const neg=(opts.neg&&v>0)||((!opts.neg)&&v<0);
+    const txt=opts.neg&&v>0? "("+fmt.usd(v).replace("$","$")+")" : fmt.usd(v);
+    return `<td class="${neg?'neg':''}">${txt}</td>`;
+  };
+  const row=(name,arr,opts)=>{
+    opts=opts||{};
+    const cells=buckets.map(b=>{ const v=S(arr,b); return cell(v,opts); }).join("");
+    const tot=arr? buckets.reduce((s,b)=>{const v=S(arr,b); return v==null?s:s+v;},0):null;
+    const cls=opts.total?"total":"";
+    const pad=opts.indent?`style="padding-left:${10+opts.indent*14}px"`:"";
+    return `<tr class="${cls}"><td ${pad}>${name}</td>${cells}${cell(tot,opts)}</tr>`;
+  };
+  const mrow=(name,numArr,denArr)=>{
+    const cells=buckets.map(b=>{ const n=S(numArr,b),d=S(denArr,b);
+      return cell(n!=null&&d?fmt.pct(n/d,0):null,{pct:1}); }).join("");
+    const tn=buckets.reduce((s,b)=>{const v=S(numArr,b);return v==null?s:s+v;},0);
+    const td=buckets.reduce((s,b)=>{const v=S(denArr,b);return v==null?s:s+v;},0);
+    return `<tr><td style="color:var(--ink-3);font-style:italic;padding-left:24px">${name}</td>${cells}${cell(td?fmt.pct(tn/td,0):null,{pct:1})}</tr>`;
+  };
+  const sec=n=>`<tr class="section"><td colspan="${buckets.length+2}">${n}</td></tr>`;
+  const krow=(name,fn)=>{
+    const cells=buckets.map(b=>b.idx.length?`<td>${fn(b)}</td>`:`<td style="color:var(--ink-3)">—</td>`).join("");
+    return `<tr><td>${name}</td>${cells}<td style="color:var(--ink-3)">—</td></tr>`;
+  };
+  // cash-flow specific rows
+  const openCash=b=>b.idx.length? (b.idx[0]>0?M.cash[b.idx[0]-1]:0) : null;
+  const closeCash=b=>b.idx.length? M.cash[b.idx[b.idx.length-1]] : null;
+  const html=`
+  <h2>Finance</h2>
+  <p class="sub">Top-down quarterly financial statements, Q4 2026 – Q3 2028 inclusive (calendar quarters; model starts ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][sm-1]} ${sy} — change in Assumptions §1). ${anyPartial?"Quarters marked * are partly outside the model horizon.":""} Monthly detail lives on the P&L and Cash Flow tabs.</p>
+  <div class="card"><div class="twrap"><table>
+    <thead><tr><th>USD</th>${buckets.map(b=>`<th>${b.label}${b.partial?"*":""}</th>`).join("")}<th>Total</th></tr></thead>
+    <tbody>
+      ${sec("Income statement")}
+      ${row("Gross gaming revenue (GGR)",M.agg.ggr)}
+      ${row("Bonuses & jackpots",M.agg.bonus,{neg:1,indent:1})}
+      ${row("Net gaming revenue (NGR)",M.agg.ngr,{total:1})}
+      ${row("Cost of services (COGS)",cogsArr,{neg:1,indent:1})}
+      ${row("Gross profit",M.grossProfit,{total:1})}
+      ${mrow("gross margin (% NGR)",M.grossProfit,M.agg.ngr)}
+      ${row("Sales & marketing",smArr,{neg:1,indent:1})}
+      ${row("Personnel",persArr,{neg:1,indent:1})}
+      ${row("Other operating expenses",otherOpex,{neg:1,indent:1})}
+      ${row("EBITDA",M.ebitda,{total:1})}
+      ${mrow("EBITDA margin (% NGR)",M.ebitda,M.agg.ngr)}
+      ${row("Depreciation & amortization",M.opex.amort,{neg:1,indent:1})}
+      ${row("EBIT",M.ebit,{total:1})}
+      ${row("Corporate income tax",M.corpTax,{neg:1,indent:1})}
+      ${row("Net income",M.netIncome,{total:1})}
+      ${mrow("net margin (% NGR)",M.netIncome,M.agg.ngr)}
+      ${sec("Cash flow")}
+      ${krow("Opening cash",b=>fmt.usd(openCash(b)))}
+      ${row("EBITDA",M.ebitda,{indent:1})}
+      ${row("Corporate income tax",M.corpTax,{neg:1,indent:1})}
+      ${row("Platform capex",capexArr,{neg:1,indent:1})}
+      ${row("License upfronts",licUpArr,{neg:1,indent:1})}
+      ${row("PSP reserve movement",M.reserveDelta,{neg:1,indent:1})}
+      ${row("Financing — funding rounds",M.fundingIn,{indent:1})}
+      ${krow("Closing cash",b=>`<span style="font-weight:650">${fmt.usd(closeCash(b))}</span>`)}
+      ${sec("KPIs")}
+      ${krow("Active depositors (avg/mo)",b=>fmt.num(S(M.agg.actives,b)/b.idx.length))}
+      ${krow("New FTDs (quarter)",b=>fmt.num(S(M.agg.ftds,b)))}
+      ${krow("Marketing spend (quarter)",b=>fmt.usd(S(M.agg.marketing,b)))}
+      ${krow("Headcount (end)",b=>fmt.num(M.opex.heads[b.idx[b.idx.length-1]]))}
+      ${krow("GGR per active per month",b=>fmt.usd(S(M.agg.ggr,b)/Math.max(1,S(M.agg.actives,b))))}
+    </tbody>
+  </table></div></div>`;
+  el.innerHTML=html;
+}
+
+/* ============================================================
+   TAB: CASH FLOW
+   ============================================================ */
+function renderCash(){
+  const el=document.getElementById("tab-cash");
+  const N=M.N;
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  const roundRows=rounds.map((f,i)=>{
+    const from=Math.round(f.month)-1;
+    const to=(i+1<rounds.length)? Math.round(rounds[i+1].month)-2 : N-1;
+    let low=Infinity, lowT=from;
+    for(let t=Math.max(0,from);t<=Math.min(N-1,to);t++){ if(M.cash[t]<low){low=M.cash[t];lowT=t;} }
+    const cum=rounds.slice(0,i+1).reduce((s,x)=>s+(+x.amount||0),0);
+    return `<tr>
+      <td style="font-weight:650">${f.name}</td>
+      <td style="text-align:center"><span class="badge" style="font-size:12px">Month ${f.month}</span></td>
+      <td style="font-weight:650">${fmt.usd(f.amount)}</td>
+      <td>${fmt.usd(cum)}</td>
+      <td class="${low<0?'neg':''}">${fmt.usd(low)} <span style="color:var(--ink-3)">at M${lowT+1}</span></td>
+      <td style="text-align:left;white-space:normal;color:var(--ink-2);font-size:12px;min-width:260px">${f.note||""}</td>
+    </tr>`;
+  }).join("");
+  el.innerHTML=`<h2>Cash Flow</h2>
+  <p class="sub">EBITDA less platform capex, license upfronts, and the PSP rolling-reserve float (held ${A.wc.reserveMonths} months, then released) — funded by ${rounds.length} staged rounds totalling ${fmt.usd(M.totalFunding)}. Edit rounds in Assumptions § 1.</p>
+  <div class="card"><h3>When to raise — the funding schedule</h3>
+  <p class="note">Each round must land before the cash line approaches zero. "Lowest cash until next round" is the number to watch: if it goes red, the round is too small or too late. Start raising each round ~3 months before its month.</p>
+  <div class="twrap"><table><thead><tr><th>Round</th><th>When</th><th>Amount</th><th>Raised so far</th><th>Lowest cash until next round</th><th>What it funds</th></tr></thead>
+  <tbody>${roundRows}</tbody></table></div></div>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Total external need</div><div class="val">${fmt.usd(M.peakNeed)}</div><div class="delta">deepest cumulative burn — the minimum you must raise in total</div></div>
+    <div class="tile"><div class="lbl">Minimum cash (funded plan)</div><div class="val">${fmt.usd(M.minCash)}</div><div class="delta">at month ${M.minCashMonth+1}${M.minCash<0?" — round too small or too late":""}</div></div>
+    <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">sustained positive</div></div>
+    <div class="tile"><div class="lbl">Cash at month 36</div><div class="val">${fmt.usd(M.cash[N-1])}</div><div class="delta">${M.cash[N-1]>A.meta.startingCapital?"capital returned":"still below starting capital"}</div></div>
+    <div class="tile"><div class="lbl">PSP reserve held at M36</div><div class="val">${fmt.usd(M.reserveBal[N-1])}</div><div class="delta">cash locked at processors</div></div>
+  </div>
+  ${M.minCash<0?`<div class="warnbox">⚠ Cash goes negative at month ${M.minCashMonth+1}. Move a round earlier, raise ≈ ${fmt.usd(-M.minCash)} more, or slow the marketing ramp.</div>`:""}
+  <div class="grid2">
+    <div class="card"><h3>Cash balance with funding rounds</h3><div class="chart" id="ch-cash2"></div></div>
+    <div class="card"><h3>Monthly net cash flow</h3><div class="chart" id="ch-ncf"></div></div>
+  </div>
+  <div class="card"><div class="twrap" style="max-height:480px;overflow:auto"><table id="cashTable"></table></div></div>`;
+  xyChart(document.getElementById("ch-cash2"),
+    [{name:"Cash",color:sColor(0),values:M.cash,kind:"area"}],
+    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+  xyChart(document.getElementById("ch-ncf"),
+    [{name:"Net CF",color:sColor(2),values:M.netcf,kind:"bar"}],{h:250});
+  const tbl=el.querySelector("#cashTable");
+  let html="<thead><tr><th>Month</th><th>Funding in</th><th>EBITDA</th><th>Corp tax</th><th>Platform capex</th><th>License upfronts</th><th>Reserve Δ</th><th>Reserve held</th><th>Net cash flow</th><th>Cash balance</th></tr></thead><tbody>";
+  for(let t=0;t<N;t++){
+    html+=`<tr><td>M${t+1}</td><td style="${M.fundingIn[t]?'font-weight:650':''}">${M.fundingIn[t]?fmt.usd(M.fundingIn[t]):"—"}</td><td class="${M.ebitda[t]<0?'neg':''}">${fmt.usd(M.ebitda[t])}</td>
+      <td>${M.corpTax[t]?("−"+fmt.usd(M.corpTax[t])):"—"}</td>
+      <td>${M.opex.platformCapex[t]?("−"+fmt.usd(M.opex.platformCapex[t])):"—"}</td>
+      <td>${M.opex.licUpfront[t]?("−"+fmt.usd(M.opex.licUpfront[t])):"—"}</td>
+      <td class="${M.reserveDelta[t]>0?'neg':''}">${M.reserveDelta[t]?fmt.usd(-M.reserveDelta[t]):"—"}</td>
+      <td>${fmt.usd(M.reserveBal[t])}</td>
+      <td class="${M.netcf[t]<0?'neg':''}">${fmt.usd(M.netcf[t])}</td>
+      <td class="${M.cash[t]<0?'neg':''}" style="font-weight:600">${fmt.usd(M.cash[t])}</td></tr>`;
+  }
+  html+="</tbody>"; tbl.innerHTML=html;
+}
+
+/* ============================================================
+   TAB: SIMULATION
+   ============================================================ */
+function renderSim(){
+  const el=document.getElementById("tab-sim");
+  el.innerHTML=`<h2>Simulation</h2>
+  <p class="sub">Stress the casino plan (Rain B2C and shared substance are unaffected here) without touching base assumptions. Presets or sliders; everything compares against the base scenario. Remember the VIP reality: top 1% of players = 35–60% of GGR, so real months are lumpier than any smooth model — the bear case is the honest planning floor.</p>
+  <div class="toolbar"><div class="seg" id="presetSeg">
+    <button data-p="base">Base</button><button data-p="bull">Bull</button><button data-p="bear">Bear</button>
+  </div><span class="badge" id="simBadge"></span></div>
+  <div class="card sliders"><h3>Drivers</h3><div class="fields" id="simFields"></div></div>
+  <div class="kpi-cmp" id="simKpis"></div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card"><h3>Cash balance — scenario vs base</h3><div class="chart" id="ch-simcash"></div></div>
+    <div class="card"><h3>Monthly EBITDA — scenario vs base</h3><div class="chart" id="ch-simebitda"></div></div>
+  </div>`;
+  const fieldsEl=el.querySelector("#simFields");
+  const defs=[
+    ["cpaMult","CPA (cost) ×",0.5,2,0.05],
+    ["retMult","Retention ×",0.5,1.5,0.05],
+    ["betMult","Player value ×  (engagement · VIP mix · game mix)",0.5,2,0.05],
+    ["mktMult","Marketing budget ×",0.3,2,0.05],
+    ["holdMult","Deposit hold ×",0.6,1.4,0.05],
+    ["rsMult","Affiliate revshare ×",0.5,1.5,0.05]
+  ];
+  simLabels={};
+  defs.forEach(([k,label,mn,mx,st])=>{
+    const f=document.createElement("div"); f.className="f";
+    const l=document.createElement("label"); f.appendChild(l);
+    const inp=document.createElement("input"); inp.type="range"; inp.min=mn; inp.max=mx; inp.step=st; inp.value=SIM[k];
+    const upd=()=>{ l.textContent=`${label} ${(+inp.value).toFixed(2)}`; };
+    upd();
+    simLabels[k]={el:l, base:()=>`${label} ${(+inp.value).toFixed(2)}`};
+    inp.addEventListener("input",()=>{ SIM[k]=+inp.value; upd(); queueSim(); });
+    f.appendChild(inp); fieldsEl.appendChild(f);
+  });
+  const bf=document.createElement("div"); bf.className="f";
+  const bl=document.createElement("label"); bf.appendChild(bl);
+  const bi=document.createElement("input"); bi.type="range"; bi.min=8; bi.max=30; bi.step=0.5;
+  bi.value=SIM.bonusPct!=null?SIM.bonusPct:A.global.bonusPctGGR;
+  const bupd=()=>{ bl.textContent=`Bonus cost % of GGR: ${(+bi.value).toFixed(1)}%`; }; bupd();
+  simLabels.bonus={el:bl, base:()=>`Bonus cost % of GGR: ${(+bi.value).toFixed(1)}%`};
+  bi.addEventListener("input",()=>{ SIM.bonusPct=+bi.value; bupd(); queueSim(); });
+  bf.appendChild(bi); fieldsEl.appendChild(bf);
+  el.querySelectorAll("#presetSeg button").forEach(b=>{
+    b.onclick=()=>{
+      const p=b.dataset.p;
+      if(p==="base") Object.assign(SIM,{cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1});
+      if(p==="bull") Object.assign(SIM,{cpaMult:0.85,retMult:1.15,betMult:1.10,mktMult:1.25,bonusPct:16,holdMult:1.05,rsMult:1});
+      if(p==="bear") Object.assign(SIM,{cpaMult:1.30,retMult:0.85,betMult:0.90,mktMult:0.80,bonusPct:22,holdMult:0.9,rsMult:1.1});
+      renderSim();
+    };
+  });
+  runSim();
+}
+let _st=null;
+function queueSim(){ clearTimeout(_st); _st=setTimeout(runSim,200); }
+function runSim(){
+  const base=M;
+  const sc=compute(A,SIM);
+  const N=sc.N;
+  const isBase=SIM.cpaMult===1&&SIM.retMult===1&&SIM.betMult===1&&SIM.mktMult===1&&SIM.bonusPct===null&&SIM.holdMult===1&&SIM.rsMult===1;
+  const badge=document.getElementById("simBadge");
+  if(badge) badge.textContent=isBase?"showing base scenario":"custom scenario vs base";
+  // append the actual global figure each multiplier produces
+  (()=>{
+    const Ns=sc.N;
+    const spendTot=sc.agg.marketing.reduce((x,y)=>x+y,0);
+    const ftdTot=sc.agg.ftds.reduce((x,y)=>x+y,0);
+    let m1w=0; sc.perGeo.forEach(g=>{ m1w+=g.ftds.reduce((x,y)=>x+y,0)*(g.r[1]||0); });
+    const actuals={
+      cpaMult:"→ blended CAC "+fmt.usd(ftdTot>0?spendTot/ftdTot:0,0)+" per depositor",
+      retMult:"→ blended M1 retention "+fmt.pct(ftdTot>0?m1w/ftdTot:0,0),
+      betMult:"→ GGR "+fmt.usd(sc.agg.actives[Ns-1]>0?sc.agg.ggr[Ns-1]/sc.agg.actives[Ns-1]:0,0)+" per active/mo — the outcome, not a dial you set",
+      mktMult:"→ "+fmt.usd(sc.agg.marketing[Ns-1])+"/mo spend at M36 ("+fmt.usd(spendTot)+" total)",
+      holdMult:"→ hold "+fmt.pct(sc.agg.deposits[Ns-1]>0?sc.agg.ggr[Ns-1]/sc.agg.deposits[Ns-1]:0,0)+" of deposits",
+      rsMult:"→ effective revshare "+(A.global.affRevsharePct*SIM.rsMult).toFixed(0)+"% of NGR",
+      bonus:"→ "+fmt.usd(sc.agg.bonus[Ns-1])+"/mo bonus cost at M36"
+    };
+    for(const k in actuals){ const sl=simLabels[k]; if(sl&&sl.el) sl.el.textContent=sl.base()+"  "+actuals[k]; }
+  })();
+  const kEl=document.getElementById("simKpis"); if(!kEl)return;
+  function tile(lbl,scv,basev,fmtF,upGood){
+    const d=scv-basev;
+    const cls=d===0?"":((d>0)===upGood?"up":"down");
+    return `<div class="tile"><div class="lbl">${lbl}</div><div class="val">${fmtF(scv)}</div>
+      <div class="delta ${cls}">${isBase?"base":"base "+fmtF(basev)+" · "+(d>=0?"+":"−")+fmtF(Math.abs(d)).replace("−","")}</div></div>`;
+  }
+  kEl.innerHTML=
+    tile("Cumulative EBITDA (36 mo)",sc.cumEbitdaArr[N-1],base.cumEbitdaArr[base.N-1],v=>fmt.usd(v),true)+
+    tile("Y3 GGR run-rate",sc.agg.ggr[N-1]*12,base.agg.ggr[base.N-1]*12,v=>fmt.usd(v),true)+
+    tile("Peak funding need",sc.peakNeed,base.peakNeed,v=>fmt.usd(v),false)+
+    `<div class="tile"><div class="lbl">Break-even</div><div class="val">${sc.breakeven!=null?"M"+(sc.breakeven+1):"—"}</div><div class="delta">base ${base.breakeven!=null?"M"+(base.breakeven+1):"—"}</div></div>`+
+    tile("Cash at M36",sc.cash[N-1],base.cash[base.N-1],v=>fmt.usd(v),true)+
+    tile("Actives at M36",sc.agg.actives[N-1],base.agg.actives[base.N-1],v=>fmt.num(v),true);
+  const cEl=document.getElementById("ch-simcash");
+  if(cEl) xyChart(cEl,[
+    {name:"Base",color:sColor(0),values:base.cash},
+    {name:"Scenario",color:sColor(1),values:sc.cash,kind:"area"}],{h:250});
+  const eEl=document.getElementById("ch-simebitda");
+  if(eEl) xyChart(eEl,[
+    {name:"Base",color:sColor(0),values:base.ebitda},
+    {name:"Scenario",color:sColor(1),values:sc.ebitda}],{h:250});
+}
+
+/* ============================================================
+   Export / Import / theme
+   ============================================================ */
+/* Persistence: POST to the defaults API when deployed; file fallback otherwise. */
+async function persistDefaults(json){
+  if(!location.protocol.startsWith("http")) return {mode:"local-file"};
+  const r=await fetch("/api/defaults",{method:"POST",headers:{"Content-Type":"application/json"},body:json});
+  if(!r.ok) throw new Error("save failed: "+r.status);
+  return {mode:"db"};
+}
+function showDefToast(msg){
+  let t=document.getElementById("defToast");
+  if(!t){ t=document.createElement("div"); t.id="defToast";
+    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink-1);color:var(--surface-1);padding:12px 20px;border-radius:12px;font-size:13px;z-index:200;max-width:560px;box-shadow:0 8px 30px rgba(0,0,0,.25)";
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.display="block";
+  clearTimeout(t._h); t._h=setTimeout(()=>{t.style.display="none";},9000);
+}
+document.getElementById("btnSaveDefault").onclick=async()=>{
+  const json=JSON.stringify(A,null,2);
+  try{
+    const res=await persistDefaults(json);
+    if(res.mode==="db"){ showDefToast("Saved as the new default \u2014 versioned in the database. Every load of this page now opens with these numbers."); return; }
+  }catch(e){}
+  const blob=new Blob([json],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="luckymay-model-defaults.json";
+  a.click(); URL.revokeObjectURL(a.href);
+  showDefToast("Database unreachable \u2014 saved locally as luckymay-model-defaults.json instead. Pull it into Claude to bake it in.");
+};
+document.getElementById("btnTheme").onclick=()=>{
+  const r=document.documentElement;
+  r.dataset.theme = r.dataset.theme==="dark" ? "light" : "dark";
+  renderTab(activeTab);
+};
+
+/* ============================================================
+   TAB: RAIN B2C — PREDICTION MARKETS
+   ============================================================ */
+function pmCal(t){
+  const sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1;
+  const MOS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const ab=(smc-1)+t; return MOS[ab%12]+"-"+String(sy+Math.floor(ab/12)).slice(2);
+}
+function ySum(a,y){ return a.slice(y*12,y*12+12).reduce((s,x)=>s+x,0); }
+function pmYearLbl(y){ return String((A.meta.startYear||2027)+y); }
+
+function renderPM(){
+  const el=document.getElementById("tab-pm");
+  const P=MPM, N=P.N;
+  const revY=[0,1,2].map(y=>ySum(P.totalRev,y));
+  const ebY=[0,1,2].map(y=>ySum(P.ebitda,y));
+  const mktY=[0,1,2].map(y=>ySum(P.mkt,y));
+  const arrExit=P.npr[N-1]*12;
+  el.innerHTML=`
+  <h2>Rain B2C — Prediction Markets</h2>
+  <p class="sub">Parallel model to the casino: acquisition spend → new traders (at blended CPA, plus organic surplus) → active users (1/${A.pm.lifetimeMonths}-mo churn) → net protocol revenue at MARPU $${(P.unit.marpu).toFixed(2)}/active/mo. Implied trading volume backs out of revenue at the ${A.pm.takeRatePct}% net take rate; treasury yield accrues on TVL. Operates under the Gibraltar Prediction Market Authorisation (duty ${A.pm.dutyPct}% of operator commission). PSP (Unifold): ${A.pm.psp.feePct}% of deposits, ${A.pm.psp.absorbedPct}% absorbed in the base case.</p>
+  <div class="tiles" style="margin-top:10px">
+    <div class="tile hero"><div class="lbl">Year-3 revenue (${pmYearLbl(2)})</div><div class="val">${fmt.usd(revY[2])}</div><div class="delta">exit ARR ${fmt.usd(arrExit)}</div></div>
+    <div class="tile"><div class="lbl">Active traders M${N}</div><div class="val">${fmt.num(P.actives[N-1])}</div><div class="delta">${fmt.num(P.newU[N-1])} new / mo</div></div>
+    <div class="tile"><div class="lbl">Year-3 EBITDA (pre-shared costs)</div><div class="val">${fmt.usd(ebY[2])}</div><div class="delta ${ebY[2]>=0?'up':'down'}">${revY[2]>0?fmt.pct(ebY[2]/revY[2],0)+" margin":""}</div></div>
+    <div class="tile"><div class="lbl">Standalone break-even</div><div class="val">${P.breakeven!=null?"M"+(P.breakeven+1):"—"}</div><div class="delta">${P.breakeven!=null?pmCal(P.breakeven):"not in horizon"}</div></div>
+    <div class="tile"><div class="lbl">LTV : CPA</div><div class="val">${fmt.x(P.unit.cpa>0?P.unit.ltv/P.unit.cpa:0)}</div><div class="delta">LTV ${fmt.usd(P.unit.ltv,0)} · CPA ${fmt.usd(P.unit.cpa,0)}</div></div>
+    <div class="tile"><div class="lbl">Y3 marketing % of revenue</div><div class="val">${revY[2]>0?fmt.pct(mktY[2]/revY[2],0):"—"}</div><div class="delta">${fmt.usd(mktY[2])} spend</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Monthly revenue</h3><div class="chart" id="pm-rev"></div></div>
+    <div class="card"><h3>Active traders</h3><div class="chart" id="pm-act"></div></div>
+    <div class="card"><h3>Marketing spend vs revenue</h3><div class="chart" id="pm-mkt"></div></div>
+    <div class="card"><h3>Monthly EBITDA (before shared substance)</h3><div class="chart" id="pm-eb"></div></div>
+    <div class="card"><h3>Implied trading volume</h3><div class="chart" id="pm-vol"></div></div>
+    <div class="card"><h3>Estimated fiat deposits & PSP</h3><p class="note">Deposits ≈ gross fees × ${A.pm.psp.depositMultiple}×. PSP fee ${A.pm.psp.feePct}% is charged to the end user unless the absorption lever below is raised.</p><div class="chart" id="pm-dep"></div></div>
+  </div>
+  <div class="card"><h3>Annual view</h3><div class="twrap"><table id="pm-annual"></table></div></div>
+  <div class="card sliders"><h3>Assumptions — Rain B2C</h3><div class="fields" id="pm-edit"></div>
+  <p class="note" style="margin-top:8px">Spend growth phases are % month-on-month for consecutive blocks of months (block lengths ${A.pm.growth.map(g=>g.m).join(" / ")}). Segment mix: ${A.pm.hvSharePct}% of users are residual global high-value traffic (LTV $${A.pm.ltvHV} / CPA $${A.pm.cpaHV}); the rest are core international markets.</p></div>`;
+
+  xyChart(document.getElementById("pm-rev"),
+    [{name:"Net protocol revenue",color:sColor(0),values:P.npr,kind:"area"},
+     {name:"Treasury yield",color:sColor(3),values:P.treasury}],{h:250});
+  xyChart(document.getElementById("pm-act"),
+    [{name:"Active traders",color:sColor(2),values:P.actives,kind:"area",fmtV:v=>fmt.num(v)}],{h:250,fmt:v=>fmt.num(v)});
+  xyChart(document.getElementById("pm-mkt"),
+    [{name:"Acquisition + builders + brand",color:sColor(1),values:P.mkt},
+     {name:"Total revenue",color:sColor(0),values:P.totalRev}],{h:250});
+  xyChart(document.getElementById("pm-eb"),
+    [{name:"PM EBITDA",color:sColor(2),values:P.ebitda,kind:"bar"}],{h:250});
+  xyChart(document.getElementById("pm-vol"),
+    [{name:"Volume",color:sColor(6),values:P.vol,kind:"area"}],{h:250});
+  xyChart(document.getElementById("pm-dep"),
+    [{name:"Deposits (est.)",color:sColor(4),values:P.deposits},
+     {name:"PSP absorbed",color:sColor(7),values:P.psp,kind:"bar"}],{h:250});
+
+  const tbl=el.querySelector("#pm-annual");
+  const rows=[
+    ["Net protocol revenue",P.npr],["Treasury yield",P.treasury],["Total revenue",P.totalRev,true],
+    ["COGS (infra + PSP absorbed)",P.cogs,false,true],["Marketing & builders",P.mkt,false,true],
+    ["Product & engineering",P.prodEng,false,true],["Licence + duty",P.duty.map((d,i)=>d+P.licAnnual[i]),false,true],
+    ["EBITDA (pre-shared costs)",P.ebitda,true]];
+  let h="<thead><tr><th></th>"+[0,1,2].map(y=>`<th>${pmYearLbl(y)}</th>`).join("")+"</tr></thead><tbody>";
+  for(const [n,a,tot,neg] of rows){
+    h+=`<tr class="${tot?'total':''}"><td>${n}</td>`+[0,1,2].map(y=>{
+      const v=ySum(a,y); return `<td class="${(!neg&&v<0)?'neg':''}">${neg?"−"+fmt.usd(Math.abs(v)):fmt.usd(v)}</td>`;}).join("")+"</tr>";
+  }
+  tbl.innerHTML=h+"</tbody>";
+
+  const ed=el.querySelector("#pm-edit"); const p=A.pm;
+  const add=(lbl,inp,unit)=>ed.appendChild(field(lbl,inp,unit));
+  add("Pre-launch seed users",numInput(p,"seedUsers",{step:500}),"users");
+  add("Month-1 acquisition spend",numInput(p,"spend1",{step:10000}),"$/mo");
+  p.growth.forEach((g,i)=>add(`Spend growth — phase ${i+1} (${g.m} mo)`,numInput(g,"pct",{step:0.5}),"%/mo"));
+  add("Organic surplus at launch",numInput(p,"organic0",{step:1}),"% of paid");
+  add("LTV — core markets",numInput(p,"ltvCore",{step:5}),"$");
+  add("LTV — residual high-value",numInput(p,"ltvHV",{step:10}),"$");
+  add("Residual high-value share",numInput(p,"hvSharePct",{step:1}),"% users");
+  add("User lifetime",numInput(p,"lifetimeMonths",{step:1}),"months");
+  add("CPA — core markets",numInput(p,"cpaCore",{step:5}),"$");
+  add("CPA — residual high-value",numInput(p,"cpaHV",{step:10}),"$");
+  add("Rain net take rate",numInput(p,"takeRatePct",{step:0.05}),"% of volume");
+  add("Overall marketplace fee",numInput(p,"overallFeePct",{step:0.05}),"% of volume");
+  add("Infra COGS",numInput(p,"cogsPctNPR",{step:0.5}),"% of net revenue");
+  add("Builders programme",numInput(p,"buildersPctVol",{step:0.01}),"% of volume");
+  add("Brand & PR month 1",numInput(p,"brand1",{step:1000}),"$/mo");
+  add("Brand growth",numInput(p,"brandGrowthPct",{step:0.5}),"%/mo");
+  add("Initial TVL",numInput(p,"tvl0",{step:1000000}),"$");
+  add("TVL capture of volume",numInput(p,"tvlCapturePct",{step:1}),"%");
+  add("Treasury yield",numInput(p,"treasuryYieldPct",{step:0.1}),"%/yr");
+  add("Regulatory duty",numInput(p,"dutyPct",{step:0.01}),"% of commission");
+  add("PM licence upfront",numInput(p.licence,"upfront",{step:1000}),"$");
+  add("PM licence annual",numInput(p.licence,"annual",{step:1000}),"$/yr");
+  add("PSP fee",numInput(p.psp,"feePct",{step:0.05}),"% of deposits");
+  add("PSP share absorbed by Rain",numInput(p.psp,"absorbedPct",{step:5}),"%");
+  add("Deposits ÷ gross fees",numInput(p.psp,"depositMultiple",{step:0.1}),"×");
+  add("Product & eng — Y1",numInput(p.personnel.prodEng,0,{step:5000}),"$/mo");
+  add("Product & eng — Y2",numInput(p.personnel.prodEng,1,{step:5000}),"$/mo");
+  add("Product & eng — Y3",numInput(p.personnel.prodEng,2,{step:5000}),"$/mo");
+}
+
+/* ============================================================
+   TAB: CONSOLIDATED — GROUP P&L
+   ============================================================ */
+function renderGroup(){
+  const el=document.getElementById("tab-group");
+  const G=MG, P=MPM, N=G.N;
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  const revY=[0,1,2].map(y=>ySum(G.revenue,y));
+  const ebY=[0,1,2].map(y=>ySum(G.ebitda,y));
+  const casNgrY=[0,1,2].map(y=>ySum(M.agg.ngr,y));
+  const pmRevY=[0,1,2].map(y=>ySum(P.totalRev,y));
+  el.innerHTML=`
+  <h2>Consolidated — one Gibraltar company, two licences</h2>
+  <p class="sub">Playmarkets (B2C Gaming Operator Licence — full casino model) + Rain B2C (Prediction Market Authorisation — parallel trader model), consolidated with the shared Gibraltar substance layer: local office & staff, management & compliance, external providers. Both operations launch January ${A.meta.startYear||2027}. Group revenue = casino NGR + Rain B2C revenue.</p>
+  <div class="tiles" style="margin-top:10px">
+    <div class="tile hero"><div class="lbl">Year-3 group revenue (${pmYearLbl(2)})</div><div class="val">${fmt.usd(revY[2])}</div><div class="delta">casino ${fmt.usd(casNgrY[2])} · prediction ${fmt.usd(pmRevY[2])}</div></div>
+    <div class="tile"><div class="lbl">Year-3 group EBITDA</div><div class="val">${fmt.usd(ebY[2])}</div><div class="delta ${ebY[2]>=0?'up':'down'}">${revY[2]>0?fmt.pct(ebY[2]/revY[2],0)+" margin":""}</div></div>
+    <div class="tile"><div class="lbl">Group EBITDA break-even</div><div class="val">${G.breakeven!=null?"M"+(G.breakeven+1):"—"}</div><div class="delta">${G.breakeven!=null?pmCal(G.breakeven)+" · min cash "+fmt.usd(G.minCash):"not in horizon"}</div></div>
+    <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(G.totalFunding)}</div><div class="delta">${rounds.length} rounds · peak need ${fmt.usd(G.peakNeed)}</div></div>
+    <div class="tile"><div class="lbl">Cash at M${N}</div><div class="val">${fmt.usd(G.cash[N-1])}</div><div class="delta">${G.cash[N-1]>=0?"funded through plan":"needs more funding"}</div></div>
+    <div class="tile"><div class="lbl">Customers M${N}</div><div class="val">${fmt.num(M.agg.actives[N-1]+P.actives[N-1])}</div><div class="delta">${fmt.num(M.agg.actives[N-1])} depositors · ${fmt.num(P.actives[N-1])} traders</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Monthly revenue by operation</h3><div class="chart" id="g-rev"></div></div>
+    <div class="card"><h3>Monthly EBITDA bridge</h3><p class="note">Casino + prediction markets − shared Gibraltar substance = group.</p><div class="chart" id="g-eb"></div></div>
+    <div class="card"><h3>Group cash & funding rounds</h3><div class="chart" id="g-cash"></div></div>
+    <div class="card"><h3>Cumulative group EBITDA</h3><div class="chart" id="g-cum"></div></div>
+  </div>
+  <div class="card"><h3>Annual consolidated P&amp;L</h3><div class="twrap"><table id="g-annual"></table></div></div>
+  <div class="card sliders"><h3>Shared Gibraltar substance ($/month, by year)</h3><div class="fields" id="g-edit"></div>
+  <p class="note" style="margin-top:8px">Local Gibraltar operations budgeted at ≈€600K in year 1, reducing as setup completes. Each operation carries its own licence (application + annual fee) and 0.15% regulatory duty inside its own P&amp;L; corporate tax 15% applies to taxable profits (no tax payable in-plan after loss relief).</p></div>
+  <div class="card sliders"><h3>Funding rounds</h3><div class="fields" id="g-fund"></div></div>`;
+
+  xyChart(document.getElementById("g-rev"),
+    [{name:"Playmarkets NGR",color:sColor(1),values:M.agg.ngr},
+     {name:"Rain B2C revenue",color:sColor(0),values:P.totalRev}],{stacked:true,h:250});
+  xyChart(document.getElementById("g-eb"),
+    [{name:"Group EBITDA",color:sColor(2),values:G.ebitda,kind:"bar"},
+     {name:"Casino EBITDA",color:sColor(1),values:M.ebitda},
+     {name:"PM EBITDA",color:sColor(0),values:P.ebitda},
+     {name:"Shared substance",color:sColor(7),values:G.shared.map(x=>-x)}],{h:250});
+  xyChart(document.getElementById("g-cash"),
+    [{name:"Group cash",color:sColor(0),values:G.cash,kind:"area"}],
+    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+  xyChart(document.getElementById("g-cum"),
+    [{name:"Cumulative EBITDA",color:sColor(3),values:G.cumE,kind:"area"}],{h:250});
+
+  const tbl=el.querySelector("#g-annual");
+  const casMkt=[0,1,2].map(y=>ySum(M.mktTotal,y));
+  const rowsA=[
+    {s:"Playmarkets — casino"},
+    {n:"GGR",a:y=>ySum(M.agg.ggr,y)},
+    {n:"Bonuses & jackpots",a:y=>ySum(M.agg.bonus,y),neg:true},
+    {n:"NGR",a:y=>ySum(M.agg.ngr,y),b:true},
+    {n:"Casino COGS (content, payments, KYC, tech, duty)",a:y=>ySum(M.cogsTotal,y),neg:true},
+    {n:"Casino marketing (CPA + revshare + brand)",a:y=>casMkt[y],neg:true},
+    {n:"Casino opex (personnel, ops, licence, G&A)",a:y=>ySum(M.opexTotal,y),neg:true},
+    {n:"Casino EBITDA",a:y=>ySum(M.ebitda,y),tot:true},
+    {s:"Rain B2C — prediction markets"},
+    {n:"Net protocol revenue + treasury",a:y=>pmRevY[y]},
+    {n:"PM COGS, marketing, product, licence & duty",a:y=>pmRevY[y]-ySum(P.ebitda,y),neg:true},
+    {n:"PM EBITDA",a:y=>ySum(P.ebitda,y),tot:true},
+    {s:"Group"},
+    {n:"Group revenue",a:y=>revY[y],b:true},
+    {n:"Shared Gibraltar substance",a:y=>ySum(G.shared,y),neg:true},
+    {n:"Group EBITDA",a:y=>ebY[y],tot:true},
+    {n:"Group EBITDA margin",custom:y=>revY[y]>0?fmt.pct(ebY[y]/revY[y],0):"—"},
+    {n:"Cumulative EBITDA",a:y=>G.cumE[Math.min(N-1,y*12+11)]}
+  ];
+  let h="<thead><tr><th></th>"+[0,1,2].map(y=>`<th>${pmYearLbl(y)}</th>`).join("")+"</tr></thead><tbody>";
+  for(const r of rowsA){
+    if(r.s){ h+=`<tr class="section"><td colspan="4">${r.s}</td></tr>`; continue; }
+    h+=`<tr class="${r.tot?'total':''}"><td>${r.n}</td>`+[0,1,2].map(y=>{
+      if(r.custom) return `<td>${r.custom(y)}</td>`;
+      const v=r.a(y);
+      return `<td class="${(!r.neg&&v<0)?'neg':''}">${r.neg?"−"+fmt.usd(Math.abs(v)):fmt.usd(v)}</td>`;
+    }).join("")+"</tr>";
+  }
+  tbl.innerHTML=h+"</tbody>";
+
+  const ed=el.querySelector("#g-edit");
+  const addf=(lbl,inp,unit)=>ed.appendChild(field(lbl,inp,unit));
+  ["Y1","Y2","Y3"].forEach((yl,i)=>addf(`Management & compliance — ${yl}`,numInput(A.shared.mgmtCompliance,i,{step:5000}),"$/mo"));
+  ["Y1","Y2","Y3"].forEach((yl,i)=>addf(`External providers — ${yl}`,numInput(A.shared.externalProviders,i,{step:2500}),"$/mo"));
+  ["Y1","Y2","Y3"].forEach((yl,i)=>addf(`Local Gibraltar operations — ${yl}`,numInput(A.shared.localOps,i,{step:2000}),"$/mo"));
+  const fd=el.querySelector("#g-fund");
+  (A.funding||[]).forEach((f,i)=>{
+    fd.appendChild(field(`${f.name||("Round "+(i+1))} — month`,numInput(f,"month",{step:1,min:1}),"M#"));
+    fd.appendChild(field(`${f.name||("Round "+(i+1))} — amount`,numInput(f,"amount",{step:500000}),"$"));
+  });
+}
+
+/* ============================================================
+   Router
+   ============================================================ */
+function renderTab(id){
+  if(!M) recompute();
+  if(id==="group")renderGroup();
+  else if(id==="pm")renderPM();
+  else if(id==="dashboard")renderDashboard();
+  else if(id==="assumptions")renderAssumptions();
+  else if(id==="games")renderGames();
+  else if(id==="geos")renderGeos();
+  else if(id==="marketing")renderMarketing();
+  else if(id==="team")renderTeam();
+  else if(id==="milestones")renderMilestones();
+  else if(id==="cohorts")renderCohorts();
+  else if(id==="pnl")renderPnl();
+  else if(id==="finance")renderFinance();
+  else if(id==="cash")renderCash();
+  else if(id==="sim")renderSim();
+}
+recompute();
+document.querySelector('nav button[data-tab="group"]').classList.add("on");
+document.getElementById("tab-group").classList.add("on");
+renderTab("group");
+/* Load the latest saved defaults from the database (deployed mode only). */
+(async()=>{
+  if(!location.protocol.startsWith("http")) return;
+  try{
+    const r=await fetch("/api/defaults",{cache:"no-store"});
+    if(!r.ok) return;
+    const j=await r.json();
+    if(j&&j.meta&&j.geos&&j.games&&j.personnel){ A=JSON.parse(JSON.stringify(j)); refresh(); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
