@@ -1896,9 +1896,9 @@ function renderFinance(){
   const N=M.N;
   const sy=A.meta.startYear||2026, sm=A.meta.startCalMonth||9;
   const idxFor=(y,mo)=>(y-sy)*12+(mo-sm); // model month index (0-based) for a calendar month
-  // fixed reporting window: Q4 2026 → Q3 2028 inclusive
-  const quarters=[]; let qy=2026,qq=4;
-  for(let i=0;i<8;i++){ quarters.push({y:qy,q:qq}); qq++; if(qq>4){qq=1;qy++;} }
+  // reporting window: Q1 2027 → Q4 2029 (full plan horizon)
+  const quarters=[]; let qy=2027,qq=1;
+  for(let i=0;i<12;i++){ quarters.push({y:qy,q:qq}); qq++; if(qq>4){qq=1;qy++;} }
   const buckets=quarters.map(({y,q})=>{
     const idx=[3*q-2,3*q-1,3*q].map(mo=>idxFor(y,mo)).filter(t=>t>=0&&t<N);
     return {label:`Q${q}-${String(y).slice(2)}`, y,q, idx, partial:idx.length>0&&idx.length<3};
@@ -1944,7 +1944,7 @@ function renderFinance(){
   const closeCash=b=>b.idx.length? M.cash[b.idx[b.idx.length-1]] : null;
   const html=`
   <h2>Finance</h2>
-  <p class="sub">Top-down quarterly financial statements, Q4 2026 – Q3 2028 inclusive (calendar quarters; model starts ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][sm-1]} ${sy} — change in Assumptions §1). ${anyPartial?"Quarters marked * are partly outside the model horizon.":""} Monthly detail lives on the P&L and Cash Flow tabs.</p>
+  <p class="sub">Top-down quarterly financial statements for the full plan horizon, Q1 2027 – Q4 2029 (casino-standalone view; group cash lives on Consolidated) (calendar quarters; model starts ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][sm-1]} ${sy} — change in Assumptions §1). ${anyPartial?"Quarters marked * are partly outside the model horizon.":""} Monthly detail lives on the P&L and Cash Flow tabs.</p>
   <div class="card"><div class="twrap"><table>
     <thead><tr><th>USD</th>${buckets.map(b=>`<th>${b.label}${b.partial?"*":""}</th>`).join("")}<th>Total</th></tr></thead>
     <tbody>
