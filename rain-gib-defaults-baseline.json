@@ -4,7 +4,7 @@
     "startingCapital": 0,
     "startYear": 2027,
     "startCalMonth": 1,
-    "note": "Rain dual-licence base case (Aug-2026): Playmarkets as a CRYPTO-FIRST casino (~75-80% of GGR via crypto rails — Crypto global, India, SEA — originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable) scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty); Rain B2C prediction markets in parallel (Prediction Market Authorisation). Each operation runs its own P&L; consolidation adds the shared Gibraltar substance layer."
+    "note": "Rain dual-licence base case (reinvestment scenario C baked: casino caps +50%/+50%/+25% on Crypto global/LatAm/SEA from ~M26; Rain B2C spend growth 3%/mo in Y4-5) (Aug-2026): Playmarkets as a CRYPTO-FIRST casino (~75-80% of GGR via crypto rails — Crypto global, India, SEA — originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable) scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty); Rain B2C prediction markets in parallel (Prediction Market Authorisation). Each operation runs its own P&L; consolidation adds the shared Gibraltar substance layer."
   },
   "funding": [
     {
@@ -594,7 +594,7 @@
       "mkStart": 2,
       "mkInit": 9129,
       "mkGrowth": 10,
-      "mkCap": 91291,
+      "mkCap": 114114,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -660,7 +660,7 @@
       "mkStart": 4,
       "mkInit": 4966,
       "mkGrowth": 10,
-      "mkCap": 49658,
+      "mkCap": 74487,
       "mixOverride": {
         "vslots": 35,
         "jslots": 4,
@@ -693,7 +693,7 @@
       "mkStart": 1,
       "mkInit": 17556,
       "mkGrowth": 10,
-      "mkCap": 175560,
+      "mkCap": 263340,
       "mixOverride": {
         "vslots": 28,
         "jslots": 3,
@@ -730,6 +730,10 @@
       {
         "m": 12,
         "pct": 1
+      },
+      {
+        "m": 24,
+        "pct": 3
       }
     ],
     "organic0": 20,
