@@ -2229,7 +2229,7 @@ function renderPM(){
   </div>
   <div class="card"><h3>Annual view</h3><div class="twrap"><table id="pm-annual"></table></div></div>
   <div class="card sliders"><h3>Assumptions — Rain B2C</h3><div class="fields" id="pm-edit"></div>
-  <p class="note" style="margin-top:8px">Spend growth phases are % month-on-month for consecutive blocks of months (block lengths ${A.pm.growth.map(g=>g.m).join(" / ")}). Segment mix: ${A.pm.hvSharePct}% of users are residual global high-value traffic (LTV $${A.pm.ltvHV} / CPA $${A.pm.cpaHV}); the rest are core international markets.</p></div>`;
+  <p class="note" style="margin-top:8px">Spend growth phases are % month-on-month for consecutive blocks of months (block lengths ${A.pm.growth.map(g=>g.m).join(" / ")}). Segment mix: a premium tier — the top ${A.pm.hvSharePct}% of traders (LTV $${A.pm.ltvHV} / CPA $${A.pm.cpaHV}) — sits above the core user base, reflecting typical value concentration.</p></div>`;
 
   xyChart(document.getElementById("pm-rev"),
     [{name:"Net protocol revenue",color:sColor(0),values:P.npr,kind:"area"},
@@ -2266,12 +2266,12 @@ function renderPM(){
   add("Month-1 acquisition spend",numInput(p,"spend1",{step:10000}),"$/mo");
   p.growth.forEach((g,i)=>add(`Spend growth — phase ${i+1} (${g.m} mo)`,numInput(g,"pct",{step:0.5}),"%/mo"));
   add("Organic surplus at launch",numInput(p,"organic0",{step:1}),"% of paid");
-  add("LTV — core markets",numInput(p,"ltvCore",{step:5}),"$");
-  add("LTV — residual high-value",numInput(p,"ltvHV",{step:10}),"$");
-  add("Residual high-value share",numInput(p,"hvSharePct",{step:1}),"% users");
+  add("LTV — core user base",numInput(p,"ltvCore",{step:5}),"$");
+  add("LTV — premium tier",numInput(p,"ltvHV",{step:10}),"$");
+  add("Premium tier share",numInput(p,"hvSharePct",{step:1}),"% users");
   add("User lifetime",numInput(p,"lifetimeMonths",{step:1}),"months");
-  add("CPA — core markets",numInput(p,"cpaCore",{step:5}),"$");
-  add("CPA — residual high-value",numInput(p,"cpaHV",{step:10}),"$");
+  add("CPA — core user base",numInput(p,"cpaCore",{step:5}),"$");
+  add("CPA — premium tier",numInput(p,"cpaHV",{step:10}),"$");
   add("Rain net take rate",numInput(p,"takeRatePct",{step:0.05}),"% of volume");
   add("Overall marketplace fee",numInput(p,"overallFeePct",{step:0.05}),"% of volume");
   add("Infra COGS",numInput(p,"cogsPctNPR",{step:0.5}),"% of net revenue");
