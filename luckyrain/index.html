@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rain Prediction Markets and Playmarkets</title>
+<title>Lucky Rain Business Plan</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%23eda100'%2F%3E%3Ctext%20x%3D'50'%20y%3D'72'%20font-size%3D'60'%20text-anchor%3D'middle'%3ER%3C%2Ftext%3E%3C%2Fsvg%3E">
 <style>
   :root{
@@ -129,7 +129,7 @@
 <body>
 <header>
   <div class="hd-row">
-    <div class="brand">Rain Prediction Markets <span>and Playmarkets</span></div>
+    <div class="brand">Lucky Rain <span>Business Plan</span></div>
     <nav id="nav"></nav>
     <div class="hd-actions">
       <button class="ghost-btn" id="btnTheme" title="Toggle dark mode">◐</button>
@@ -137,8 +137,6 @@
   </div>
 </header>
 <main>
-  <div id="tab-group" class="tab"></div>
-  <div id="tab-pm" class="tab"></div>
   <div id="tab-dashboard" class="tab"></div>
   <div id="tab-assumptions" class="tab"></div>
   <div id="tab-games" class="tab"></div>
@@ -152,8 +150,7 @@
   <div id="tab-cash" class="tab"></div>
   <div id="tab-sim" class="tab"></div>
   <footer>
-    <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px;margin-bottom:10px">Save current numbers as new default</button>
-    <div>All figures USD · 60-month horizon · Jan-2027 dual launch · Playmarkets (casino) + Rain Prediction Markets, one Gibraltar company, two licences · all assumptions editable</div>
+    <div>All figures USD · 60-month horizon · Jan-2027 launch · Lucky Rain — crypto-first casino · Gibraltar B2C Gaming Operator Licence · all assumptions editable</div>
   </footer>
 </main>
 <div class="tip" id="tip"></div>
@@ -290,7 +287,7 @@ var defaultAssumptions = function(){ return {
 
 /* Saved-default overrides: baked in by Claude when you send a saved default file.
    The durable "DB" lives in the claude.ai project (claude/model-defaults.json). */
-const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":60,"startingCapital":0,"startYear":2027,"startCalMonth":1,"note":"Rain dual-licence base case v2 (Oct-2026): volume-first Rain Prediction Markets engine \u2014 cohort retention curve (front-loaded churn, 24-mo avg core life), Rain take 2.0% of traded value = dynamic trading fee 1.2% (cap 2.5%) + 0.8% market-making spread on Rain-supplied liquidity; liquidity & resolution risk 0.1% of volume; the $10M market-making float (ramping $3M\u2192$10M by M12) is an AT-WILL liquidity allocation from Rain treasury \u2014 redeemable, outside the $18M raise \u2014 with treasury yield accruing to the operation while deployed; corporate tax 15% on consolidated group taxable profit with loss carryforward. Playmarkets casino side unchanged (crypto-first, scenario C reinvestment caps +50%/+50%/+25% on Crypto global/LatAm/SEA from ~M26)."},"funding":[{"name":"Round 1 \u2014 Build, Launch & Prove","month":1,"amount":7000000,"note":"Lean by design: Gibraltar setup (both licence applications, local office & team), platform build, Jan-2027 dual launch. Covers the first half-year while both businesses generate live cohort data. The market-making liquidity ($3M\u2192$10M) is NOT in this raise \u2014 it is an at-will, redeemable allocation from Rain treasury, deployed as market depth."},{"name":"Round 2 \u2014 Scale on Proof","month":7,"amount":11000000,"note":"The heavy investment, raised on two quarters of live cohort economics (CPA, retention, hold, trader activity) across both operations. Carries the group through EBITDA breakeven (~M24) \u2014 the trough sits at ~M23, so this round is sized with modest buffer; the liquidity allocation remains outside the raise."}],"global":{"bonusPctGGR":17,"fraudPctGGR":2.6,"kycPerFTD":2,"supportPerActive":1.5,"crmMonthly":6000,"toolsMonthly":3000,"brandMonthly":10000,"brandStartMonth":6,"rsShareAff":40,"affRevsharePct":30,"organicPct":15,"retMultAff":1.05,"retMultMedia":0.85,"retMultOrganic":1.25,"jackpotPctWager":0,"scaleMonth":11,"scaleMult":2,"feeCompressPP":2,"feeCompressAtDep":3000000},"personnel":[{"role":"CEO (Roy)","dept":"Executive","phase":"core","salary":25000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five. Also owns cohort analytics & the smoking-gun dashboard (with Claude) until the analyst hire at M8 \u2014 the M7 scale-up call is the CEO's number."},{"role":"CTO","dept":"Engineering","phase":"core","salary":20000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},{"role":"Head of Product","dept":"Product","phase":"core","salary":15000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},{"role":"Head of User Acquisition","dept":"User Acquisition","phase":"core","salary":10500,"bonus":23000,"start":1,"h":[1,1,1],"wk1":true,"note":"Base $10.5K + up to $23K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},{"role":"Head of Payments & Risk","dept":"Payments & Risk","phase":"growth","salary":6500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},{"role":"Compliance Officer / MLRO","dept":"Compliance","phase":"growth","salary":6000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Gibraltar licence applications (gaming + prediction markets) filed pre-launch. KYC/AML program, RG policies, geo-blocking matrix."},{"role":"Legal advisor (external retainer)","dept":"Compliance","phase":"core","salary":4500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"External gaming counsel on retainer \u2014 entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},{"role":"Head of CRM & Monetization","dept":"Monetization/CRM","phase":"growth","salary":7500,"bonus":5000,"start":4,"h":[1,1,1],"note":"Base $7.5K + up to $5K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost \u2264 target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention \u2265 model M1."},{"role":"Casino Manager (curation & integrations)","dept":"Product","phase":"growth","salary":7500,"bonus":0,"start":3,"h":[1,1,1],"note":"Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},{"role":"Platform engineers","dept":"Engineering","phase":"growth","salary":11000,"bonus":0,"start":2,"h":[3,3,4],"note":"PAM, wallet, cashier, integrations, site."},{"role":"Game devs (in-house studio)","dept":"Games Studio","phase":"growth","salary":11000,"bonus":0,"start":5,"h":[1,1,2],"note":"Crash + instant titles = the 20% internal-GGR margin play. Launch runs on external content; ship own title #1 by M9, #2 by M12."},{"role":"Affiliate managers","dept":"User Acquisition","phase":"growth","salary":5500,"bonus":11000,"start":3,"h":[1,1,2],"note":"Base $5.5K + up to $11K/mo bonus on payback-qualified FTDs (not raw volume). Pre-launch deal pipeline from M3, then program ops, deal compliance, affiliate fraud watch."},{"role":"Media buyers","dept":"User Acquisition","phase":"growth","salary":5000,"bonus":4000,"start":5,"h":[1,1,2],"note":"Base $5K + up to $4K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},{"role":"CRM executives","dept":"Monetization/CRM","phase":"later","salary":5000,"bonus":0,"start":6,"h":[1,1,2],"note":"Base $5K + up to $3K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},{"role":"VIP managers","dept":"VIP","phase":"growth","salary":4500,"bonus":13000,"start":6,"h":[1,2,4],"note":"Base $4.5K + up to $13K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35\u201360% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15\u201325% of VIP GGR; ratio ~1 host per 150\u2013250 VIPs."},{"role":"Payment ops & payouts","dept":"Payments & Risk","phase":"growth","salary":5500,"bonus":0,"start":6,"h":[2,2,4],"note":"Payout review, PSP reconciliation, chargeback representment, rail failover. Partially automated; scales with deposit volume (~$95M/mo at M36)."},{"role":"Risk & fraud analysts","dept":"Payments & Risk","phase":"later","salary":5000,"bonus":0,"start":7,"h":[2,3,5],"note":"Salary-only by design \u2014 bonusing risk staff on volume creates the wrong incentive. Scales with FTD volume: ~1 analyst per 20\u201325K monthly FTDs. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},{"role":"Product designer","dept":"Product","phase":"growth","salary":6000,"bonus":0,"start":3,"h":[1,1,1],"note":"Site, promos, game art for in-house titles."},{"role":"Data analysts","dept":"Data","phase":"growth","salary":8000,"bonus":0,"start":8,"h":[1,1,2],"note":"Takes over the cohort/LTV dashboard from the CEO at M8. Cohort tracking vs this model; owns actual-vs-model on every base KPI from then on."},{"role":"Support leads","dept":"Support","phase":"growth","salary":5000,"bonus":0,"start":5,"h":[1,2,3],"note":"Manage the outsourced 24/7 agent pool (the $-per-active variable line \u2248 110\u2013150 agents at M36). ~1 lead per 25\u201335 agents."},{"role":"Finance & admin","dept":"Finance & Ops","phase":"growth","salary":8000,"bonus":0,"start":4,"h":[1,1,1],"note":"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."}],"bonusAttainPct":50,"payrollLoad":28,"platform":{"capexTotal":500000,"capexMonths":9,"amortMonths":24},"cogs":{"hostingStart":8000,"hostingStartMonth":3,"hostingGrowthPct":3,"hostingCap":45000,"softwareMonthly":10000,"softwareStartMonth":4,"aggregatorMin":5000,"antifraudMonthly":2500,"aggregatorStartMonth":3},"ga":{"legal":4000,"office":5000,"travel":4000,"misc":5000,"contingencyPct":5},"corpTaxPct":15,"wc":{"reserveMonths":4},"licenses":[{"name":"Gibraltar B2C Gaming Operator Licence","enabled":true,"upfront":39000,"annual":129000,"startMonth":1}],"games":[{"id":"vslots","name":"Video slots","source":"ext","rs":9,"rtp":95.5,"velocity":400,"avgBet":0.9,"mix":35},{"id":"jslots","name":"Jackpot slots (progressive)","source":"ext","rs":11,"rtp":92,"velocity":350,"avgBet":1,"mix":4},{"id":"roul","name":"RNG roulette","source":"ext","rs":8,"rtp":97.3,"velocity":100,"avgBet":4,"mix":4},{"id":"bj","name":"RNG blackjack","source":"ext","rs":8,"rtp":99,"velocity":180,"avgBet":6,"mix":2.5},{"id":"vpoker","name":"Video poker","source":"ext","rs":8,"rtp":99.2,"velocity":200,"avgBet":2.5,"mix":5},{"id":"scratch","name":"Scratch & instant win","source":"ext","rs":9,"rtp":95,"velocity":250,"avgBet":1,"mix":1.5},{"id":"live","name":"Live casino","source":"ext","rs":14,"rtp":97.5,"velocity":60,"avgBet":25,"mix":7},{"id":"crash","name":"Crash (own)","source":"own","rs":0,"rtp":97,"velocity":180,"avgBet":2,"mix":20},{"id":"inst","name":"Instant \u2014 Plinko/Mines (own)","source":"own","rs":0,"rtp":98,"velocity":150,"avgBet":1.5,"mix":21}],"geos":[{"id":"ca","name":"Canada","enabled":true,"cpaAff":220,"cpaMedia":202,"mediaSharePct":20,"betMult":1,"hours":9,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":2,"mkInit":3887,"mkGrowth":10,"mkCap":32604,"mixOverride":{"vslots":34,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":12,"crash":18,"inst":14}},{"id":"nz","name":"New Zealand","enabled":true,"cpaAff":194,"cpaMedia":176,"mediaSharePct":20,"betMult":0.95,"hours":8.5,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":3,"mkInit":1693,"mkGrowth":10,"mkCap":13794,"mixOverride":{"vslots":34,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":12,"crash":18,"inst":14}},{"id":"in","name":"India (crypto)","enabled":true,"cpaAff":22,"cpaMedia":15,"mediaSharePct":45,"betMult":0.13,"hours":9,"m1":27,"m3":13.8,"m6":7.1,"hold":45,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":4,"mkInit":4815,"mkGrowth":10,"mkCap":40128,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"sea","name":"SEA (TH/VN/ID/PH)","enabled":true,"cpaAff":53,"cpaMedia":48,"mediaSharePct":30,"betMult":0.3,"hours":9,"m1":31,"m3":18.4,"m6":9.5,"hold":45,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":2,"mkInit":9129,"mkGrowth":10,"mkCap":114114,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"br","name":"Brazil","enabled":false,"cpaAff":70,"cpaMedia":57,"mediaSharePct":40,"betMult":0.25,"hours":9,"m1":31,"m3":18.4,"m6":10.7,"hold":42,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":5,"mkStart":3,"mkInit":0,"mkGrowth":10,"mkCap":0,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"lat","name":"LatAm other (MX/CL)","enabled":true,"cpaAff":31,"cpaMedia":29,"mediaSharePct":35,"betMult":0.26,"hours":8.5,"m1":30,"m3":17.3,"m6":9.5,"hold":42,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":3,"mkStart":4,"mkInit":4966,"mkGrowth":10,"mkCap":74487,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"cr","name":"Crypto global","enabled":true,"cpaAff":150,"cpaMedia":150,"mediaSharePct":15,"betMult":1.45,"hours":10,"m1":31,"m3":18,"m6":12,"hold":37,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":1,"mkInit":17556,"mkGrowth":10,"mkCap":263340,"mixOverride":{"vslots":28,"jslots":3,"roul":3,"bj":2,"vpoker":3,"scratch":2,"live":9,"crash":28,"inst":22}}],"pm":{"seedUsers":3000,"spend1":200000,"growth":[{"m":6,"pct":21},{"m":6,"pct":8},{"m":6,"pct":8},{"m":6,"pct":2},{"m":12,"pct":1},{"m":24,"pct":3}],"organic0":20,"organicStep1":1,"organicStep2":0.5,"volPerActive":406,"hvVolMult":2.29,"hvSharePct":10,"hvLifeMult":1.5,"lifetimeMonths":24,"churnEarlyPct":12,"churnTailPct":2.4,"churnDecay":0.78,"cpaCore":75,"cpaHV":200,"feeEffPct":1.2,"feeCapPct":2.5,"spreadPct":0.8,"overallFeePct":3.83,"cogsPctNPR":8,"buildersPctVol":0.1,"liqRiskPctVol":0.1,"brand1":15000,"brandGrowthPct":5,"tvl0":10000000,"tvlCapturePct":20,"treasuryYieldPct":1.7,"floatSeed":3000000,"floatRampMonths":12,"dutyPct":0.15,"licence":{"upfront":39000,"annual":129000},"psp":{"feePct":0.5,"absorbedPct":0,"depositMultiple":2},"personnel":{"prodEng":[40000,75000,130000,150000,165000]}},"shared":{"mgmtCompliance":[60000,90000,140000,160000,175000],"externalProviders":[25000,35000,45000,50000,55000],"localOps":[54000,40000,30000,32000,34000]}}/*__END_DEFAULTS__*/;
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":60,"startingCapital":0,"startYear":2027,"startCalMonth":1,"note":"Lucky Rain (frozen copy, Oct-2026, maintained separately from the Rain plan): crypto-first casino \u2014 ~75-80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable \u2014 scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty)."},"funding":[{"name":"Round 1 \u2014 Build, Launch & Prove","month":1,"amount":7000000,"note":"Lean by design: Gibraltar setup (licence application, local office & team), platform build, Jan-2027 launch. Covers the first half-year of live cohort data."},{"name":"Round 2 \u2014 Scale on Proof","month":7,"amount":11000000,"note":"The heavy investment, raised on two quarters of live cohort economics (CPA, retention, hold, trader LTV). Carries the business through EBITDA breakeven."}],"global":{"bonusPctGGR":17,"fraudPctGGR":2.6,"kycPerFTD":2,"supportPerActive":1.5,"crmMonthly":6000,"toolsMonthly":3000,"brandMonthly":10000,"brandStartMonth":6,"rsShareAff":40,"affRevsharePct":30,"organicPct":15,"retMultAff":1.05,"retMultMedia":0.85,"retMultOrganic":1.25,"jackpotPctWager":0,"scaleMonth":11,"scaleMult":2,"feeCompressPP":2,"feeCompressAtDep":3000000},"personnel":[{"role":"CEO (Roy)","dept":"Executive","phase":"core","salary":25000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five. Also owns cohort analytics & the smoking-gun dashboard (with Claude) until the analyst hire at M8 \u2014 the M7 scale-up call is the CEO's number."},{"role":"CTO","dept":"Engineering","phase":"core","salary":20000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},{"role":"Head of Product","dept":"Product","phase":"core","salary":15000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},{"role":"Head of User Acquisition","dept":"User Acquisition","phase":"core","salary":10500,"bonus":23000,"start":1,"h":[1,1,1],"wk1":true,"note":"Base $10.5K + up to $23K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},{"role":"Head of Payments & Risk","dept":"Payments & Risk","phase":"growth","salary":6500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},{"role":"Compliance Officer / MLRO","dept":"Compliance","phase":"growth","salary":6000,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"Gibraltar licence applications (gaming) filed pre-launch. KYC/AML program, RG policies, geo-blocking matrix."},{"role":"Legal advisor (external retainer)","dept":"Compliance","phase":"core","salary":4500,"bonus":0,"start":1,"h":[1,1,1],"wk1":true,"note":"External gaming counsel on retainer \u2014 entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},{"role":"Head of CRM & Monetization","dept":"Monetization/CRM","phase":"growth","salary":7500,"bonus":5000,"start":4,"h":[1,1,1],"note":"Base $7.5K + up to $5K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost \u2264 target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention \u2265 model M1."},{"role":"Casino Manager (curation & integrations)","dept":"Product","phase":"growth","salary":7500,"bonus":0,"start":3,"h":[1,1,1],"note":"Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},{"role":"Platform engineers","dept":"Engineering","phase":"growth","salary":11000,"bonus":0,"start":2,"h":[3,3,4],"note":"PAM, wallet, cashier, integrations, site."},{"role":"Game devs (in-house studio)","dept":"Games Studio","phase":"growth","salary":11000,"bonus":0,"start":5,"h":[1,1,2],"note":"Crash + instant titles = the 20% internal-GGR margin play. Launch runs on external content; ship own title #1 by M9, #2 by M12."},{"role":"Affiliate managers","dept":"User Acquisition","phase":"growth","salary":5500,"bonus":11000,"start":3,"h":[1,1,2],"note":"Base $5.5K + up to $11K/mo bonus on payback-qualified FTDs (not raw volume). Pre-launch deal pipeline from M3, then program ops, deal compliance, affiliate fraud watch."},{"role":"Media buyers","dept":"User Acquisition","phase":"growth","salary":5000,"bonus":4000,"start":5,"h":[1,1,2],"note":"Base $5K + up to $4K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},{"role":"CRM executives","dept":"Monetization/CRM","phase":"later","salary":5000,"bonus":0,"start":6,"h":[1,1,2],"note":"Base $5K + up to $3K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},{"role":"VIP managers","dept":"VIP","phase":"growth","salary":4500,"bonus":13000,"start":6,"h":[1,2,4],"note":"Base $4.5K + up to $13K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35\u201360% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15\u201325% of VIP GGR; ratio ~1 host per 150\u2013250 VIPs."},{"role":"Payment ops & payouts","dept":"Payments & Risk","phase":"growth","salary":5500,"bonus":0,"start":6,"h":[2,2,4],"note":"Payout review, PSP reconciliation, chargeback representment, rail failover. Partially automated; scales with deposit volume (~$95M/mo at M36)."},{"role":"Risk & fraud analysts","dept":"Payments & Risk","phase":"later","salary":5000,"bonus":0,"start":7,"h":[2,3,5],"note":"Salary-only by design \u2014 bonusing risk staff on volume creates the wrong incentive. Scales with FTD volume: ~1 analyst per 20\u201325K monthly FTDs. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},{"role":"Product designer","dept":"Product","phase":"growth","salary":6000,"bonus":0,"start":3,"h":[1,1,1],"note":"Site, promos, game art for in-house titles."},{"role":"Data analysts","dept":"Data","phase":"growth","salary":8000,"bonus":0,"start":8,"h":[1,1,2],"note":"Takes over the cohort/LTV dashboard from the CEO at M8. Cohort tracking vs this model; owns actual-vs-model on every base KPI from then on."},{"role":"Support leads","dept":"Support","phase":"growth","salary":5000,"bonus":0,"start":5,"h":[1,2,3],"note":"Manage the outsourced 24/7 agent pool (the $-per-active variable line \u2248 110\u2013150 agents at M36). ~1 lead per 25\u201335 agents."},{"role":"Finance & admin","dept":"Finance & Ops","phase":"growth","salary":8000,"bonus":0,"start":4,"h":[1,1,1],"note":"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."}],"bonusAttainPct":50,"payrollLoad":28,"platform":{"capexTotal":500000,"capexMonths":9,"amortMonths":24},"cogs":{"hostingStart":8000,"hostingStartMonth":3,"hostingGrowthPct":3,"hostingCap":45000,"softwareMonthly":10000,"softwareStartMonth":4,"aggregatorMin":5000,"antifraudMonthly":2500,"aggregatorStartMonth":3},"ga":{"legal":4000,"office":5000,"travel":4000,"misc":5000,"contingencyPct":5},"corpTaxPct":15,"wc":{"reserveMonths":4},"licenses":[{"name":"Gibraltar B2C Gaming Operator Licence","enabled":true,"upfront":39000,"annual":129000,"startMonth":1}],"games":[{"id":"vslots","name":"Video slots","source":"ext","rs":9,"rtp":95.5,"velocity":400,"avgBet":0.9,"mix":35},{"id":"jslots","name":"Jackpot slots (progressive)","source":"ext","rs":11,"rtp":92,"velocity":350,"avgBet":1,"mix":4},{"id":"roul","name":"RNG roulette","source":"ext","rs":8,"rtp":97.3,"velocity":100,"avgBet":4,"mix":4},{"id":"bj","name":"RNG blackjack","source":"ext","rs":8,"rtp":99,"velocity":180,"avgBet":6,"mix":2.5},{"id":"vpoker","name":"Video poker","source":"ext","rs":8,"rtp":99.2,"velocity":200,"avgBet":2.5,"mix":5},{"id":"scratch","name":"Scratch & instant win","source":"ext","rs":9,"rtp":95,"velocity":250,"avgBet":1,"mix":1.5},{"id":"live","name":"Live casino","source":"ext","rs":14,"rtp":97.5,"velocity":60,"avgBet":25,"mix":7},{"id":"crash","name":"Crash (own)","source":"own","rs":0,"rtp":97,"velocity":180,"avgBet":2,"mix":20},{"id":"inst","name":"Instant \u2014 Plinko/Mines (own)","source":"own","rs":0,"rtp":98,"velocity":150,"avgBet":1.5,"mix":21}],"geos":[{"id":"ca","name":"Canada","enabled":true,"cpaAff":220,"cpaMedia":202,"mediaSharePct":20,"betMult":1,"hours":9,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":2,"mkInit":3887,"mkGrowth":10,"mkCap":32604,"mixOverride":{"vslots":34,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":12,"crash":18,"inst":14}},{"id":"nz","name":"New Zealand","enabled":true,"cpaAff":194,"cpaMedia":176,"mediaSharePct":20,"betMult":0.95,"hours":8.5,"m1":31,"m3":23,"m6":14.3,"hold":40,"tax":0.15,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":3,"mkInit":1693,"mkGrowth":10,"mkCap":13794,"mixOverride":{"vslots":34,"jslots":6,"roul":6,"bj":4,"vpoker":4,"scratch":4,"live":12,"crash":18,"inst":14}},{"id":"in","name":"India (crypto)","enabled":true,"cpaAff":22,"cpaMedia":15,"mediaSharePct":45,"betMult":0.13,"hours":9,"m1":27,"m3":13.8,"m6":7.1,"hold":45,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":4,"mkInit":4815,"mkGrowth":10,"mkCap":40128,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"sea","name":"SEA (TH/VN/ID/PH)","enabled":true,"cpaAff":53,"cpaMedia":48,"mediaSharePct":30,"betMult":0.3,"hours":9,"m1":31,"m3":18.4,"m6":9.5,"hold":45,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":2,"mkInit":9129,"mkGrowth":10,"mkCap":114114,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"br","name":"Brazil","enabled":false,"cpaAff":70,"cpaMedia":57,"mediaSharePct":40,"betMult":0.25,"hours":9,"m1":31,"m3":18.4,"m6":10.7,"hold":42,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":5,"mkStart":3,"mkInit":0,"mkGrowth":10,"mkCap":0,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"lat","name":"LatAm other (MX/CL)","enabled":true,"cpaAff":31,"cpaMedia":29,"mediaSharePct":35,"betMult":0.26,"hours":8.5,"m1":30,"m3":17.3,"m6":9.5,"hold":42,"tax":0.15,"feeDep":3,"feeWd":1,"resPct":3,"mkStart":4,"mkInit":4966,"mkGrowth":10,"mkCap":74487,"mixOverride":{"vslots":35,"jslots":4,"roul":4,"bj":2,"vpoker":3,"scratch":3,"live":15,"crash":18,"inst":16}},{"id":"cr","name":"Crypto global","enabled":true,"cpaAff":150,"cpaMedia":150,"mediaSharePct":15,"betMult":1.45,"hours":10,"m1":31,"m3":18,"m6":12,"hold":37,"tax":0.15,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":1,"mkInit":17556,"mkGrowth":10,"mkCap":263340,"mixOverride":{"vslots":28,"jslots":3,"roul":3,"bj":2,"vpoker":3,"scratch":2,"live":9,"crash":28,"inst":22}}]}/*__END_DEFAULTS__*/;
 const _baseDefaults = defaultAssumptions;
 defaultAssumptions = function(){
   if(DEFAULT_OVERRIDES){ try{ return JSON.parse(JSON.stringify(DEFAULT_OVERRIDES)); }catch(e){} }
@@ -587,22 +584,18 @@ function compute(A, sim){
    ============================================================ */
 function pmDefaults(){
   return {
-    seedUsers:3000, spend1:200000,
-    growth:[{m:6,pct:21},{m:6,pct:8},{m:6,pct:8},{m:6,pct:2},{m:12,pct:1},{m:24,pct:3}],
+    seedUsers:12500, spend1:200000,
+    growth:[{m:6,pct:21},{m:6,pct:8},{m:6,pct:8},{m:6,pct:2},{m:12,pct:1}],
     organic0:20, organicStep1:1, organicStep2:0.5,
-    volPerActive:406, hvVolMult:2.29, hvSharePct:10, hvLifeMult:1.5,
-    lifetimeMonths:24, churnEarlyPct:12, churnTailPct:2.4, churnDecay:0.78,
+    ltvCore:175, ltvHV:400, hvSharePct:10, lifetimeMonths:24,
     cpaCore:75, cpaHV:200,
-    feeEffPct:1.2, feeCapPct:2.5, spreadPct:0.8,
-    overallFeePct:3.83,
-    cogsPctNPR:8, buildersPctVol:0.1, liqRiskPctVol:0.1,
-    brand1:15000, brandGrowthPct:5,
+    takeRatePct:1.795, overallFeePct:3.625,
+    cogsPctNPR:8, buildersPctVol:0.1, brand1:15000, brandGrowthPct:5,
     tvl0:10000000, tvlCapturePct:20, treasuryYieldPct:1.7,
-    floatSeed:3000000, floatRampMonths:12,
     dutyPct:0.15,
     licence:{upfront:39000, annual:129000},
     psp:{feePct:0.5, absorbedPct:0, depositMultiple:2},
-    personnel:{prodEng:[40000,75000,130000,150000,165000]}
+    personnel:{prodEng:[40000,75000,130000]}
   };
 }
 function sharedDefaults(){
@@ -613,46 +606,27 @@ function sharedDefaults(){
   };
 }
 function computePM(A){
-  /* Volume-first funnel: spend -> new traders -> cohort retention -> traded volume
-     -> Rain take = dynamic fee + market-making spread on own liquidity.
-     LTVs are OUTPUTS. Churn curve: churn(age)=tail+(early-tail)*decay^age, scaled so
-     the average core lifetime equals lifetimeMonths (premium x hvLifeMult). */
   if(!A.pm) A.pm=pmDefaults();
-  if(!A.pm.volPerActive){ /* migrate pre-v2 saved assumptions */ const d=pmDefaults(); for(const k in d) if(A.pm[k]===undefined) A.pm[k]=d[k]; }
-  if(!A.pm.personnel) A.pm.personnel={prodEng:[40000,75000,130000,150000,165000]};
-  const p=A.pm, N=A.meta.months, Z=()=>Array(N).fill(0);
-  const hv=(p.hvSharePct||0)/100;
-  const cpa=(p.cpaHV||0)*hv+(p.cpaCore||0)*(1-hv);
-  const early=(+p.churnEarlyPct||12)/100, tail=(+p.churnTailPct||2.4)/100, dec=(+p.churnDecay||0.78);
-  const lifeOf=s=>{let sv=1,L=0;for(let k=0;k<600;k++){sv*=(1-Math.min(.95,(tail+(early-tail)*Math.pow(dec,k))*s));L+=sv;}return L;};
-  const solve=target=>{let lo=0.05,hi=5;for(let i=0;i<60;i++){const m=(lo+hi)/2;(lifeOf(m)>target)?lo=m:hi=m;}return (lo+hi)/2;};
-  const scC=solve(Math.max(2,+p.lifetimeMonths||24));
-  const scH=solve(Math.max(2,(+p.lifetimeMonths||24)*(+p.hvLifeMult||1.5)));
-  const churnAt=(k,s)=>Math.min(.95,(tail+(early-tail)*Math.pow(dec,k))*s);
-  const vC=+p.volPerActive||406, vH=vC*(+p.hvVolMult||2.29);
-  const takePct=(+p.feeEffPct||0)+(+p.spreadPct||0);
+  if(!A.pm.personnel) A.pm.personnel={prodEng:[40000,75000,130000]};
+  const p=A.pm, N=A.meta.months;
+  const hv=p.hvSharePct/100;
+  const ltv=p.ltvHV*hv+p.ltvCore*(1-hv), cpa=p.cpaHV*hv+p.cpaCore*(1-hv);
+  const marpu=ltv/Math.max(1,p.lifetimeMonths), churn=1/Math.max(1,p.lifetimeMonths);
+  const Z=()=>Array(N).fill(0);
   const spend=Z(),organic=Z(),newU=Z(),actives=Z(),npr=Z(),vol=Z(),fees=Z(),deposits=Z(),psp=Z(),
         tvl=Z(),treasury=Z(),totalRev=Z(),cogs=Z(),builders=Z(),brand=Z(),duty=Z(),prodEng=Z(),
-        mkt=Z(),ebitda=Z(),netcf=Z(),cumE=Z(),licAnnual=Z(),licUpfront=Z(),
-        feeRev=Z(),sprRev=Z(),liqCost=Z(),activesCore=Z(),activesHV=Z();
+        mkt=Z(),ebitda=Z(),netcf=Z(),cumE=Z(),licAnnual=Z(),licUpfront=Z();
   const gv=[]; (p.growth||[]).forEach(ph=>{ for(let k=0;k<(+ph.m||0)&&gv.length<N;k++) gv.push(+ph.pct||0); });
   while(gv.length<N) gv.push(gv.length?gv[gv.length-1]:0);
-  const cohC=[{n:(+p.seedUsers||0)*(1-hv),age:6}], cohH=[{n:(+p.seedUsers||0)*hv,age:6}];
-  let o=(+p.organic0||0)/100, cum=0, ptvl=+p.tvl0||0, pvol=0, be=null;
+  let prev=+p.seedUsers||0, ptvl=+p.tvl0||0, pvol=0, o=(+p.organic0||0)/100, cum=0, be=null;
   for(let t=0;t<N;t++){
     spend[t]= t===0? (+p.spend1||0) : spend[t-1]*(1+gv[t-1]/100);
     organic[t]=o;
     newU[t]= cpa>0? spend[t]/cpa*(1+o) : 0;
-    cohC.forEach(c=>{c.n*=(1-churnAt(c.age,scC));c.age++;});
-    cohH.forEach(c=>{c.n*=(1-churnAt(c.age,scH));c.age++;});
-    cohC.push({n:newU[t]*(1-hv),age:0}); cohH.push({n:newU[t]*hv,age:0});
-    activesCore[t]=cohC.reduce((s,c)=>s+c.n,0); activesHV[t]=cohH.reduce((s,c)=>s+c.n,0);
-    actives[t]=activesCore[t]+activesHV[t];
-    vol[t]=activesCore[t]*vC+activesHV[t]*vH;
-    feeRev[t]=vol[t]*(+p.feeEffPct||0)/100;
-    sprRev[t]=vol[t]*(+p.spreadPct||0)/100;
-    npr[t]=feeRev[t]+sprRev[t];
-    fees[t]=vol[t]*(+p.overallFeePct||0)/100;
+    actives[t]=prev*(1-churn)+newU[t];
+    npr[t]=actives[t]*marpu;
+    vol[t]= p.takeRatePct>0? npr[t]/(p.takeRatePct/100) : 0;
+    fees[t]=vol[t]*p.overallFeePct/100;
     deposits[t]=fees[t]*(p.psp.depositMultiple||0);
     psp[t]=deposits[t]*(p.psp.feePct/100)*((p.psp.absorbedPct||0)/100);
     tvl[t]=ptvl+(vol[t]-pvol)*(p.tvlCapturePct/100);
@@ -660,57 +634,43 @@ function computePM(A){
     totalRev[t]=npr[t]+treasury[t];
     cogs[t]=npr[t]*(p.cogsPctNPR/100)+psp[t];
     builders[t]=vol[t]*(p.buildersPctVol/100);
-    liqCost[t]=vol[t]*((+p.liqRiskPctVol||0)/100);
     brand[t]=(+p.brand1||0)*Math.pow(1+(+p.brandGrowthPct||0)/100,t);
     duty[t]=npr[t]*(p.dutyPct/100);
     prodEng[t]=+p.personnel.prodEng[Math.min(p.personnel.prodEng.length-1,Math.floor(t/12))]||0;
     licAnnual[t]=(+p.licence.annual||0)/12;
     licUpfront[t]= t===0? (+p.licence.upfront||0) : 0;
     mkt[t]=spend[t]+builders[t]+brand[t];
-    ebitda[t]=totalRev[t]-cogs[t]-mkt[t]-duty[t]-liqCost[t]-licAnnual[t]-prodEng[t];
+    ebitda[t]=totalRev[t]-cogs[t]-mkt[t]-duty[t]-licAnnual[t]-prodEng[t];
     netcf[t]=ebitda[t]-licUpfront[t];
     cum+=ebitda[t]; cumE[t]=cum;
-    ptvl=tvl[t]; pvol=vol[t];
+    prev=actives[t]; ptvl=tvl[t]; pvol=vol[t];
     o+=(t<11?(+p.organicStep1||0):(+p.organicStep2||0))/100;
   }
   for(let t=0;t<N;t++){ if(ebitda[t]>0&&(t===N-1||ebitda[t+1]>0)){ be=t; break; } }
-  const lifeC=lifeOf(scC), lifeH=lifeOf(scH);
-  const ltvC=vC*takePct/100*lifeC, ltvH=vH*takePct/100*lifeH;
-  const ltv=ltvH*hv+ltvC*(1-hv);
-  const marpu=vC*takePct/100*( (activesCore[N-1]+activesHV[N-1]*(+p.hvVolMult||2.29))/Math.max(1,actives[N-1]) );
-  return {N,spend,organic,newU,actives,activesCore,activesHV,npr,vol,fees,deposits,psp,tvl,treasury,totalRev,cogs,builders,
+  return {N,spend,organic,newU,actives,npr,vol,fees,deposits,psp,tvl,treasury,totalRev,cogs,builders,
           brand,duty,prodEng,mkt,ebitda,netcf,cumE,licAnnual,licUpfront,breakeven:be,
-          feeRev,sprRev,liqCost,
-          unit:{ltv,ltvC,ltvH,cpa,marpu,churn:1/Math.max(1,+p.lifetimeMonths||24),takePct,lifeC,lifeH}};
+          unit:{ltv,cpa,marpu,churn}};
 }
 function computeGroup(A,MC,MP){
   if(!A.shared) A.shared=sharedDefaults();
   const N=A.meta.months, Z=()=>Array(N).fill(0);
-  const p=A.pm||{};
-  const seed=+p.floatSeed||3000000, ramp=Math.max(1,+p.floatRampMonths||12), fcap=+p.tvl0||10000000;
-  const floatAt=t=>Math.min(fcap, seed+t*((fcap-seed)/ramp));
-  const shared=Z(),revenue=Z(),ebitda=Z(),netcf=Z(),cash=Z(),avail=Z(),cumE=Z(),fundingIn=Z(),tax=Z(),floatC=Z();
+  const shared=Z(),revenue=Z(),ebitda=Z(),netcf=Z(),cash=Z(),cumE=Z(),fundingIn=Z();
   (A.funding||[]).forEach(f=>{ const m=Math.round(+f.month)-1; if(m>=0&&m<N) fundingIn[m]+=(+f.amount||0); });
-  let bal=0,cum=0,cumOp=0,maxNeed=0,be=null,minCash=Infinity,minCashM=0,cumTaxable=0;
+  let bal=0,cum=0,cumOp=0,maxNeed=0,be=null,minCash=Infinity,minCashM=0;
   for(let t=0;t<N;t++){
     const y=Math.floor(t/12);
     const pick=a=>+a[Math.min(a.length-1,y)]||0;
     shared[t]=pick(A.shared.mgmtCompliance)+pick(A.shared.externalProviders)+pick(A.shared.localOps);
     revenue[t]=MC.agg.ngr[t]+MP.totalRev[t];
     ebitda[t]=MC.ebitda[t]+MP.ebitda[t]-shared[t];
-    const gEbit=MC.ebit[t]+MP.ebitda[t]-shared[t];           /* PM carries no D&A */
-    cumTaxable+=gEbit;
-    tax[t]= cumTaxable>0? Math.min(Math.max(0,gEbit),cumTaxable)*((A.corpTaxPct||0)/100) : 0; /* 15%, GROUP basis, loss carryforward */
-    netcf[t]=(MC.netcf[t]+MC.corpTax[t])+MP.netcf[t]-shared[t]-tax[t]; /* casino standalone tax added back; group tax charged once */
-    floatC[t]=floatAt(t);   /* at-will liquidity allocation from Rain treasury — deployed as market depth, redeemable; OUTSIDE the raise and operating cash */
+    netcf[t]=MC.netcf[t]+MP.netcf[t]-shared[t];
     cum+=ebitda[t]; cumE[t]=cum;
     cumOp+=netcf[t]; if(-cumOp>maxNeed) maxNeed=-cumOp;
     bal+=netcf[t]+fundingIn[t]; cash[t]=bal;
-    avail[t]=bal;
-    if(cash[t]<minCash){ minCash=cash[t]; minCashM=t; }
+    if(bal<minCash){ minCash=bal; minCashM=t; }
   }
   for(let t=0;t<N;t++){ if(ebitda[t]>0&&(t===N-1||ebitda[t+1]>0)){ be=t; break; } }
-  return {N,shared,revenue,ebitda,netcf,cash,avail,cumE,fundingIn,tax,floatC,breakeven:be,
+  return {N,shared,revenue,ebitda,netcf,cash,cumE,fundingIn,breakeven:be,
           peakNeed:Math.max(0,maxNeed),minCash,minCashM,
           totalFunding:fundingIn.reduce((a,b)=>a+b,0)};
 }
@@ -1056,13 +1016,12 @@ function heatmap(el, rows, cols, get, opts){
    UI — tabs, rendering, binding
    ============================================================ */
 const TABS=[
-  ["group","Consolidated"],["pm","Rain Prediction Markets"],
-  ["dashboard","Playmarkets"],["assumptions","Playmarkets Assumptions"],
-  ["games","Playmarkets Games"],["geos","Playmarkets GEOs"],["marketing","Playmarkets Marketing"],["cohorts","Playmarkets Cohorts"],
-  ["pnl","Playmarkets P&L"],["finance","Playmarkets Finance"],["cash","Playmarkets Cash"],
-  ["team","Playmarkets Team"],["milestones","Playmarkets Milestones"],["sim","Simulate"]
+  ["dashboard","Dashboard"],["assumptions","Assumptions"],
+  ["games","Games"],["geos","GEOs"],["marketing","Marketing"],["cohorts","Cohorts"],
+  ["pnl","P&L"],["finance","Finance"],["cash","Cash"],
+  ["team","Team"],["milestones","Milestones"],["sim","Simulate"]
 ];
-let activeTab="group";
+let activeTab="dashboard";
 const nav=document.getElementById("nav");
 TABS.forEach(([id,label])=>{
   const b=document.createElement("button"); b.textContent=label; b.dataset.tab=id;
@@ -1073,7 +1032,7 @@ TABS.forEach(([id,label])=>{
   else nav.appendChild(b);
 });
 
-function recompute(){ M=compute(A,null); MPM=computePM(A); MG=computeGroup(A,M,MPM); }
+function recompute(){ M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1139,7 +1098,7 @@ function renderDashboard(){
     <div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">* Affiliate revshare is contractually ${A.global.affRevsharePct}% of <b>NGR</b>, not GGR — affiliates share the bonus cost. Every bonus dollar given to their players (including big VIP bonuses) reduces the affiliate's cut too; that alignment is why NGR-based deals are the industry norm. Shown as % of GGR here only so the waterfall adds up.</div></div>
     <div class="grid2">
       <div class="card"><h3>Monthly GGR by GEO</h3><div class="chart" id="ch-ggr"></div></div>
-      <div class="card"><h3>Cash & funding (Playmarkets-standalone view — group cash on Consolidated)</h3><div class="chart" id="ch-cash"></div></div>
+      <div class="card"><h3>Cash & funding</h3><div class="chart" id="ch-cash"></div></div>
       <div class="card"><h3>Monthly EBITDA</h3><div class="chart" id="ch-ebitda"></div></div>
       <div class="card"><h3>EBITDA margin (% of GGR)</h3><p class="note">Dashed = target steady-state ~21% · marker = where the plan moves onto it and stays.</p><div class="chart" id="ch-margin"></div></div>
       <div class="card"><h3>Marketing ROI by GEO</h3><p class="note">36-mo player value ÷ acquisition cost · 3× = healthy.</p><div class="chart" id="ch-ltv"></div></div>
@@ -1982,7 +1941,7 @@ function renderFinance(){
   const closeCash=b=>b.idx.length? M.cash[b.idx[b.idx.length-1]] : null;
   const html=`
   <h2>Finance</h2>
-  <p class="sub">Top-down quarterly financial statements for the full 5-year plan horizon, Q1 2027 – Q4 2031 (Playmarkets-standalone view; group cash lives on Consolidated) (calendar quarters; model starts ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][sm-1]} ${sy} — change in Assumptions §1). ${anyPartial?"Quarters marked * are partly outside the model horizon.":""} Monthly detail lives on the P&L and Cash Flow tabs.</p>
+  <p class="sub">Top-down quarterly financial statements for the full 5-year plan horizon, Q1 2027 – Q4 2031 (calendar quarters; model starts ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][sm-1]} ${sy} — change in Assumptions §1). ${anyPartial?"Quarters marked * are partly outside the model horizon.":""} Monthly detail lives on the P&L and Cash Flow tabs.</p>
   <div class="card"><div class="twrap"><table>
     <thead><tr><th>USD</th>${buckets.map(b=>`<th>${b.label}${b.partial?"*":""}</th>`).join("")}<th>Total</th></tr></thead>
     <tbody>
@@ -2090,7 +2049,7 @@ function renderCash(){
 function renderSim(){
   const el=document.getElementById("tab-sim");
   el.innerHTML=`<h2>Simulation</h2>
-  <p class="sub">Stress the Playmarkets plan (Rain Prediction Markets and shared substance are unaffected here) without touching base assumptions. Presets or sliders; everything compares against the base scenario. Remember the VIP reality: top 1% of players = 35–60% of GGR, so real months are lumpier than any smooth model — the bear case is the honest planning floor.</p>
+  <p class="sub">Stress the plan without touching base assumptions. Presets or sliders; everything compares against the base scenario. Remember the VIP reality: top 1% of players = 35–60% of GGR, so real months are lumpier than any smooth model — the bear case is the honest planning floor.</p>
   <div class="toolbar"><div class="seg" id="presetSeg">
     <button data-p="base">Base</button><button data-p="bull">Bull</button><button data-p="bear">Bear</button>
   </div><span class="badge" id="simBadge"></span></div>
@@ -2194,7 +2153,7 @@ function runSim(){
    ============================================================ */
 /* Persistence: POST to the defaults API when deployed; file fallback otherwise. */
 async function persistDefaults(json){
-  if(!location.protocol.startsWith("http")) return {mode:"local-file"};
+  return {mode:"local-file"}; /* frozen copy — never writes shared defaults */
   const r=await fetch("/api/defaults",{method:"POST",headers:{"Content-Type":"application/json"},body:json});
   if(!r.ok) throw new Error("save failed: "+r.status);
   return {mode:"db"};
@@ -2239,43 +2198,39 @@ function pmYearLbl(y){ return String((A.meta.startYear||2027)+y); }
 
 function renderPM(){
   const el=document.getElementById("tab-pm");
-  const P=MPM, N=P.N, p=A.pm;
+  const P=MPM, N=P.N;
   const YRS=[...Array(Math.floor(N/12)).keys()]; const revY=YRS.map(y=>ySum(P.totalRev,y));
   const ebY=YRS.map(y=>ySum(P.ebitda,y));
   const mktY=YRS.map(y=>ySum(P.mkt,y));
   const arrExit=P.npr[N-1]*12;
-  const take=(+p.feeEffPct||0)+(+p.spreadPct||0);
   el.innerHTML=`
   <h2>Rain Prediction Markets</h2>
-  <p class="sub">Volume-first model: acquisition spend → new traders (blended CPA, plus organic surplus) → cohort retention (front-loaded churn calibrated to a ${p.lifetimeMonths}-month average core lifetime; premium ×${p.hvLifeMult}) → traded volume at $${(+p.volPerActive).toFixed(0)}/active/mo core (premium ×${p.hvVolMult}) → Rain take <b>${take.toFixed(1)}% of traded value</b>: a dynamic trading fee averaging ${p.feeEffPct}% (capped at ${p.feeCapPct}%) plus a ${p.spreadPct}% market-making spread earned on Rain-supplied liquidity. Treasury yield accrues on the TVL float. Trader LTVs are <i>outputs</i> of this funnel, not inputs. Gibraltar Prediction Market Authorisation (duty ${p.dutyPct}% of operator commission); PSP (Unifold) ${p.psp.feePct}% of deposits, ${p.psp.absorbedPct}% absorbed.</p>
+  <p class="sub">Parallel model to the casino: acquisition spend → new traders (at blended CPA, plus organic surplus) → active users (1/${A.pm.lifetimeMonths}-mo churn) → net protocol revenue at MARPU $${(P.unit.marpu).toFixed(2)}/active/mo. Implied trading volume backs out of revenue at the ${A.pm.takeRatePct}% net take rate; treasury yield accrues on TVL. Operates under the Gibraltar Prediction Market Authorisation (duty ${A.pm.dutyPct}% of operator commission). PSP (Unifold): ${A.pm.psp.feePct}% of deposits, ${A.pm.psp.absorbedPct}% absorbed in the base case.</p>
   <div class="tiles" style="margin-top:10px">
     <div class="tile hero"><div class="lbl">Final-year revenue (${pmYearLbl(YRS.length-1)})</div><div class="val">${fmt.usd(revY[YRS.length-1])}</div><div class="delta">exit ARR ${fmt.usd(arrExit)}</div></div>
-    <div class="tile"><div class="lbl">Rain take on traded value</div><div class="val">${take.toFixed(1)}%</div><div class="delta">fee ${p.feeEffPct}% + spread ${p.spreadPct}%</div></div>
     <div class="tile"><div class="lbl">Active traders M${N}</div><div class="val">${fmt.num(P.actives[N-1])}</div><div class="delta">${fmt.num(P.newU[N-1])} new / mo</div></div>
     <div class="tile"><div class="lbl">Final-year EBITDA (pre-shared costs)</div><div class="val">${fmt.usd(ebY[YRS.length-1])}</div><div class="delta ${ebY[YRS.length-1]>=0?'up':'down'}">${revY[YRS.length-1]>0?fmt.pct(ebY[YRS.length-1]/revY[YRS.length-1],0)+" margin":""}</div></div>
     <div class="tile"><div class="lbl">Standalone break-even</div><div class="val">${P.breakeven!=null?"M"+(P.breakeven+1):"—"}</div><div class="delta">${P.breakeven!=null?pmCal(P.breakeven):"not in horizon"}</div></div>
-    <div class="tile"><div class="lbl">LTV : CPA (derived)</div><div class="val">${fmt.x(P.unit.cpa>0?P.unit.ltv/P.unit.cpa:0)}</div><div class="delta">LTV ${fmt.usd(P.unit.ltv,0)} · CPA ${fmt.usd(P.unit.cpa,0)}</div></div>
+    <div class="tile"><div class="lbl">LTV : CPA</div><div class="val">${fmt.x(P.unit.cpa>0?P.unit.ltv/P.unit.cpa:0)}</div><div class="delta">LTV ${fmt.usd(P.unit.ltv,0)} · CPA ${fmt.usd(P.unit.cpa,0)}</div></div>
     <div class="tile"><div class="lbl">Final-year marketing % of revenue</div><div class="val">${revY[YRS.length-1]>0?fmt.pct(mktY[YRS.length-1]/revY[YRS.length-1],0):"—"}</div><div class="delta">${fmt.usd(mktY[YRS.length-1])} spend</div></div>
     <div class="tile"><div class="lbl">Cumulative EBITDA (${N} mo)</div><div class="val">${fmt.usd(P.cumE[N-1])}</div><div class="delta ${P.cumE[N-1]>=0?'up':'down'}">standalone, before shared costs</div></div>
+    <div class="tile"><div class="lbl">Peak standalone burn</div><div class="val">${(()=>{let c=0,mx=0;for(let t=0;t<N;t++){c+=P.netcf[t];if(-c>mx)mx=-c;}return fmt.usd(mx);})()}</div><div class="delta">own funding need as its own business</div></div>
   </div>
-  <div class="card"><h3>Take rate — composition & market benchmark</h3>
-    <p class="note"><b>Basis: all percentages are of traded value (matched stakes).</b> Benchmarks (researched Oct-2026): <b>Kalshi</b>'s published schedule — taker 0.07×P×(1−P) plus maker 0.0175×P×(1−P) per $1 contract — prices a mid-odds sports trade at ≈2.2% of notional all-in, diluted to ≈1.1% blended across all prices and categories (≈$4B annualized revenue on ≈$360B annualized volume, ~80% of fee-generating volume from sports). <b>Polymarket</b> charges 0.03–0.07% taker after its zero-fee land-grab era but monetizes its customer float — reported ≈$1B annualized revenue implies ≈0.8–1% all-in monetization. <b>Betfair</b> charges 5% commission on net winnings; US <b>sportsbooks</b> hold 10.1–11.6% of handle (2025–26). Rain sits inside this envelope because it is both venue and liquidity provider: the fee component (${p.feeEffPct}% realized, dynamic, capped at ${p.feeCapPct}%) is Kalshi-comparable, and the ${p.spreadPct}% market-making spread is a fraction of the sportsbook margin the same recreational bettors pay today. Customer all-in cost ${p.overallFeePct}%: Rain ${take.toFixed(1)}% + creators/resolvers ${(p.overallFeePct-take-p.buildersPctVol).toFixed(2)}% + builders ${p.buildersPctVol}%. Bearing the book has a cost: liquidity &amp; resolution risk is charged at ${p.liqRiskPctVol}% of volume, and the $${(p.tvl0/1e6).toFixed(0)}M market-making float (ramping $${(p.floatSeed/1e6).toFixed(0)}M→$${(p.tvl0/1e6).toFixed(0)}M over ${p.floatRampMonths} months) is an <b>at-will, redeemable liquidity allocation from Rain treasury — outside the raise</b> — with treasury yield accruing to the operation while deployed (see Consolidated).</p></div>
   <div class="grid2">
-    <div class="card"><h3>Monthly revenue — fee + spread + treasury</h3><div class="chart" id="pm-rev"></div></div>
+    <div class="card"><h3>Monthly revenue</h3><div class="chart" id="pm-rev"></div></div>
     <div class="card"><h3>Active traders</h3><div class="chart" id="pm-act"></div></div>
     <div class="card"><h3>Marketing spend vs revenue</h3><div class="chart" id="pm-mkt"></div></div>
     <div class="card"><h3>Monthly EBITDA (before shared substance)</h3><div class="chart" id="pm-eb"></div></div>
-    <div class="card"><h3>Traded volume (drives revenue)</h3><div class="chart" id="pm-vol"></div></div>
+    <div class="card"><h3>Implied trading volume</h3><div class="chart" id="pm-vol"></div></div>
     <div class="card"><h3>Estimated fiat deposits & PSP</h3><p class="note">Deposits ≈ gross fees × ${A.pm.psp.depositMultiple}×. PSP fee ${A.pm.psp.feePct}% is charged to the end user unless the absorption lever below is raised.</p><div class="chart" id="pm-dep"></div></div>
   </div>
   <div class="card"><h3>Annual view</h3><div class="twrap"><table id="pm-annual"></table></div></div>
   <div class="card sliders"><h3>Assumptions — Rain Prediction Markets</h3><div class="fields" id="pm-edit"></div>
-  <p class="note" style="margin-top:8px">Spend growth phases are % month-on-month for consecutive blocks of months (block lengths ${A.pm.growth.map(g=>g.m).join(" / ")}). Premium tier: the top ${p.hvSharePct}% of new users (CPA $${p.cpaHV}) trade ×${p.hvVolMult} the core volume and retain ×${p.hvLifeMult} longer — their LTV is derived (${fmt.usd(P.unit.ltvH,0)}, vs core ${fmt.usd(P.unit.ltvC,0)}), not assumed. The churn curve starts at ${p.churnEarlyPct}%/mo and decays to ${p.churnTailPct}%/mo, auto-scaled so the average core lifetime equals the ${p.lifetimeMonths}-month target.</p></div>`;
+  <p class="note" style="margin-top:8px">Spend growth phases are % month-on-month for consecutive blocks of months (block lengths ${A.pm.growth.map(g=>g.m).join(" / ")}). Segment mix: a premium tier — the top ${A.pm.hvSharePct}% of traders (LTV $${A.pm.ltvHV} / CPA $${A.pm.cpaHV}) — sits above the core user base, reflecting typical value concentration.</p></div>`;
 
   xyChart(document.getElementById("pm-rev"),
-    [{name:"Trading fees",color:sColor(0),values:P.feeRev,kind:"area"},
-     {name:"Market-making spread",color:sColor(5),values:P.sprRev,kind:"area"},
-     {name:"Treasury yield",color:sColor(3),values:P.treasury,kind:"area"}],{stacked:true,h:250});
+    [{name:"Net protocol revenue",color:sColor(0),values:P.npr,kind:"area"},
+     {name:"Treasury yield",color:sColor(3),values:P.treasury}],{h:250});
   xyChart(document.getElementById("pm-act"),
     [{name:"Active traders",color:sColor(2),values:P.actives,kind:"area",fmtV:v=>fmt.num(v)}],{h:250,fmt:v=>fmt.num(v)});
   xyChart(document.getElementById("pm-mkt"),
@@ -2291,10 +2246,8 @@ function renderPM(){
 
   const tbl=el.querySelector("#pm-annual");
   const rows=[
-    ["Trading fee revenue",P.feeRev],["Market-making spread",P.sprRev],["Treasury yield",P.treasury],
-    ["Total revenue",P.totalRev,true],
+    ["Net protocol revenue",P.npr],["Treasury yield",P.treasury],["Total revenue",P.totalRev,true],
     ["COGS (infra + PSP absorbed)",P.cogs,false,true],["Marketing & builders",P.mkt,false,true],
-    ["Liquidity & resolution risk",P.liqCost,false,true],
     ["Product & engineering",P.prodEng,false,true],["Licence + duty",P.duty.map((d,i)=>d+P.licAnnual[i]),false,true],
     ["EBITDA (pre-shared costs)",P.ebitda,true]];
   let h="<thead><tr><th></th>"+YRS.map(y=>`<th>${pmYearLbl(y)}</th>`).join("")+"</tr></thead><tbody>";
@@ -2304,33 +2257,25 @@ function renderPM(){
   }
   tbl.innerHTML=h+"</tbody>";
 
-  const ed=el.querySelector("#pm-edit");
+  const ed=el.querySelector("#pm-edit"); const p=A.pm;
   const add=(lbl,inp,unit)=>ed.appendChild(field(lbl,inp,unit));
   add("Pre-launch seed users",numInput(p,"seedUsers",{step:500}),"users");
   add("Month-1 acquisition spend",numInput(p,"spend1",{step:10000}),"$/mo");
   p.growth.forEach((g,i)=>add(`Spend growth — phase ${i+1} (${g.m} mo)`,numInput(g,"pct",{step:0.5}),"%/mo"));
   add("Organic surplus at launch",numInput(p,"organic0",{step:1}),"% of paid");
-  add("Volume per active — core",numInput(p,"volPerActive",{step:10}),"$/mo");
-  add("Premium volume multiple",numInput(p,"hvVolMult",{step:0.1}),"×");
-  add("Premium tier share of new users",numInput(p,"hvSharePct",{step:1}),"%");
-  add("Avg core lifetime (curve target)",numInput(p,"lifetimeMonths",{step:1}),"months");
-  add("Premium lifetime multiple",numInput(p,"hvLifeMult",{step:0.1}),"×");
-  add("Churn — month 1",numInput(p,"churnEarlyPct",{step:0.5}),"%/mo");
-  add("Churn — mature tail",numInput(p,"churnTailPct",{step:0.1}),"%/mo");
+  add("LTV — core user base",numInput(p,"ltvCore",{step:5}),"$");
+  add("LTV — premium tier",numInput(p,"ltvHV",{step:10}),"$");
+  add("Premium tier share",numInput(p,"hvSharePct",{step:1}),"% users");
+  add("User lifetime",numInput(p,"lifetimeMonths",{step:1}),"months");
   add("CPA — core user base",numInput(p,"cpaCore",{step:5}),"$");
   add("CPA — premium tier",numInput(p,"cpaHV",{step:10}),"$");
-  add("Trading fee — realized",numInput(p,"feeEffPct",{step:0.05}),"% of volume");
-  add("Trading fee — cap",numInput(p,"feeCapPct",{step:0.05}),"%");
-  add("Market-making spread",numInput(p,"spreadPct",{step:0.05}),"% of volume");
-  add("Liquidity & resolution risk",numInput(p,"liqRiskPctVol",{step:0.01}),"% of volume");
-  add("Overall customer cost",numInput(p,"overallFeePct",{step:0.05}),"% of volume");
+  add("Rain net take rate",numInput(p,"takeRatePct",{step:0.05}),"% of volume");
+  add("Overall marketplace fee",numInput(p,"overallFeePct",{step:0.05}),"% of volume");
   add("Infra COGS",numInput(p,"cogsPctNPR",{step:0.5}),"% of net revenue");
   add("Builders programme",numInput(p,"buildersPctVol",{step:0.01}),"% of volume");
   add("Brand & PR month 1",numInput(p,"brand1",{step:1000}),"$/mo");
   add("Brand growth",numInput(p,"brandGrowthPct",{step:0.5}),"%/mo");
-  add("Initial TVL / float target",numInput(p,"tvl0",{step:1000000}),"$");
-  add("Float seed (at launch)",numInput(p,"floatSeed",{step:500000}),"$");
-  add("Float ramp to full",numInput(p,"floatRampMonths",{step:1}),"months");
+  add("Initial TVL",numInput(p,"tvl0",{step:1000000}),"$");
   add("TVL capture of volume",numInput(p,"tvlCapturePct",{step:1}),"%");
   add("Treasury yield",numInput(p,"treasuryYieldPct",{step:0.1}),"%/yr");
   add("Regulatory duty",numInput(p,"dutyPct",{step:0.01}),"% of commission");
@@ -2342,8 +2287,6 @@ function renderPM(){
   add("Product & eng — Y1",numInput(p.personnel.prodEng,0,{step:5000}),"$/mo");
   add("Product & eng — Y2",numInput(p.personnel.prodEng,1,{step:5000}),"$/mo");
   add("Product & eng — Y3",numInput(p.personnel.prodEng,2,{step:5000}),"$/mo");
-  add("Product & eng — Y4",numInput(p.personnel.prodEng,3,{step:5000}),"$/mo");
-  add("Product & eng — Y5",numInput(p.personnel.prodEng,4,{step:5000}),"$/mo");
 }
 
 /* ============================================================
@@ -2359,37 +2302,36 @@ function renderGroup(){
   const pmRevY=YRS.map(y=>ySum(P.totalRev,y));
   el.innerHTML=`
   <h2>Consolidated — one Gibraltar company, two licences</h2>
-  <p class="sub">Two businesses, each running its own P&amp;L, on one shared Gibraltar backbone. <b>Playmarkets</b> (B2C Gaming Operator Licence) is a crypto-first casino — ~75–80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs. <b>Rain Prediction Markets</b> (Prediction Market Authorisation) is the prediction-markets trader model. Consolidation adds the shared substance layer: local office &amp; staff, management &amp; compliance, external providers. Both operations launch January ${A.meta.startYear||2027}. Group revenue = Playmarkets NGR + Rain Prediction Markets revenue. The $10M market-making float is an <b>at-will, redeemable liquidity allocation from Rain treasury</b> — deployed as market depth (ramping $3M→$10M by M12), held outside the raise and outside operating cash; treasury yield accrues to the operation while deployed.</p>
+  <p class="sub">Two businesses, each running its own P&amp;L, on one shared Gibraltar backbone. <b>Lucky Rain</b> (B2C Gaming Operator Licence) is a crypto-first casino — ~75–80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs. <b>Rain Prediction Markets</b> (Prediction Market Authorisation) is the prediction-markets trader model. Consolidation adds the shared substance layer: local office &amp; staff, management &amp; compliance, external providers. Both operations launch January ${A.meta.startYear||2027}. Group revenue = Lucky Rain NGR + Rain Prediction Markets revenue.</p>
   <div class="tiles" style="margin-top:10px">
-    <div class="tile hero"><div class="lbl">Final-year group revenue (${pmYearLbl(YRS.length-1)})</div><div class="val">${fmt.usd(revY[YRS.length-1])}</div><div class="delta">Playmarkets ${fmt.usd(casNgrY[YRS.length-1])} · prediction ${fmt.usd(pmRevY[YRS.length-1])}</div></div>
+    <div class="tile hero"><div class="lbl">Final-year group revenue (${pmYearLbl(YRS.length-1)})</div><div class="val">${fmt.usd(revY[YRS.length-1])}</div><div class="delta">Lucky Rain ${fmt.usd(casNgrY[YRS.length-1])} · prediction ${fmt.usd(pmRevY[YRS.length-1])}</div></div>
     <div class="tile"><div class="lbl">Final-year group EBITDA</div><div class="val">${fmt.usd(ebY[YRS.length-1])}</div><div class="delta ${ebY[YRS.length-1]>=0?'up':'down'}">${revY[YRS.length-1]>0?fmt.pct(ebY[YRS.length-1]/revY[YRS.length-1],0)+" margin":""}</div></div>
-    <div class="tile"><div class="lbl">Group EBITDA break-even</div><div class="val">${G.breakeven!=null?"M"+(G.breakeven+1):"—"}</div><div class="delta">${G.breakeven!=null?pmCal(G.breakeven)+" · min operating cash "+fmt.usd(G.minCash):"not in horizon"}</div></div>
-    <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(G.totalFunding)}</div><div class="delta">${rounds.length} rounds · peak need ${fmt.usd(G.peakNeed)} · liquidity allocation held separately</div></div>
+    <div class="tile"><div class="lbl">Group EBITDA break-even</div><div class="val">${G.breakeven!=null?"M"+(G.breakeven+1):"—"}</div><div class="delta">${G.breakeven!=null?pmCal(G.breakeven)+" · min cash "+fmt.usd(G.minCash):"not in horizon"}</div></div>
+    <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(G.totalFunding)}</div><div class="delta">${rounds.length} rounds · peak need ${fmt.usd(G.peakNeed)}</div></div>
     <div class="tile"><div class="lbl">Cash at M${N}</div><div class="val">${fmt.usd(G.cash[N-1])}</div><div class="delta">${G.cash[N-1]>=0?"funded through plan":"needs more funding"}</div></div>
     <div class="tile"><div class="lbl">Customers M${N}</div><div class="val">${fmt.num(M.agg.actives[N-1]+P.actives[N-1])}</div><div class="delta">${fmt.num(M.agg.actives[N-1])} depositors · ${fmt.num(P.actives[N-1])} traders</div></div>
   </div>
   <div class="card"><h3>Annual consolidated P&amp;L</h3><div class="twrap"><table id="g-annual"></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Monthly revenue by operation</h3><div class="chart" id="g-rev"></div></div>
-    <div class="card"><h3>Monthly EBITDA bridge</h3><p class="note">Playmarkets + prediction markets − shared Gibraltar substance = group.</p><div class="chart" id="g-eb"></div></div>
+    <div class="card"><h3>Monthly EBITDA bridge</h3><p class="note">Lucky Rain + prediction markets − shared Gibraltar substance = group.</p><div class="chart" id="g-eb"></div></div>
     <div class="card"><h3>Group cash & funding rounds</h3><div class="chart" id="g-cash"></div></div>
     <div class="card"><h3>Cumulative group EBITDA</h3><div class="chart" id="g-cum"></div></div>
   </div>
   <div class="card sliders"><h3>Shared Gibraltar substance ($/month, by year)</h3><div class="fields" id="g-edit"></div>
-  <p class="note" style="margin-top:8px">Local Gibraltar operations budgeted at ≈€600K in year 1, reducing as setup completes. Each operation carries its own licence (application + annual fee) and 0.15% regulatory duty inside its own P&amp;L; corporate tax 15% applies to consolidated group taxable profits after loss relief — payable in-plan from roughly Y3 (see the tax row above).</p></div>
+  <p class="note" style="margin-top:8px">Local Gibraltar operations budgeted at ≈€600K in year 1, reducing as setup completes. Each operation carries its own licence (application + annual fee) and 0.15% regulatory duty inside its own P&amp;L; corporate tax 15% applies to taxable profits (no tax payable in-plan after loss relief).</p></div>
   <div class="card sliders"><h3>Funding rounds</h3><div class="fields" id="g-fund"></div></div>`;
 
   xyChart(document.getElementById("g-rev"),
-    [{name:"Playmarkets NGR",color:sColor(1),values:M.agg.ngr},
+    [{name:"Lucky Rain NGR",color:sColor(1),values:M.agg.ngr},
      {name:"Rain Prediction Markets revenue",color:sColor(0),values:P.totalRev}],{stacked:true,h:250});
   xyChart(document.getElementById("g-eb"),
     [{name:"Group EBITDA",color:sColor(2),values:G.ebitda,kind:"bar"},
-     {name:"Playmarkets EBITDA",color:sColor(1),values:M.ebitda},
+     {name:"Lucky Rain EBITDA",color:sColor(1),values:M.ebitda},
      {name:"PM EBITDA",color:sColor(0),values:P.ebitda},
      {name:"Shared substance",color:sColor(7),values:G.shared.map(x=>-x)}],{h:250});
   xyChart(document.getElementById("g-cash"),
-    [{name:"Group operating cash",color:sColor(0),values:G.cash,kind:"area"},
-     {name:"Liquidity allocation deployed (Rain treasury, at-will)",color:sColor(5),values:G.floatC}],
+    [{name:"Group cash",color:sColor(0),values:G.cash,kind:"area"}],
     {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
   xyChart(document.getElementById("g-cum"),
     [{name:"Cumulative EBITDA",color:sColor(3),values:G.cumE,kind:"area"}],{h:250});
@@ -2397,14 +2339,14 @@ function renderGroup(){
   const tbl=el.querySelector("#g-annual");
   const casMkt=YRS.map(y=>ySum(M.mktTotal,y));
   const rowsA=[
-    {s:"Playmarkets — crypto casino"},
+    {s:"Lucky Rain — crypto casino"},
     {n:"GGR",a:y=>ySum(M.agg.ggr,y)},
     {n:"Bonuses & jackpots",a:y=>ySum(M.agg.bonus,y),neg:true},
     {n:"NGR",a:y=>ySum(M.agg.ngr,y),b:true},
-    {n:"Playmarkets COGS (content, payments, KYC, tech, duty)",a:y=>ySum(M.cogsTotal,y),neg:true},
-    {n:"Playmarkets marketing (CPA + revshare + brand)",a:y=>casMkt[y],neg:true},
-    {n:"Playmarkets opex (personnel, ops, licence, G&A)",a:y=>ySum(M.opexTotal,y),neg:true},
-    {n:"Playmarkets EBITDA",a:y=>ySum(M.ebitda,y),tot:true},
+    {n:"Lucky Rain COGS (content, payments, KYC, tech, duty)",a:y=>ySum(M.cogsTotal,y),neg:true},
+    {n:"Lucky Rain marketing (CPA + revshare + brand)",a:y=>casMkt[y],neg:true},
+    {n:"Lucky Rain opex (personnel, ops, licence, G&A)",a:y=>ySum(M.opexTotal,y),neg:true},
+    {n:"Lucky Rain EBITDA",a:y=>ySum(M.ebitda,y),tot:true},
     {s:"Rain Prediction Markets"},
     {n:"Net protocol revenue + treasury",a:y=>pmRevY[y]},
     {n:"PM COGS, marketing, product, licence & duty",a:y=>pmRevY[y]-ySum(P.ebitda,y),neg:true},
@@ -2414,8 +2356,6 @@ function renderGroup(){
     {n:"Shared Gibraltar substance",a:y=>ySum(G.shared,y),neg:true},
     {n:"Group EBITDA",a:y=>ebY[y],tot:true},
     {n:"Group EBITDA margin",custom:y=>revY[y]>0?fmt.pct(ebY[y]/revY[y],0):"—"},
-    {n:"Corporate tax (15%, group basis, after loss relief)",a:y=>ySum(G.tax,y),neg:true},
-    {n:"Liquidity allocation deployed (year-end, at-will)",custom:y=>fmt.usd(G.floatC[Math.min(N-1,y*12+11)])},
     {n:"Cumulative EBITDA",a:y=>G.cumE[Math.min(N-1,y*12+11)]}
   ];
   let h="<thead><tr><th></th>"+YRS.map(y=>`<th>${pmYearLbl(y)}</th>`).join("")+"</tr></thead><tbody>";
@@ -2462,12 +2402,12 @@ function renderTab(id){
   else if(id==="sim")renderSim();
 }
 recompute();
-document.querySelector('nav button[data-tab="group"]').classList.add("on");
-document.getElementById("tab-group").classList.add("on");
-renderTab("group");
+document.querySelector('nav button[data-tab="dashboard"]').classList.add("on");
+document.getElementById("tab-dashboard").classList.add("on");
+renderTab("dashboard");
 /* Load the latest saved defaults from the database (deployed mode only). */
 (async()=>{
-  if(!location.protocol.startsWith("http")) return;
+  return; /* frozen copy — remote defaults disabled */
   try{
     const r=await fetch("/api/defaults",{cache:"no-store"});
     if(!r.ok) return;
