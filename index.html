@@ -371,6 +371,13 @@ function hostingAt(c, t){
   return Math.min(c.hostingStart*Math.pow(1+c.hostingGrowthPct/100, t-c.hostingStartMonth), c.hostingCap);
 }
 
+function certCost(c, t){            // own-game + RNG certification (test lab), t = model month (1-based)
+  if(!c||!c.enabled) return {upfront:0, monthly:0};
+  const per=+c.costPerGame||0, s=+c.startMonth||1;
+  const upfront=(t===s? (+c.initialGames||0)*per : 0) + (t===(+c.rngMonth||1)? (+c.rngCost||0) : 0);
+  const monthly= t>s ? (+c.gamesPerMonth||0)*per : 0;
+  return {upfront, monthly};
+}
 function licenseCost(licenses, t){
   let upfront=0, annual=0;
   for(const l of licenses){
@@ -541,7 +548,8 @@ function compute(A, sim){
     opex.platformCapex[t]=platformCapexAt(A.platform,t+1);
     opex.amort[t]=amortAt(A.platform,t+1);
     const lc=licenseCost(A.licenses,t+1);
-    opex.licAnnual[t]=lc.annual; opex.licUpfront[t]=lc.upfront;
+    const cc=certCost(A.certs,t+1);
+    opex.licAnnual[t]=lc.annual+cc.monthly; opex.licUpfront[t]=lc.upfront+cc.upfront;
     opex.kyc[t]=agg.ftds[t]*A.global.kycPerFTD;
     opex.support[t]=agg.actives[t]*A.global.supportPerActive;
     opex.crmTools[t]=A.global.crmMonthly+A.global.toolsMonthly;
@@ -1395,6 +1403,22 @@ function buildLicenseEditor(){
       td.appendChild(inp); tr.appendChild(td); });
     ltb.appendChild(tr);
   });
+  if(A.certs){
+    const c=A.certs;
+    const sec=document.createElement("div"); sec.style.marginTop="16px";
+    sec.innerHTML=`<h3 style="font-size:14px;margin:0 0 4px">Game &amp; RNG certification (own content)</h3><p class="note">Every in-house title must be tested and certified by an accredited lab (GLI, BMM, iTech Labs, eCOGRA) before it can go live; external providers certify their own games, so this applies only to your originals. Research (Oct-2026): RNG + RTP testing runs in the low-to-mid thousands of dollars per game per jurisdiction, more for complex games and every resubmission; 2–8 weeks per title. The platform RNG is certified once. The launch batch and the RNG are booked as one-off costs (cash, like a licence application); each new title thereafter is a monthly operating cost.</p>`;
+    const fl=document.createElement("div"); fl.className="fields";
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!c.enabled;
+    cb.onchange=()=>{ c.enabled=cb.checked; queueRefresh(); };
+    fl.appendChild(field("Include certification costs",cb));
+    fl.appendChild(field("Games certified at launch",numInput(c,"initialGames",{step:1,min:0}),"titles"));
+    fl.appendChild(field("New games per month",numInput(c,"gamesPerMonth",{step:0.5,min:0}),"titles/mo"));
+    fl.appendChild(field("Cost per game certification",numInput(c,"costPerGame",{step:500,min:0}),"$ per title"));
+    fl.appendChild(field("Launch batch month",numInput(c,"startMonth",{step:1,min:1}),"M#"));
+    fl.appendChild(field("RNG certification (one-time)",numInput(c,"rngCost",{step:1000,min:0}),"$"));
+    fl.appendChild(field("RNG certification month",numInput(c,"rngMonth",{step:1,min:1}),"M#"));
+    sec.appendChild(fl); card.appendChild(sec);
+  }
   return card;
 }
 
