@@ -1221,6 +1221,20 @@ function buildGamesEditor(){
   const mixBar=mixTotalBar(()=>A.games.map(g=>g.mix), ()=>{
     const nv=mixRescale(A.games.map(g=>g.mix)); A.games.forEach((g,i)=>g.mix=nv[i]); refresh(); });
   card.insertBefore(mixBar, card.querySelector(".addbtn"));
+  const custom=A.geos.filter(g=>g.enabled&&g.mixOverride);
+  if(custom.length){
+    const n=document.createElement("div");
+    n.style.cssText="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink-2)";
+    n.innerHTML=`<span><b>${custom.length} market${custom.length>1?"s use their":" uses its"} own mix</b> (${custom.map(g=>g.name).join(", ")}) — the mix above does not apply there. Edit them on the GEOs tab, or:</span>`;
+    const ab=document.createElement("button"); ab.className="ghost-btn"; ab.textContent="Apply this mix to all markets";
+    ab.style.cssText="font-size:11.5px;padding:4px 10px";
+    ab.onclick=()=>{ A.geos.forEach(g=>g.mixOverride=null); refresh(); };
+    n.appendChild(ab); card.insertBefore(n, card.querySelector(".addbtn"));
+  } else {
+    const n=document.createElement("div"); n.style.cssText="margin-top:8px;font-size:12.5px;color:var(--ink-2)";
+    n.textContent="All markets use this mix — changes here flow through every market, the Dashboard, P&L, Cash and Finance.";
+    card.insertBefore(n, card.querySelector(".addbtn"));
+  }
   tb.addEventListener("input", ()=>setTimeout(mixBar.upd,0));
   card.querySelector(".addbtn").onclick=()=>{
     A.games.push({id:"g"+Date.now()%100000,name:"New game",source:"ext",rs:12,rtp:96,velocity:200,avgBet:1,mix:5});
@@ -2228,7 +2242,7 @@ function runSim(){
 async function persistDefaults(json){
   if(!location.protocol.startsWith("http")) return {mode:"local-file"};
   const r=await fetch("/api/defaults?plan=main",{method:"POST",headers:{"Content-Type":"application/json"},body:json});
-  if(!r.ok) throw new Error("save failed: "+r.status);
+  if(!r.ok){ let m=""; try{ m=(await r.json()).error||""; }catch(e){} throw new Error("save failed ("+r.status+")"+(m?": "+m:"")); }
   return {mode:"db"};
 }
 function showDefToast(msg){
@@ -2244,13 +2258,13 @@ document.getElementById("btnSaveDefault").onclick=async()=>{
   try{
     const res=await persistDefaults(json);
     if(res.mode==="db"){ showDefToast("Saved as the new default \u2014 everyone who opens the plan now sees these numbers. Previous versions are kept."); return; }
-  }catch(e){}
+  }catch(e){ window._saveErr=String(e&&e.message||e); }
   const blob=new Blob([json],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   a.download="luckymay-model-defaults.json";
   a.click(); URL.revokeObjectURL(a.href);
-  showDefToast("Could not save to the server \u2014 a copy was downloaded instead. (Saving needs the main password and the Vercel storage connected.)");
+  showDefToast("Could not save to the server \u2014 a copy was downloaded instead."+(window._saveErr?" Reason: "+window._saveErr:""));
 };
 document.getElementById("btnTheme").onclick=()=>{
   const r=document.documentElement;
