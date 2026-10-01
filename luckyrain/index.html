@@ -151,6 +151,7 @@
   <div id="tab-cash" class="tab"></div>
   <div id="tab-sim" class="tab"></div>
   <footer>
+    <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px;margin-bottom:10px">Download current numbers (JSON)</button>
     <div>All figures USD · 60-month horizon · Jan-2027 launch · Lucky Rain — crypto-first casino · Gibraltar B2C Gaming Operator Licence · all assumptions editable</div>
   </footer>
 </main>
@@ -2176,9 +2177,9 @@ const _btnSD=document.getElementById("btnSaveDefault"); if(_btnSD) _btnSD.onclic
   const blob=new Blob([json],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download="luckymay-model-defaults.json";
+  a.download="lucky-rain-numbers.json";
   a.click(); URL.revokeObjectURL(a.href);
-  showDefToast("Database unreachable \u2014 saved locally as luckymay-model-defaults.json instead. Pull it into Claude to bake it in.");
+  showDefToast("Saved as lucky-rain-numbers.json \u2014 send it to Claude to bake these numbers into the plan permanently.");
 };
 document.getElementById("btnTheme").onclick=()=>{
   const r=document.documentElement;

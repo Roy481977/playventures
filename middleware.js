@@ -30,16 +30,16 @@ export default function middleware(req) {
   const url = new URL(req.url);
   const cookies = req.headers.get('cookie') || '';
   const inLucky = url.pathname === '/luckyrain' || url.pathname.startsWith('/luckyrain/');
-  if (MAINS.some(pw => cookies.includes('rg_auth=' + pw))) return;   // full access
-  if (cookies.includes('rg_auth=' + LUCKY)) {                  // Lucky Rain only
-    if (inLucky) return;
-    return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
-  }
   if (url.pathname === '/logout') {
     return new Response(null, { status: 302, headers: {
       'Location': '/',
       'Set-Cookie': 'rg_auth=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly'
     }});
+  }
+  if (MAINS.some(pw => cookies.includes('rg_auth=' + pw))) return;   // full access
+  if (cookies.includes('rg_auth=' + LUCKY)) {                  // Lucky Rain only
+    if (inLucky) return;
+    return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
   }
   if (url.pathname === '/auth') {
     const pw = url.searchParams.get('pw');
