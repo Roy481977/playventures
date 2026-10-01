@@ -2166,7 +2166,7 @@ function showDefToast(msg){
   t.textContent=msg; t.style.display="block";
   clearTimeout(t._h); t._h=setTimeout(()=>{t.style.display="none";},9000);
 }
-document.getElementById("btnSaveDefault").onclick=async()=>{
+const _btnSD=document.getElementById("btnSaveDefault"); if(_btnSD) _btnSD.onclick=async()=>{
   const json=JSON.stringify(A,null,2);
   try{
     const res=await persistDefaults(json);

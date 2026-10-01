@@ -35,6 +35,12 @@ export default function middleware(req) {
     if (inLucky) return;
     return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
   }
+  if (url.pathname === '/logout') {
+    return new Response(null, { status: 302, headers: {
+      'Location': '/',
+      'Set-Cookie': 'rg_auth=; Path=/; Max-Age=0; SameSite=Lax; HttpOnly'
+    }});
+  }
   if (url.pathname === '/auth') {
     const pw = url.searchParams.get('pw');
     if (MAINS.includes(pw)) return setCookie(pw, '/');
