@@ -1,6 +1,6 @@
 // Shared-password gate: main password opens the full Rain plan, the Lucky Rain
 // password opens only the frozen casino copy at /luckyrain/.
-const MAIN = 'roysentme';          // full site (incl. /api and /luckyrain)
+const MAINS = ['roysentme', '123456'];   // full site (incl. /api and /luckyrain)
 const LUCKY = 'lucky2027';      // Lucky Rain casino plan only
 
 const loginHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Business Plan</title>
@@ -30,14 +30,14 @@ export default function middleware(req) {
   const url = new URL(req.url);
   const cookies = req.headers.get('cookie') || '';
   const inLucky = url.pathname === '/luckyrain' || url.pathname.startsWith('/luckyrain/');
-  if (cookies.includes('rg_auth=' + MAIN)) return;            // full access
+  if (MAINS.some(pw => cookies.includes('rg_auth=' + pw))) return;   // full access
   if (cookies.includes('rg_auth=' + LUCKY)) {                  // Lucky Rain only
     if (inLucky) return;
     return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
   }
   if (url.pathname === '/auth') {
     const pw = url.searchParams.get('pw');
-    if (pw === MAIN)  return setCookie(MAIN, '/');
+    if (MAINS.includes(pw)) return setCookie(pw, '/');
     if (pw === LUCKY) return setCookie(LUCKY, '/luckyrain/');
     return new Response(loginHtml.replace('__ERR__', 'Wrong password'), { status: 401, headers: { 'Content-Type': 'text/html' } });
   }
