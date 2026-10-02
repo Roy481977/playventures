@@ -317,7 +317,7 @@ function xyChart(el, series, opts){
 
 
 
-const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startYear":2026,"startCalMonth":11,"bakeId":"rpm1-2026-10-02"},"funding":[{"name":"Bootstrap — Rain seed","month":1,"amount":600000,"note":"Funds the 4-month proof: a lean team, the in-house market-making desk with a small float, and a test marketing budget of $10–25K a month."},{"name":"Round A — Proof of ROAS","month":5,"amount":2000000,"note":"Raised on four months of live cohort data: cost per funded trader by channel, retention, volume per trader, market-making result and the cohort value curve heading to payback."},{"name":"Round B — Scale","month":10,"amount":6000000,"note":"Raised five months later on proven payback; funds the marketing scale-up, the larger market-making float and the full team through EBITDA breakeven."}],"mkt":{"proofBudget":[10000,15000,20000,25000],"aStart":60000,"aGrowth":15,"bStart":180000,"bGrowth":7,"cap":650000},"cpa":{"proof":80,"a":65,"b":70},"organic0":10,"organicStep":1,"organicCap":35,"hvShare":8,"hvVolMult":4,"hvRetMult":1.4,"churnEarly":32,"churnTail":4,"churnDecay":0.72,"volCore":1100,"firstMonthBoost":1.2,"mixSports":60,"sportsFee":1.2,"sportsSpread":0.8,"quickFee":1.5,"quickSpread":0.8,"feeCap":2.5,"mmRiskPct":0.25,"floatMin":100000,"floatPctVol":5,"floatYield":3,"infraPctRev":6,"infraFixed":6000,"kycPerNew":3,"supportPerActive":0.6,"paymentsPctVol":0.1,"dutyPct":0.15,"team":{"proof":45000,"a":110000,"b":220000,"y3Step":20},"mmTeam":{"proof":12000,"a":30000,"b":60000},"data":{"proof":5000,"a":12000,"b":20000},"legal":{"proof":10000,"a":15000,"b":25000},"ga":{"proof":5000,"a":15000,"b":30000},"licence":{"upfront":39000,"annual":129000,"startMonth":3},"corpTaxPct":15}/*__END_DEFAULTS__*/;
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startYear":2026,"startCalMonth":11,"bakeId":"rpm1-2026-10-02"},"funding":[{"name":"Bootstrap — Rain seed","month":1,"amount":600000,"note":"Rain's own launch funding in month 1. Rain group top-ups (shown separately) cover any month where operating cash would fall below the minimum."},{"name":"Round A — Proof of ROAS","month":5,"amount":2000000,"note":"Raised on four months of live cohort data: cost per funded trader by channel, retention, volume per trader, market-making result and the cohort value curve heading to payback."},{"name":"Round B — Scale","month":10,"amount":6000000,"note":"Raised five months later on proven payback; funds the marketing scale-up and the larger market-making float."},{"name":"Round C — Growth to breakeven","month":16,"amount":13000000,"note":"Raised in Feb-28, when Round B is spent, on 15 months of trading history and scaled cohort economics. Carries the business through EBITDA breakeven in mid-2029 with about $1M of cushion."}],"mkt":{"proofBudget":[10000,20000,30000,40000],"aStart":60000,"aGrowth":15,"bStart":180000,"bGrowth":7,"cap":650000},"cpa":{"proof":80,"a":65,"b":70},"organic0":10,"organicStep":1,"organicCap":35,"hvShare":8,"hvVolMult":4,"hvRetMult":1.4,"churnEarly":32,"churnTail":4,"churnDecay":0.72,"volCore":1100,"firstMonthBoost":1.2,"mixSports":60,"sportsFee":1.2,"sportsSpread":0.8,"quickFee":1.5,"quickSpread":0.8,"feeCap":2.5,"mmRiskPct":0.25,"floatMin":100000,"floatPctVol":5,"floatYield":3,"infraPctRev":6,"infraFixed":6000,"kycPerNew":3,"supportPerActive":0.6,"paymentsPctVol":0.1,"dutyPct":0.15,"team":{"proof":45000,"a":110000,"b":220000,"y3Step":20},"mmTeam":{"proof":12000,"a":30000,"b":60000},"data":{"proof":5000,"a":12000,"b":20000},"legal":{"proof":10000,"a":15000,"b":25000},"ga":{"proof":5000,"a":15000,"b":30000},"licence":{"upfront":39000,"annual":129000,"startMonth":3},"corpTaxPct":15,"rainOpex":900000,"rainOpexStep":0,"rainSupport":{"enabled":true,"floor":250000}}/*__END_DEFAULTS__*/;
 
 /* ============================================================
    RAIN PREDICTION MARKETS — LAUNCH PLAN (standalone)
@@ -336,7 +336,7 @@ function computeRPM(R){
   const s={spend:Z(),newPaid:Z(),newOrg:Z(),newU:Z(),actives:Z(),vol:Z(),volSports:Z(),volQuick:Z(),feeRev:Z(),sprRev:Z(),
     floatYield:Z(),rev:Z(),mmRisk:Z(),infra:Z(),kyc:Z(),support:Z(),payments:Z(),duty:Z(),variable:Z(),contrib:Z(),
     team:Z(),mmTeam:Z(),data:Z(),legal:Z(),ga:Z(),licAnnual:Z(),licUpfront:Z(),fixed:Z(),ebitda:Z(),tax:Z(),netcf:Z(),
-    float:Z(),dFloat:Z(),cashOp:Z(),fundingIn:Z(),cpa:Z(),phase:Array(N).fill("")};
+    float:Z(),dFloat:Z(),cashOp:Z(),fundingIn:Z(),rainIn:Z(),cpa:Z(),phase:Array(N).fill("")};
   rounds.forEach(f=>{const m=Math.round(+f.month)-1; if(m>=0&&m<N) s.fundingIn[m]+=+f.amount||0;});
   const coh=[];
   let o=R.organic0/100, cumTax=0, bal=0, prevFloat=0, minCash=Infinity, minCashM=0, maxNeed=0, cumOp=0, be=null, budget=0;
@@ -364,7 +364,11 @@ function computeRPM(R){
     s.variable[t]=s.mmRisk[t]+s.infra[t]+s.kyc[t]+s.support[t]+s.payments[t]+s.duty[t];
     s.contrib[t]=s.rev[t]-s.variable[t]-s.spend[t];
     const y=Math.floor(t/12), step=y>=2?(1+R.team.y3Step/100):1;
-    s.team[t]=R.team[ph]*(ph==="b"?step:1); s.mmTeam[t]=R.mmTeam[ph]; s.data[t]=R.data[ph]; s.legal[t]=R.legal[ph]; s.ga[t]=R.ga[ph]+R.infraFixed;
+    if((+R.rainOpex||0)>0){   // Rain's full operating cost base (team, MM desk, data, legal, G&A, hosting) replaces the phase lines
+      s.team[t]=R.rainOpex*Math.pow(1+(+R.rainOpexStep||0)/100,y); s.mmTeam[t]=0; s.data[t]=0; s.legal[t]=0; s.ga[t]=0;
+    } else {
+      s.team[t]=R.team[ph]*(ph==="b"?step:1); s.mmTeam[t]=R.mmTeam[ph]; s.data[t]=R.data[ph]; s.legal[t]=R.legal[ph]; s.ga[t]=R.ga[ph]+R.infraFixed;
+    }
     s.licAnnual[t]=(t+1)>=R.licence.startMonth? R.licence.annual/12 : 0;
     s.licUpfront[t]=(t+1)===R.licence.startMonth? R.licence.upfront : 0;
     s.fixed[t]=s.team[t]+s.mmTeam[t]+s.data[t]+s.legal[t]+s.ga[t]+s.licAnnual[t];
@@ -373,7 +377,10 @@ function computeRPM(R){
     s.dFloat[t]=s.float[t]-prevFloat; prevFloat=s.float[t];
     s.netcf[t]=s.ebitda[t]-s.tax[t]-s.licUpfront[t]-s.dFloat[t];
     cumOp+=s.netcf[t]; if(-cumOp>maxNeed) maxNeed=-cumOp;
-    bal+=s.netcf[t]+s.fundingIn[t]; s.cashOp[t]=bal;
+    bal+=s.netcf[t]+s.fundingIn[t];
+    const rs=R.rainSupport||{};
+    if(rs.enabled && bal<(+rs.floor||0)){ s.rainIn[t]=(+rs.floor||0)-bal; bal=(+rs.floor||0); }   // Rain group tops up to the floor
+    s.cashOp[t]=bal;
     if(bal<minCash){minCash=bal;minCashM=t;}
     o=Math.min(R.organicCap/100,o+R.organicStep/100);
   }
@@ -392,7 +399,9 @@ function computeRPM(R){
     payback:{proof:payback(cP),a:payback(cA),b:payback(cB)},
     ret:{m1:surv[1],m3:surv[3],m6:surv[6],m12:surv[12]},
     take:{feePct,sprPct,blend:feePct+sprPct,sports:feeS+R.sportsSpread,quick:feeQ+R.quickSpread},
-    totalFunding:s.fundingIn.reduce((a,b)=>a+b,0)};
+    totalFunding:s.fundingIn.reduce((a,b)=>a+b,0), rainTotal:s.rainIn.reduce((a,b)=>a+b,0),
+    rainLast:(()=>{let l=-1; s.rainIn.forEach((v,i)=>{if(v>0)l=i;}); return l;})(),
+    rainFirst:s.rainIn.findIndex(v=>v>0)};
 }
 
 /* ---------------- state ---------------- */
@@ -457,14 +466,21 @@ function plRows(s){
     {n:"Marketing (paid acquisition)",a:s.spend,neg:true},
     {n:"Contribution after marketing",a:s.contrib,tot:true},
     {s:"Fixed costs"},
-    {n:"Product, engineering & operations team",a:s.team,neg:true},
-    {n:"Market-making desk (quants & traders)",a:s.mmTeam,neg:true},
-    {n:"Sports data, oracles & market resolution",a:s.data,neg:true},
-    {n:"Legal, compliance & licence fees",a:sum(s.legal,s.licAnnual),neg:true},
-    {n:"G&A and fixed hosting",a:s.ga,neg:true},
+    ...((+A.rainOpex||0)>0 ? [
+      {n:"Rain operating costs (team, market-making desk, data, legal, G&A, hosting)",a:s.team,neg:true},
+      {n:"Licence fees",a:s.licAnnual,neg:true}
+    ] : [
+      {n:"Product, engineering & operations team",a:s.team,neg:true},
+      {n:"Market-making desk (quants & traders)",a:s.mmTeam,neg:true},
+      {n:"Sports data, oracles & market resolution",a:s.data,neg:true},
+      {n:"Legal, compliance & licence fees",a:sum(s.legal,s.licAnnual),neg:true},
+      {n:"G&A and fixed hosting",a:s.ga,neg:true}]),
     {n:"EBITDA",a:s.ebitda,tot:true},
     {n:"Corporate tax (15%, after loss relief)",a:s.tax,neg:true},
-    {n:"EBITDA margin",custom:y=>{const r=yS(s.rev,y);return r>0?pct0(yS(s.ebitda,y)/r):"—";}}
+    {n:"EBITDA margin",custom:y=>{const r=yS(s.rev,y);return r>0?pct0(yS(s.ebitda,y)/r):"—";}},
+    {s:"Funding"},
+    {n:"Investor rounds received",a:s.fundingIn},
+    {n:"Rain group funding (top-ups)",a:s.rainIn}
   ];
 }
 
@@ -474,20 +490,20 @@ function renderOverview(){
   const ly=Math.ceil(N/12)-1, revL=yS(s.rev,ly), ebL=yS(s.ebitda,ly);
   el.innerHTML=`
   <h2>Rain Prediction Markets — launch plan</h2>
-  <p class="sub">A standalone plan for Rain's prediction-markets business, starting ${calLbl(0)} on a deliberately small budget. Markets are built around <b>sports</b> and <b>quick trades</b> (short-duration markets that settle in minutes to hours), Rain runs its <b>own market making</b>, and the audience is crypto-native traders worldwide, with every country that prohibits prediction markets geo-blocked. The first ${r.aM-1} months exist to prove one thing: paid acquisition produces traders whose value climbs towards payback. That proof raises Round A (${fmt.usd(R[1]?R[1].amount:0)}, ${R[1]?calLbl(R[1].month-1):"—"}); five months of scaled data then raise Round B (${fmt.usd(R[2]?R[2].amount:0)}, ${R[2]?calLbl(R[2].month-1):"—"}).</p>
+  <p class="sub">A standalone plan for Rain's prediction-markets business, starting ${calLbl(0)} on a deliberately small budget. Markets are built around <b>sports</b> and <b>quick trades</b> (short-duration markets that settle in minutes to hours), Rain runs its <b>own market making</b>, and the audience is crypto-native traders worldwide, with every country that prohibits prediction markets geo-blocked. The first ${r.aM-1} months exist to prove one thing: paid acquisition produces traders whose value climbs towards payback. The plan carries Rain's full operating cost base of ${fmt.usd(A.rainOpex||0)} a month from day one. That proof raises Round A (${fmt.usd(R[1]?R[1].amount:0)}, ${R[1]?calLbl(R[1].month-1):"—"}); five months of scaled data then raise Round B (${fmt.usd(R[2]?R[2].amount:0)}, ${R[2]?calLbl(R[2].month-1):"—"}).</p>
   <div class="tiles" style="margin-top:10px">
     <div class="tile hero"><div class="lbl">Year ${ly+1} revenue</div><div class="val">${fmt.usd(revL)}</div><div class="delta">EBITDA ${fmt.usd(ebL)} · ${revL>0?pct0(ebL/revL):"—"} margin</div></div>
     <div class="tile"><div class="lbl">Proof cohorts — payback</div><div class="val">${r.payback.proof?"Month "+r.payback.proof:"> 24 mo"}</div><div class="delta">${pct0(r.curveProof[3])} of acquisition cost back by month 4</div></div>
     <div class="tile"><div class="lbl">EBITDA breakeven</div><div class="val">${r.be!=null?"M"+(r.be+1):"—"}</div><div class="delta">${r.be!=null?calLbl(r.be):"not in horizon"}</div></div>
-    <div class="tile"><div class="lbl">Total funding</div><div class="val">${fmt.usd(r.totalFunding)}</div><div class="delta">${R.length} rounds · peak need ${fmt.usd(r.peakNeed)}</div></div>
-    <div class="tile"><div class="lbl">Lowest cash point</div><div class="val">${fmt.usd(r.minCash)}</div><div class="delta ${r.minCash>=0?'up':'down'}">${calLbl(r.minCashM)} · ${r.minCash>=0?"funded throughout":"funding gap"}</div></div>
+    <div class="tile"><div class="lbl">Total funding</div><div class="val">${fmt.usd(r.totalFunding+r.rainTotal)}</div><div class="delta">${fmt.usd(r.totalFunding)} rounds + ${fmt.usd(r.rainTotal)} Rain group</div></div>
+    <div class="tile"><div class="lbl">Rain group funding needed</div><div class="val">${fmt.usd(r.rainTotal)}</div><div class="delta ${r.rainTotal>0?'down':'up'}">${r.rainTotal>0?calLbl(r.rainFirst)+" – "+calLbl(r.rainLast)+" · keeps cash ≥ "+fmt.usd((A.rainSupport||{}).floor||0):"none — rounds cover the plan"}</div></div>
     <div class="tile"><div class="lbl">Active traders ${calLbl(N-1)}</div><div class="val">${fmt.num(s.actives[N-1])}</div><div class="delta">${fmt.num(s.newU[N-1])} new / month</div></div>
   </div>
   <div class="card"><h3>Annual P&amp;L</h3><div class="twrap"><table id="ov-annual"></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Monthly revenue</h3><p class="note">Rain earns on every trade twice: a dynamic trading fee, and the spread its own market-making desk captures.</p><div class="chart" id="ov-rev"></div></div>
     <div class="card"><h3>Monthly EBITDA</h3><p class="note">Seed, Round A and Round B marked. Losses are planned while marketing scales ahead of maturing cohorts.</p><div class="chart" id="ov-eb"></div></div>
-    <div class="card"><h3>Operating cash &amp; market-making float</h3><p class="note">The float is Rain's own capital deployed as liquidity on its markets; it is funded from the rounds and stays an asset on the balance sheet.</p><div class="chart" id="ov-cash"></div></div>
+    <div class="card"><h3>Operating cash &amp; market-making float</h3><p class="note">The float is Rain's own capital deployed as liquidity on its markets and stays an asset on the balance sheet. Bars: Rain group top-ups that keep operating cash at the floor.</p><div class="chart" id="ov-cash"></div></div>
     <div class="card"><h3>Active traders</h3><div class="chart" id="ov-act"></div></div>
   </div>
   <div class="card"><h3>Basis of the plan &amp; what must be confirmed</h3>
@@ -501,7 +517,7 @@ function renderOverview(){
     [{name:"Trading fees",color:sColor(0),values:s.feeRev},{name:"Market-making spread",color:sColor(5),values:s.sprRev},{name:"Float yield",color:sColor(3),values:s.floatYield}],{stacked:true,h:250,xl,fmt:v=>fmt.usd(v,1)});
   xyChart(document.getElementById("ov-eb"),[{name:"EBITDA",color:sColor(2),values:s.ebitda,kind:"bar"}],{h:250,xl,marks:roundMarks()});
   xyChart(document.getElementById("ov-cash"),
-    [{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float}],{h:250,xl,marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
+    [{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float},{name:"Rain group top-ups",color:sColor(1),values:s.rainIn,kind:"bar"}],{h:250,xl,marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
   xyChart(document.getElementById("ov-act"),[{name:"Active traders",color:sColor(2),values:s.actives,kind:"area"}],{h:250,xl,fmt:v=>fmt.num(v)});
 }
 
@@ -578,28 +594,33 @@ function renderCash(){
   const phases=["proof","a","b"].map(ph=>{
     const ts=[...Array(N).keys()].filter(t=>s.phase[t]===ph); if(!ts.length) return null;
     const sum=a=>ts.reduce((x,t)=>x+a[t],0);
-    return {ph,from:ts[0],to:ts[ts.length-1],mkt:sum(s.spend),opex:sum(s.rev)-sum(s.ebitda)-sum(s.spend),rev:sum(s.rev),
+    return {ph,from:ts[0],to:ts[ts.length-1],rain:sum(s.rainIn),inv:sum(s.fundingIn),mkt:sum(s.spend),opex:sum(s.rev)-sum(s.ebitda)-sum(s.spend),rev:sum(s.rev),
       float:sum(s.dFloat),lic:sum(s.licUpfront),tax:sum(s.tax),net:-sum(s.netcf)};
   }).filter(Boolean);
   el.innerHTML=`<h2>Cash &amp; funding</h2>
-  <p class="sub">Three steps of funding, each released by evidence from the step before. Operating cash excludes the market-making float, which is capital at work on Rain's markets.</p>
+  <p class="sub">Investor rounds as agreed, each released by evidence from the step before. Where they don't cover the burn, Rain group funding tops up operating cash to the minimum below, month by month, so Rain's commitment is explicit. Operating cash excludes the market-making float, which is capital at work on Rain's markets.</p>
   <div class="tiles" style="margin-top:10px">
     ${R.map((f,i)=>`<div class="tile ${i===0?'':''}"><div class="lbl">${f.name}</div><div class="val">${fmt.usd(f.amount)}</div><div class="delta">${calLbl(f.month-1)} · month ${f.month}</div></div>`).join("")}
-    <div class="tile"><div class="lbl">Peak funding need</div><div class="val">${fmt.usd(r.peakNeed)}</div><div class="delta">vs ${fmt.usd(r.totalFunding)} raised</div></div>
+    <div class="tile"><div class="lbl">Rain group funding</div><div class="val">${fmt.usd(r.rainTotal)}</div><div class="delta">${r.rainTotal>0?calLbl(r.rainFirst)+" – "+calLbl(r.rainLast):"not needed"}</div></div>
+    <div class="tile"><div class="lbl">Peak funding need</div><div class="val">${fmt.usd(r.peakNeed)}</div><div class="delta">vs ${fmt.usd(r.totalFunding)} from investor rounds</div></div>
     <div class="tile"><div class="lbl">Cash at ${calLbl(N-1)}</div><div class="val">${fmt.usd(s.cashOp[N-1])}</div><div class="delta">plus ${fmt.usd(s.float[N-1])} market-making float</div></div>
   </div>
   <div class="card"><h3>Operating cash by month</h3><div class="chart" id="cs-cash"></div></div>
   <div class="card"><h3>Where each step's money goes</h3><div class="twrap"><table id="cs-uses"></table></div></div>
   <div class="card sliders"><h3>Funding rounds</h3><div class="fields" id="cs-edit"></div>
   <p class="note" style="margin-top:8px">${R.map(f=>`<b>${f.name}:</b> ${f.note||""}`).join("<br>")}</p></div>`;
-  xyChart(document.getElementById("cs-cash"),[{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float}],{w:1240,h:300,xl:t=>calLbl(t),marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
+  xyChart(document.getElementById("cs-cash"),[{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float},{name:"Rain group top-ups",color:sColor(1),values:s.rainIn,kind:"bar"}],{w:1240,h:300,xl:t=>calLbl(t),marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
   el.querySelector("#cs-uses").innerHTML="<thead><tr><th></th>"+phases.map(p=>`<th>${PH[p.ph]}<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">${calLbl(p.from)} – ${calLbl(p.to)}</span></th>`).join("")+"</tr></thead><tbody>"+
     [["Revenue",p=>fmt.usd(p.rev)],["Marketing",p=>"−"+fmt.usd(p.mkt)],["Team, desk, data, legal, G&A & variable costs",p=>"−"+fmt.usd(p.opex)],
      ["Market-making float added",p=>p.float?"−"+fmt.usd(p.float):"—"],["Licence application & tax",p=>(p.lic+p.tax)?"−"+fmt.usd(p.lic+p.tax):"—"],
-     ["Net cash used",p=>`<b>${fmt.usd(p.net)}</b>`]].map(([n,f])=>`<tr${n==="Net cash used"?' class="total"':''}><td>${n}</td>${phases.map(p=>`<td>${f(p)}</td>`).join("")}</tr>`).join("")+"</tbody>";
+     ["Net cash used",p=>`<b>${fmt.usd(p.net)}</b>`],["Funded by investor rounds",p=>p.inv?fmt.usd(p.inv):"—"],["Funded by Rain group top-ups",p=>p.rain?fmt.usd(p.rain):"—"]].map(([n,f])=>`<tr${n==="Net cash used"?' class="total"':''}><td>${n}</td>${phases.map(p=>`<td>${f(p)}</td>`).join("")}</tr>`).join("")+"</tbody>";
   const fd=el.querySelector("#cs-edit");
   A.funding.forEach(f=>{ fd.appendChild(field(f.name+" — month",numInput(f,"month",{step:1,min:1}),"M#"));
     fd.appendChild(field(f.name+" — amount",numInput(f,"amount",{step:100000,min:0}),"$")); });
+  if(!A.rainSupport) A.rainSupport={enabled:true,floor:250000};
+  const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!A.rainSupport.enabled; cb.onchange=()=>{A.rainSupport.enabled=cb.checked; queueRefresh();};
+  fd.appendChild(field("Rain group tops up shortfalls",cb));
+  fd.appendChild(field("Minimum operating cash",numInput(A.rainSupport,"floor",{step:50000,min:0}),"$ — Rain tops up below this"));
 }
 
 /* ---------------- TAB: ASSUMPTIONS ---------------- */
@@ -648,7 +669,10 @@ function renderAssump(){
     field("Desk team — proof",numInput(A.mmTeam,"proof",{step:1000}),"$/mo"),
     field("Desk team — Round A",numInput(A.mmTeam,"a",{step:1000}),"$/mo"),
     field("Desk team — scale",numInput(A.mmTeam,"b",{step:1000}),"$/mo")]);
-  card("7 · Fixed costs by phase",`Kept deliberately small in the proof phase. Team costs grow by the step below from year 3.`,[
+  card("7 · Rain operating costs",`Rain's full running cost base — team, market-making desk, sports data and oracles, legal and compliance, G&A and hosting — carried by this plan from month 1. Set it to 0 to use the lean phase-by-phase costs below instead.`,[
+    field("Rain operating costs",numInput(A,"rainOpex",{step:50000,min:0}),"$/mo"),
+    field("Yearly increase",numInput(A,"rainOpexStep",{step:1}),"% per year")]);
+  card("7b · Lean costs by phase"+((+A.rainOpex||0)>0?" (not in use while Rain operating costs is set)":""),`Used only when Rain operating costs is 0. Team costs grow by the step below from year 3.`,[
     field("Team — proof",numInput(A.team,"proof",{step:5000}),"$/mo"),
     field("Team — Round A",numInput(A.team,"a",{step:5000}),"$/mo"),
     field("Team — scale",numInput(A.team,"b",{step:10000}),"$/mo"),
