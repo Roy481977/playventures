@@ -2,6 +2,7 @@
 // password opens only the frozen casino copy at /luckyrain/.
 const MAINS = ['roysentme', '123456'];   // full site (incl. /api and /luckyrain)
 const LUCKY = 'lucky2027';      // Lucky Rain casino plan only
+const RPM = 'predict2026';      // Rain Prediction Markets launch plan only
 
 const loginHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Business Plan</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -37,6 +38,15 @@ export default function middleware(req) {
     }});
   }
   if (MAINS.some(pw => cookies.includes('rg_auth=' + pw))) return;   // full access
+  const inRpm = url.pathname === '/rainpm' || url.pathname.startsWith('/rainpm/');
+  if (cookies.includes('rg_auth=' + RPM)) {                    // prediction-markets launch plan only
+    if (inRpm) return;
+    if (url.pathname === '/api/defaults') {
+      if (req.method === 'GET' && url.searchParams.get('plan') === 'rainpm') return;
+      return new Response(JSON.stringify({ error: 'read-only access' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(null, { status: 302, headers: { 'Location': '/rainpm/' } });
+  }
   if (cookies.includes('rg_auth=' + LUCKY)) {                  // Lucky Rain only
     if (inLucky) return;
     if (url.pathname === '/api/defaults') {                     // read-only access to the Lucky Rain slot
@@ -49,6 +59,7 @@ export default function middleware(req) {
     const pw = url.searchParams.get('pw');
     if (MAINS.includes(pw)) return setCookie(pw, '/');
     if (pw === LUCKY) return setCookie(LUCKY, '/luckyrain/');
+    if (pw === RPM) return setCookie(RPM, '/rainpm/');
     return new Response(loginHtml.replace('__ERR__', 'Wrong password'), { status: 401, headers: { 'Content-Type': 'text/html' } });
   }
   return new Response(loginHtml.replace('__ERR__', ''), { status: 401, headers: { 'Content-Type': 'text/html' } });

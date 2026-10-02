@@ -1,5 +1,5 @@
 // Model defaults API (Vercel Blob) — one store, each plan in its own folder.
-// GET  /api/defaults?plan=main|luckyrain          -> latest saved assumption set (404 if none yet)
+// GET  /api/defaults?plan=main|luckyrain|rainpm   -> latest saved assumption set (404 if none yet)
 // GET  /api/defaults?plan=...&list=1              -> version history
 // GET  /api/defaults?diag=1                       -> which storage settings are present (names only, never values)
 // POST /api/defaults?plan=main|luckyrain          -> save new default (timestamped version; history kept)
@@ -8,7 +8,7 @@
 import { put, list, get } from '@vercel/blob';
 
 // Own folders inside the store, so a store shared with other apps never mixes their saved numbers.
-const PREFIX = { main: 'playventures/main/v-', luckyrain: 'playventures/luckyrain/v-' };
+const PREFIX = { main: 'playventures/main/v-', luckyrain: 'playventures/luckyrain/v-', rainpm: 'playventures/rainpm/v-' };
 
 async function readText(pathname, access) {
   const r = await get(pathname, { access, useCache: false });
@@ -47,8 +47,10 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       let body = req.body;
       if (typeof body === 'string') body = JSON.parse(body);
-      if (!body || !body.meta || !body.geos || !body.games || !body.personnel)
-        return res.status(400).json({ error: 'not a valid assumptions object' });
+      const valid = plan === 'rainpm'
+        ? !!(body && body.meta && body.funding && body.mkt)
+        : !!(body && body.meta && body.geos && body.games && body.personnel);
+      if (!valid) return res.status(400).json({ error: 'not a valid assumptions object' });
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const json = JSON.stringify(body, null, 2);
       let lastErr = null;

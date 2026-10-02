@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rain Prediction Markets — Launch Plan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20rx%3D'20'%20fill%3D'%23eda100'%2F%3E%3Ctext%20x%3D'50'%20y%3D'72'%20font-size%3D'60'%20text-anchor%3D'middle'%3ER%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  :root{
+    color-scheme: light;
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --ink-1:#0b0b0b; --ink-2:#52514e; --ink-3:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+    --good:#0ca30c; --warn:#fab219; --serious:#ec835a; --crit:#d03b3b;
+    --good-text:#006300;
+    --seq100:#cde2fb; --seq200:#9ec5f4; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95; --seq700:#0d366b;
+    --accent:#2a78d6;
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-1:#1a1a19; --page:#0d0d0d;
+    --ink-1:#ffffff; --ink-2:#c3c2b7; --ink-3:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --good-text:#0ca30c;
+    --accent:#3987e5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page);color:var(--ink-1);font-size:13.5px;line-height:1.45}
+  /* ---------- Top nav ---------- */
+  header{position:sticky;top:0;z-index:50;background:var(--surface-1);border-bottom:1px solid var(--grid);padding:0 20px}
+  .hd-row{display:flex;align-items:center;gap:12px 16px;min-height:52px;flex-wrap:wrap;padding:6px 0}
+  .brand{font-weight:700;font-size:14px;letter-spacing:-0.01em;white-space:nowrap}
+  .brand span{color:var(--accent)}
+  nav{display:flex;gap:2px 1px;flex-wrap:wrap;overflow:visible;flex:1;min-width:0}
+  nav button{appearance:none;border:none;background:none;color:var(--ink-2);font:inherit;font-size:13px;font-weight:500;padding:7px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  nav button:hover{background:var(--page)}
+  nav button.on{background:var(--accent);color:#fff}
+  .hd-actions{display:flex;gap:8px;align-items:center}
+  .ghost-btn{appearance:none;border:1px solid var(--grid);background:var(--surface-1);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer}
+  .ghost-btn:hover{border-color:var(--axis);color:var(--ink-1)}
+  main{max-width:1280px;margin:0 auto;padding:20px 20px 80px}
+  .tab{display:none}
+  .tab.on{display:block}
+  h2{font-size:18px;margin:6px 0 2px;letter-spacing:-0.01em}
+  .sub{color:var(--ink-2);margin:0 0 16px;font-size:13px}
+  /* ---------- Cards & grids ---------- */
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .card h3{margin:0 0 4px;font-size:13.5px;font-weight:650}
+  .card .note{color:var(--ink-3);font-size:12px;margin:0 0 10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+  /* ---------- Stat tiles ---------- */
+  .tile{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+  .tile .lbl{color:var(--ink-2);font-size:12px;margin-bottom:4px}
+  .tile .val{font-size:26px;font-weight:600;letter-spacing:-0.02em}
+  .tile .delta{font-size:12px;margin-top:3px;color:var(--ink-3)}
+  .tile .delta.up{color:var(--good-text)} .tile .delta.down{color:var(--crit)}
+  .hero .val{font-size:31px;white-space:nowrap}
+  .story{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+  .story .st{background:var(--surface-1);border:1px solid var(--border);border-top:3px solid var(--ph,var(--accent));border-radius:12px;padding:11px 13px;position:relative}
+  .story .st:not(:last-child)::after{content:"›";position:absolute;right:-10px;top:36%;color:var(--ink-3);font-size:17px;z-index:2}
+  .st-k{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:700}
+  .st-v{font-size:21px;font-weight:700;letter-spacing:-0.02em;margin:2px 0;white-space:nowrap}
+  .st-d{font-size:11px;color:var(--ink-2)}
+  .tiles.mini .tile{padding:9px 12px}
+  .tiles.mini .val{font-size:18px}
+  .tiles.mini .lbl{font-size:11px;margin-bottom:2px}
+  @media(max-width:1000px){.story{grid-template-columns:repeat(3,1fr)}}
+  /* ---------- Inputs ---------- */
+  .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+  .f{display:flex;flex-direction:column;gap:3px}
+  .f label{font-size:11.5px;color:var(--ink-2)}
+  .f input,.f select{font:inherit;padding:6px 8px;border:1px solid var(--grid);border-radius:8px;background:var(--page);color:var(--ink-1);width:100%}
+  .f input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  .f .unit{font-size:10.5px;color:var(--ink-3)}
+  /* ---------- Tables ---------- */
+  .twrap{overflow-x:auto;border:1px solid var(--grid);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{padding:6px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+  th{color:var(--ink-2);font-weight:600;background:var(--surface-1);position:sticky;top:0}
+  td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--surface-1);font-variant-numeric:normal}
+  tr:last-child td{border-bottom:none}
+  tr.total td{font-weight:650;border-top:2px solid var(--axis)}
+  tr.section td{color:var(--ink-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:12px}
+  td.neg{color:var(--crit)}
+  table input.wide{width:118px !important}
+  table input{width:76px;font:inherit;font-size:12.5px;padding:4px 6px;border:1px solid var(--grid);border-radius:6px;background:var(--page);color:var(--ink-1);text-align:right}
+  table input[type=checkbox]{width:auto}
+  table select{font:inherit;font-size:12.5px;padding:4px;border:1px solid var(--grid);border-radius:6px;background:var(--page);color:var(--ink-1)}
+  table input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .editable th,.editable td{text-align:left}
+  /* ---------- Charts ---------- */
+  .chart{position:relative}
+  .chart svg{display:block;width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 2px;font-size:12px;color:var(--ink-2)}
+  .legend .it{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  .tip{position:fixed;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.12);border-radius:10px;padding:8px 11px;font-size:12px;z-index:100;display:none;min-width:130px}
+  .tip .t-h{font-weight:650;margin-bottom:4px}
+  .tip .t-r{display:flex;justify-content:space-between;gap:14px}
+  .tip .t-r .k{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+  .tip .t-r .v{font-variant-numeric:tabular-nums;font-weight:550}
+  .badge{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:99px;border:1px solid var(--grid);color:var(--ink-2)}
+  .badge.own{color:var(--good-text);border-color:var(--good-text)}
+  .rowbtns button{appearance:none;border:none;background:none;color:var(--ink-3);cursor:pointer;font-size:14px;padding:2px 5px}
+  .rowbtns button:hover{color:var(--crit)}
+  .addbtn{margin-top:10px}
+  .seg{display:inline-flex;border:1px solid var(--grid);border-radius:9px;overflow:hidden}
+  .seg button{appearance:none;border:none;background:var(--surface-1);color:var(--ink-2);font:inherit;font-size:12.5px;padding:6px 13px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#fff}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .warnbox{border-left:3px solid var(--warn);background:var(--surface-1);border-radius:0 10px 10px 0;padding:10px 14px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+  .sliders .f input[type=range]{padding:0;accent-color:var(--accent)}
+  .kpi-cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  footer{text-align:center;color:var(--ink-3);font-size:11.5px;margin-top:30px}
+  /* gamified attention pulse on the Simulation tab (until first visit) */
+  @keyframes simPulse{0%,100%{box-shadow:0 0 0 0 rgba(42,120,214,.5)}60%{box-shadow:0 0 0 9px rgba(42,120,214,0)}}
+  .sim-cta{appearance:none;border:1px solid var(--accent);background:transparent;color:var(--accent);font:inherit;font-size:13px;font-weight:650;padding:6px 15px;border-radius:99px;cursor:pointer;white-space:nowrap;animation:simPulse 2s ease-out infinite}
+  .sim-cta:hover{background:var(--accent);color:#fff}
+  .sim-cta.on{background:var(--accent);color:#fff;animation:none}
+  @media (prefers-reduced-motion: reduce){.sim-cta{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd-row">
+    <div class="brand">Rain Prediction Markets <span>Launch Plan</span></div>
+    <nav id="nav"></nav>
+    <div class="hd-actions">
+      <button class="ghost-btn" id="btnTheme" title="Toggle dark mode">◐</button>
+      <a class="ghost-btn" href="/logout" title="Sign out" style="text-decoration:none">Log out</a>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="tab-overview" class="tab"></div>
+  <div id="tab-proof" class="tab"></div>
+  <div id="tab-pnl" class="tab"></div>
+  <div id="tab-cash" class="tab"></div>
+  <div id="tab-assump" class="tab"></div>
+  <footer>
+    <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px;margin-bottom:10px">Save current numbers as new default</button>
+    <div>All figures USD · 36 months from Nov-2026 · sports &amp; quick-trade prediction markets · in-house market making · global crypto audience, prohibited countries geo-blocked · all assumptions editable</div>
+  </footer>
+</main>
+<div class="tip" id="tip"></div>
+<script>
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+/* ============================================================
+   FORMATTING
+   ============================================================ */
+const fmt = {
+  usd(v,dec){ if(v==null||!isFinite(v))return "—";
+    const a=Math.abs(v), s=v<0?"−$":"$";
+    if(a>=1e9) return s+(a/1e9).toFixed(dec==null?2:dec)+"B";
+    if(a>=1e6) return s+(a/1e6).toFixed(dec==null?2:dec)+"M";
+    if(a>=1e4) return s+(a/1e3).toFixed(0)+"K";
+    if(a>=1e3) return s+(a/1e3).toFixed(1)+"K";
+    return s+a.toFixed(a<10?1:0); },
+  usdFull(v){ if(v==null||!isFinite(v))return "—"; const s=v<0?"−":""; return s+"$"+Math.round(Math.abs(v)).toLocaleString("en-US"); },
+  num(v){ if(v==null||!isFinite(v))return "—"; const a=Math.abs(v);
+    if(a>=1e6) return (v/1e6).toFixed(1)+"M"; if(a>=1e3) return (v/1e3).toFixed(1)+"K"; return Math.round(v).toLocaleString(); },
+  pct(v,d){ return (v*100).toFixed(d==null?1:d)+"%"; },
+  x(v){ return !isFinite(v)?"—":v.toFixed(2)+"×"; },
+  mo(t){ return "M"+(t+1); }
+};
+const SERIES=["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+function cssv(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function sColor(i){ return cssv(SERIES[i%SERIES.length]); }
+function gameColor(g){ if(g.source==="own") return cssv("--s3");
+  return (g.id==="live"||/live/i.test(g.name||"")) ? cssv("--s2") : cssv("--s1"); }
+
+/* ============================================================
+   MICRO CHART LIBRARY (SVG, hand-rolled per dataviz spec)
+   ============================================================ */
+const tip=document.getElementById("tip");
+function showTip(html,x,y){ tip.innerHTML=html; tip.style.display="block";
+  const r=tip.getBoundingClientRect();
+  let px=x+14, py=y+14;
+  if(px+r.width>window.innerWidth-8) px=x-r.width-14;
+  if(py+r.height>window.innerHeight-8) py=y-r.height-14;
+  tip.style.left=px+"px"; tip.style.top=py+"px"; }
+function hideTip(){ tip.style.display="none"; }
+
+function niceTicks(min,max,n){
+  if(min===max){max=min+1;}
+  const span=max-min, step0=span/Math.max(1,n), mag=Math.pow(10,Math.floor(Math.log10(step0)));
+  let step=mag; for(const m of [1,2,2.5,5,10]) if(step0<=m*mag){step=m*mag;break;}
+  const lo=Math.floor(min/step)*step, hi=Math.ceil(max/step)*step, ticks=[];
+  for(let v=lo;v<=hi+1e-9;v+=step) ticks.push(v);
+  return ticks;
+}
+function svgEl(tag,attrs){ const el=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(const k in attrs) el.setAttribute(k,attrs[k]); return el; }
+
+/* Generic xy chart: series=[{name,color,values,kind:'line'|'area'|'bar'}] over months */
+function xyChart(el, series, opts){
+  opts=opts||{};
+  const W=opts.w||620, H=opts.h||260, padL=54, padR=14, padT=14, padB=26;
+  const N=series[0].values.length;
+  const stacked=opts.stacked;
+  let min=0,max=-Infinity;
+  if(stacked){
+    for(let t=0;t<N;t++){ let s=0; for(const sr of series) s+=Math.max(0,sr.values[t]); max=Math.max(max,s);}
+    min=0;
+  } else {
+    for(const sr of series) for(const v of sr.values){ if(v<min)min=v; if(v>max)max=v; }
+  }
+  if(max===-Infinity)max=1;
+  const ticks=niceTicks(Math.min(min,0),max,5);
+  min=ticks[0]; max=ticks[ticks.length-1];
+  const X=t=>padL+(t/(N-1))*(W-padL-padR);
+  const Y=v=>padT+(1-(v-min)/(max-min))*(H-padT-padB);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img"});
+  // grid
+  for(const tv of ticks){
+    svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(tv),y2:Y(tv),stroke:"var(--grid)","stroke-width":1}));
+    const lbl=svgEl("text",{x:padL-8,y:Y(tv)+4,"text-anchor":"end",fill:"var(--ink-3)","font-size":10.5,style:"font-variant-numeric:tabular-nums"});
+    lbl.textContent=opts.fmt?opts.fmt(tv):fmt.usd(tv,0); svg.appendChild(lbl);
+  }
+  // zero baseline emphasized
+  if(min<0&&max>0) svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(0),y2:Y(0),stroke:"var(--axis)","stroke-width":1}));
+  // x labels
+  const step=N>24?6:(N>12?3:2);
+  for(let t=0;t<N;t+=step){
+    const lbl=svgEl("text",{x:X(t),y:H-8,"text-anchor":"middle",fill:"var(--ink-3)","font-size":10.5});
+    lbl.textContent=opts.xl?opts.xl(t):"M"+(t+1); svg.appendChild(lbl);
+  }
+  if(stacked){
+    const base=Array(N).fill(0);
+    series.forEach((sr,si)=>{
+      let d="",d2="";
+      const tops=[];
+      for(let t=0;t<N;t++){ const v=base[t]+Math.max(0,sr.values[t]); tops.push(v); }
+      d="M"+X(0)+" "+Y(base[0]);
+      for(let t=0;t<N;t++) d+=" L"+X(t)+" "+Y(tops[t]);
+      for(let t=N-1;t>=0;t--) d+=" L"+X(t)+" "+Y(base[t]);
+      d+=" Z";
+      svg.appendChild(svgEl("path",{d,fill:sr.color,"fill-opacity":0.55,stroke:"var(--surface-1)","stroke-width":1.5}));
+      for(let t=0;t<N;t++) base[t]=tops[t];
+    });
+  } else {
+    series.forEach(sr=>{
+      if(sr.kind==="bar"){
+        const bw=Math.min(14,(W-padL-padR)/N*0.62);
+        for(let t=0;t<N;t++){
+          const v=sr.values[t], y0=Y(Math.max(0,v)), h=Math.abs(Y(v)-Y(0));
+          const rct=svgEl("rect",{x:X(t)-bw/2,y:v>=0?y0:Y(0),width:bw,height:Math.max(0.5,h),
+            fill:v>=0?sr.color:"var(--crit)",rx:2});
+          svg.appendChild(rct);
+        }
+      } else {
+        if(sr.kind==="area"){
+          let d="M"+X(0)+" "+Y(Math.max(0,min));
+          for(let t=0;t<N;t++) d+=" L"+X(t)+" "+Y(sr.values[t]);
+          d+=" L"+X(N-1)+" "+Y(Math.max(0,min))+" Z";
+          svg.appendChild(svgEl("path",{d,fill:sr.color,"fill-opacity":0.10}));
+        }
+        let d="";
+        for(let t=0;t<N;t++) d+=(t?" L":"M")+X(t)+" "+Y(sr.values[t]);
+        svg.appendChild(svgEl("path",{d,fill:"none",stroke:sr.color,"stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"}));
+      }
+    });
+  }
+  // optional vertical event markers (e.g. funding rounds)
+  if(opts.marks) for(const mk of opts.marks){
+    if(mk.t<0||mk.t>=N) continue;
+    svg.appendChild(svgEl("line",{x1:X(mk.t),x2:X(mk.t),y1:padT+10,y2:H-padB,stroke:"var(--axis)","stroke-width":1}));
+    const flip=X(mk.t)>(W-padR)*0.72;
+    const tl=svgEl("text",{x:X(mk.t)+(flip?-4:3),y:padT+9+(mk.dy||0),fill:"var(--ink-2)","font-size":9.5,"font-weight":600,"text-anchor":flip?"end":"start"});
+    tl.textContent=mk.label; svg.appendChild(tl);
+  }
+  // optional horizontal reference line (e.g. target margin)
+  if(opts.href!=null && opts.href.v>=min && opts.href.v<=max){
+    svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:Y(opts.href.v),y2:Y(opts.href.v),stroke:"var(--s2)","stroke-width":1.3,"stroke-dasharray":"5 4"}));
+    const rl=svgEl("text",{x:W-padR-4,y:Y(opts.href.v)-5,"text-anchor":"end",fill:"var(--s2)","font-size":10,"font-weight":650});
+    rl.textContent=opts.href.label||""; svg.appendChild(rl);
+  }
+  // crosshair + tooltip
+  const hover=svgEl("line",{x1:0,x2:0,y1:padT,y2:H-padB,stroke:"var(--axis)","stroke-width":1,visibility:"hidden"});
+  svg.appendChild(hover);
+  const dots=series.map(sr=>{ const c=svgEl("circle",{r:4.5,fill:sr.color,stroke:"var(--surface-1)","stroke-width":2,visibility:"hidden"}); svg.appendChild(c); return c; });
+  svg.addEventListener("mousemove",e=>{
+    const pt=svg.getBoundingClientRect();
+    const sx=(e.clientX-pt.left)*(W/pt.width);
+    let t=Math.round(((sx-padL)/(W-padL-padR))*(N-1)); t=clamp(t,0,N-1);
+    hover.setAttribute("x1",X(t)); hover.setAttribute("x2",X(t)); hover.setAttribute("visibility","visible");
+    let rows="";
+    if(stacked){ let base=0;
+      series.forEach((sr,si)=>{ base+=Math.max(0,sr.values[t]); dots[si].setAttribute("visibility","hidden"); });
+      let acc=0;
+      series.forEach((sr,si)=>{ acc+=Math.max(0,sr.values[t]);
+        rows+=`<div class="t-r"><span class="k"><span class="sw" style="background:${sr.color};width:8px;height:8px;border-radius:2px;display:inline-block"></span>${sr.name}</span><span class="v">${(opts.fmt||fmt.usd)(sr.values[t])}</span></div>`;});
+      rows+=`<div class="t-r" style="border-top:1px solid var(--grid);margin-top:4px;padding-top:4px"><span class="k">Total</span><span class="v">${(opts.fmt||fmt.usd)(base)}</span></div>`;
+    } else {
+      series.forEach((sr,si)=>{
+        dots[si].setAttribute("cx",X(t)); dots[si].setAttribute("cy",Y(sr.values[t])); dots[si].setAttribute("visibility","visible");
+        rows+=`<div class="t-r"><span class="k"><span class="sw" style="background:${sr.color};width:8px;height:8px;border-radius:2px;display:inline-block"></span>${sr.name}</span><span class="v">${(opts.fmt||fmt.usd)(sr.values[t])}</span></div>`;});
+    }
+    showTip(`<div class="t-h">${opts.xl?opts.xl(t):"Month "+(t+1)}</div>${rows}`, e.clientX, e.clientY);
+  });
+  svg.addEventListener("mouseleave",()=>{ hideTip(); hover.setAttribute("visibility","hidden"); dots.forEach(d=>d.setAttribute("visibility","hidden")); });
+  el.innerHTML="";
+  el.appendChild(svg);
+  if(series.length>1){
+    const lg=document.createElement("div"); lg.className="legend";
+    series.forEach(sr=>{ const it=document.createElement("div"); it.className="it";
+      it.innerHTML=`<span class="sw" style="background:${sr.color}"></span>${sr.name}`; lg.appendChild(it); });
+    el.appendChild(lg);
+  }
+}
+
+
+
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startYear":2026,"startCalMonth":11,"bakeId":"rpm1-2026-10-02"},"funding":[{"name":"Bootstrap — Rain seed","month":1,"amount":600000,"note":"Funds the 4-month proof: a lean team, the in-house market-making desk with a small float, and a test marketing budget of $10–25K a month."},{"name":"Round A — Proof of ROAS","month":5,"amount":2000000,"note":"Raised on four months of live cohort data: cost per funded trader by channel, retention, volume per trader, market-making result and the cohort value curve heading to payback."},{"name":"Round B — Scale","month":10,"amount":6000000,"note":"Raised five months later on proven payback; funds the marketing scale-up, the larger market-making float and the full team through EBITDA breakeven."}],"mkt":{"proofBudget":[10000,15000,20000,25000],"aStart":60000,"aGrowth":15,"bStart":180000,"bGrowth":7,"cap":650000},"cpa":{"proof":80,"a":65,"b":70},"organic0":10,"organicStep":1,"organicCap":35,"hvShare":8,"hvVolMult":4,"hvRetMult":1.4,"churnEarly":32,"churnTail":4,"churnDecay":0.72,"volCore":1100,"firstMonthBoost":1.2,"mixSports":60,"sportsFee":1.2,"sportsSpread":0.8,"quickFee":1.5,"quickSpread":0.8,"feeCap":2.5,"mmRiskPct":0.25,"floatMin":100000,"floatPctVol":5,"floatYield":3,"infraPctRev":6,"infraFixed":6000,"kycPerNew":3,"supportPerActive":0.6,"paymentsPctVol":0.1,"dutyPct":0.15,"team":{"proof":45000,"a":110000,"b":220000,"y3Step":20},"mmTeam":{"proof":12000,"a":30000,"b":60000},"data":{"proof":5000,"a":12000,"b":20000},"legal":{"proof":10000,"a":15000,"b":25000},"ga":{"proof":5000,"a":15000,"b":30000},"licence":{"upfront":39000,"annual":129000,"startMonth":3},"corpTaxPct":15}/*__END_DEFAULTS__*/;
+
+/* ============================================================
+   RAIN PREDICTION MARKETS — LAUNCH PLAN (standalone)
+   Volume-first funnel, phased by funding: Proof -> Build (Round A) -> Scale (Round B).
+   ============================================================ */
+function computeRPM(R){
+  const N=R.meta.months, Z=()=>Array(N).fill(0);
+  const rounds=[...R.funding].sort((a,b)=>a.month-b.month);
+  const aM=rounds[1]?+rounds[1].month:5, bM=rounds[2]?+rounds[2].month:10;      // phases follow the rounds
+  const phaseOf=t=> (t+1)<aM?"proof":((t+1)<bM?"a":"b");
+  const early=R.churnEarly/100, tail=R.churnTail/100, dec=R.churnDecay;
+  const churn=(age,mult)=>Math.min(.95,(tail+(early-tail)*Math.pow(dec,age))/mult);
+  const hv=R.hvShare/100, ms=R.mixSports/100;
+  const feeS=Math.min(R.sportsFee,R.feeCap), feeQ=Math.min(R.quickFee,R.feeCap);
+  const feePct=ms*feeS+(1-ms)*feeQ, sprPct=ms*R.sportsSpread+(1-ms)*R.quickSpread;
+  const s={spend:Z(),newPaid:Z(),newOrg:Z(),newU:Z(),actives:Z(),vol:Z(),volSports:Z(),volQuick:Z(),feeRev:Z(),sprRev:Z(),
+    floatYield:Z(),rev:Z(),mmRisk:Z(),infra:Z(),kyc:Z(),support:Z(),payments:Z(),duty:Z(),variable:Z(),contrib:Z(),
+    team:Z(),mmTeam:Z(),data:Z(),legal:Z(),ga:Z(),licAnnual:Z(),licUpfront:Z(),fixed:Z(),ebitda:Z(),tax:Z(),netcf:Z(),
+    float:Z(),dFloat:Z(),cashOp:Z(),fundingIn:Z(),cpa:Z(),phase:Array(N).fill("")};
+  rounds.forEach(f=>{const m=Math.round(+f.month)-1; if(m>=0&&m<N) s.fundingIn[m]+=+f.amount||0;});
+  const coh=[];
+  let o=R.organic0/100, cumTax=0, bal=0, prevFloat=0, minCash=Infinity, minCashM=0, maxNeed=0, cumOp=0, be=null, budget=0;
+  for(let t=0;t<N;t++){
+    const ph=phaseOf(t); s.phase[t]=ph;
+    if(ph==="proof") budget=+R.mkt.proofBudget[Math.min(t,R.mkt.proofBudget.length-1)]||0;
+    else if(ph==="a") budget=(t+1===aM)?R.mkt.aStart:budget*(1+R.mkt.aGrowth/100);
+    else budget=(t+1===bM)?R.mkt.bStart:Math.min(R.mkt.cap,budget*(1+R.mkt.bGrowth/100));
+    s.spend[t]=budget;
+    const cpa=+R.cpa[ph]||1; s.cpa[t]=cpa;
+    s.newPaid[t]=budget/cpa; s.newOrg[t]=s.newPaid[t]*o; s.newU[t]=s.newPaid[t]+s.newOrg[t];
+    coh.forEach(c=>{c.n*=(1-churn(c.age,c.hv?R.hvRetMult:1)); c.age++;});
+    coh.push({n:s.newU[t]*(1-hv),age:0,hv:false}); coh.push({n:s.newU[t]*hv,age:0,hv:true});
+    let act=0,vol=0;
+    coh.forEach(c=>{ act+=c.n; vol+=c.n*R.volCore*(c.hv?R.hvVolMult:1)*(c.age===0?R.firstMonthBoost:1); });
+    s.actives[t]=act; s.vol[t]=vol; s.volSports[t]=vol*ms; s.volQuick[t]=vol*(1-ms);
+    s.feeRev[t]=vol*feePct/100; s.sprRev[t]=vol*sprPct/100;
+    s.float[t]=Math.max(R.floatMin, vol*R.floatPctVol/100);            // in-house market-making float (company capital)
+    s.floatYield[t]=s.float[t]*R.floatYield/100/12;
+    s.rev[t]=s.feeRev[t]+s.sprRev[t]+s.floatYield[t];
+    s.mmRisk[t]=vol*R.mmRiskPct/100;
+    s.infra[t]=s.rev[t]*R.infraPctRev/100;
+    s.kyc[t]=s.newU[t]*R.kycPerNew; s.support[t]=act*R.supportPerActive; s.payments[t]=vol*R.paymentsPctVol/100;
+    s.duty[t]=(s.feeRev[t]+s.sprRev[t])*R.dutyPct/100;
+    s.variable[t]=s.mmRisk[t]+s.infra[t]+s.kyc[t]+s.support[t]+s.payments[t]+s.duty[t];
+    s.contrib[t]=s.rev[t]-s.variable[t]-s.spend[t];
+    const y=Math.floor(t/12), step=y>=2?(1+R.team.y3Step/100):1;
+    s.team[t]=R.team[ph]*(ph==="b"?step:1); s.mmTeam[t]=R.mmTeam[ph]; s.data[t]=R.data[ph]; s.legal[t]=R.legal[ph]; s.ga[t]=R.ga[ph]+R.infraFixed;
+    s.licAnnual[t]=(t+1)>=R.licence.startMonth? R.licence.annual/12 : 0;
+    s.licUpfront[t]=(t+1)===R.licence.startMonth? R.licence.upfront : 0;
+    s.fixed[t]=s.team[t]+s.mmTeam[t]+s.data[t]+s.legal[t]+s.ga[t]+s.licAnnual[t];
+    s.ebitda[t]=s.contrib[t]-s.fixed[t];
+    cumTax+=s.ebitda[t]; s.tax[t]=cumTax>0?Math.min(Math.max(0,s.ebitda[t]),cumTax)*R.corpTaxPct/100:0;
+    s.dFloat[t]=s.float[t]-prevFloat; prevFloat=s.float[t];
+    s.netcf[t]=s.ebitda[t]-s.tax[t]-s.licUpfront[t]-s.dFloat[t];
+    cumOp+=s.netcf[t]; if(-cumOp>maxNeed) maxNeed=-cumOp;
+    bal+=s.netcf[t]+s.fundingIn[t]; s.cashOp[t]=bal;
+    if(bal<minCash){minCash=bal;minCashM=t;}
+    o=Math.min(R.organicCap/100,o+R.organicStep/100);
+  }
+  for(let t=0;t<N;t++){ if(s.ebitda[t]>0&&(t===N-1||s.ebitda[t+1]>0)){be=t;break;} }
+  // Cohort value curve: cumulative contribution per $1 of acquisition cost, by month since acquisition
+  const H=24;
+  const unit=(age,isHv)=>{const v=R.volCore*(isHv?R.hvVolMult:1)*(age===0?R.firstMonthBoost:1), g=v*(feePct+sprPct)/100;
+    return g - v*R.mmRiskPct/100 - g*R.infraPctRev/100 - v*R.paymentsPctVol/100 - g*R.dutyPct/100 - R.supportPerActive;};
+  const curve=(cpa)=>{ const out=[]; let cum=-R.kycPerNew, sC=1, sH=1;
+    for(let a=0;a<H;a++){ cum+=(1-hv)*sC*unit(a,false)+hv*sH*unit(a,true); out.push(cum/cpa);
+      sC*=(1-churn(a,1)); sH*=(1-churn(a,R.hvRetMult)); } return out; };
+  const cP=curve(R.cpa.proof), cA=curve(R.cpa.a), cB=curve(R.cpa.b);
+  const payback=c=>{const i=c.findIndex(v=>v>=1); return i<0?null:i+1;};
+  const surv=[]; {let sv=1; for(let a=0;a<13;a++){ surv.push(sv); sv*=(1-churn(a,1)); }}
+  return {N,s,aM,bM,minCash,minCashM,peakNeed:maxNeed,be,curveProof:cP,curveA:cA,curveB:cB,
+    payback:{proof:payback(cP),a:payback(cA),b:payback(cB)},
+    ret:{m1:surv[1],m3:surv[3],m6:surv[6],m12:surv[12]},
+    take:{feePct,sprPct,blend:feePct+sprPct,sports:feeS+R.sportsSpread,quick:feeQ+R.quickSpread},
+    totalFunding:s.fundingIn.reduce((a,b)=>a+b,0)};
+}
+
+/* ---------------- state ---------------- */
+let A = JSON.parse(JSON.stringify(DEFAULT_OVERRIDES));
+let MR = null;
+function recompute(){ MR=computeRPM(A); }
+function refresh(){ recompute(); renderTab(activeTab); }
+let _t=null;
+function queueRefresh(){ clearTimeout(_t); _t=setTimeout(refresh,250); }
+function numInput(obj,key,opts){
+  opts=opts||{};
+  const inp=document.createElement("input");
+  inp.type="number"; inp.value=obj[key];
+  if(opts.step)inp.step=opts.step; if(opts.min!=null)inp.min=opts.min;
+  inp.addEventListener("input",()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ obj[key]=v; queueRefresh(); } });
+  return inp;
+}
+function field(labelTxt,inputEl,unit){
+  const f=document.createElement("div"); f.className="f";
+  const l=document.createElement("label"); l.textContent=labelTxt; f.appendChild(l);
+  f.appendChild(inputEl);
+  if(unit){ const u=document.createElement("div"); u.className="unit"; u.textContent=unit; f.appendChild(u); }
+  return f;
+}
+const MOS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function calLbl(t){ const ab=(A.meta.startCalMonth-1)+t; return MOS[ab%12]+"-"+String(A.meta.startYear+Math.floor(ab/12)).slice(2); }
+function yS(a,y){ return a.slice(y*12,y*12+12).reduce((x,z)=>x+z,0); }
+function yrLbl(y){ return "Year "+(y+1)+"<br><span style='font-weight:400;color:var(--ink-3);font-size:11px'>"+calLbl(y*12)+" – "+calLbl(Math.min(MR.N-1,y*12+11))+"</span>"; }
+const PH={proof:"Proof",a:"Build (Round A)",b:"Scale (Round B)"};
+const pct0=v=>Math.round(v*100)+"%";
+function rounds(){ return [...A.funding].sort((a,b)=>a.month-b.month); }
+function roundMarks(){ return rounds().map((f,i)=>({t:Math.round(f.month)-1,label:i===0?"Seed":"R"+String.fromCharCode(64+i)})); }
+
+/* ---------------- tables ---------------- */
+function annualTable(rows,N){
+  const YRS=[...Array(Math.ceil(N/12)).keys()];
+  let h="<thead><tr><th></th>"+YRS.map(y=>`<th>${yrLbl(y)}</th>`).join("")+"</tr></thead><tbody>";
+  for(const r of rows){
+    if(r.s){ h+=`<tr class="section"><td colspan="${YRS.length+1}">${r.s}</td></tr>`; continue; }
+    h+=`<tr class="${r.tot?'total':''}"><td>${r.n}</td>`+YRS.map(y=>{
+      if(r.custom) return `<td>${r.custom(y)}</td>`;
+      const v=yS(r.a,y); return `<td class="${(!r.neg&&v<0)?'neg':''}">${r.neg?(Math.abs(v)<0.5?"—":"−"+fmt.usd(Math.abs(v))):fmt.usd(v)}</td>`;
+    }).join("")+"</tr>";
+  }
+  return h+"</tbody>";
+}
+function plRows(s){
+  const sum=(...arrs)=>s.rev.map((_,t)=>arrs.reduce((x,a)=>x+a[t],0));
+  return [
+    {s:"Activity"},
+    {n:"Traded volume",custom:y=>fmt.usd(yS(s.vol,y))},
+    {n:"New funded traders",custom:y=>fmt.num(yS(s.newU,y))},
+    {n:"Active traders (year end)",custom:y=>fmt.num(s.actives[Math.min(s.actives.length-1,y*12+11)])},
+    {s:"Revenue"},
+    {n:"Trading fees (dynamic, capped)",a:s.feeRev},
+    {n:"Market-making spread (own liquidity)",a:s.sprRev},
+    {n:"Yield on market-making float",a:s.floatYield},
+    {n:"Total revenue",a:s.rev,tot:true},
+    {s:"Variable costs"},
+    {n:"Market-making trading risk",a:s.mmRisk,neg:true},
+    {n:"Infrastructure, payments, onboarding, support, duty",a:sum(s.infra,s.payments,s.kyc,s.support,s.duty),neg:true},
+    {n:"Marketing (paid acquisition)",a:s.spend,neg:true},
+    {n:"Contribution after marketing",a:s.contrib,tot:true},
+    {s:"Fixed costs"},
+    {n:"Product, engineering & operations team",a:s.team,neg:true},
+    {n:"Market-making desk (quants & traders)",a:s.mmTeam,neg:true},
+    {n:"Sports data, oracles & market resolution",a:s.data,neg:true},
+    {n:"Legal, compliance & licence fees",a:sum(s.legal,s.licAnnual),neg:true},
+    {n:"G&A and fixed hosting",a:s.ga,neg:true},
+    {n:"EBITDA",a:s.ebitda,tot:true},
+    {n:"Corporate tax (15%, after loss relief)",a:s.tax,neg:true},
+    {n:"EBITDA margin",custom:y=>{const r=yS(s.rev,y);return r>0?pct0(yS(s.ebitda,y)/r):"—";}}
+  ];
+}
+
+/* ---------------- TAB: OVERVIEW ---------------- */
+function renderOverview(){
+  const el=document.getElementById("tab-overview"), r=MR, s=r.s, N=r.N, R=rounds();
+  const ly=Math.ceil(N/12)-1, revL=yS(s.rev,ly), ebL=yS(s.ebitda,ly);
+  el.innerHTML=`
+  <h2>Rain Prediction Markets — launch plan</h2>
+  <p class="sub">A standalone plan for Rain's prediction-markets business, starting ${calLbl(0)} on a deliberately small budget. Markets are built around <b>sports</b> and <b>quick trades</b> (short-duration markets that settle in minutes to hours), Rain runs its <b>own market making</b>, and the audience is crypto-native traders worldwide, with every country that prohibits prediction markets geo-blocked. The first ${r.aM-1} months exist to prove one thing: paid acquisition produces traders whose value climbs towards payback. That proof raises Round A (${fmt.usd(R[1]?R[1].amount:0)}, ${R[1]?calLbl(R[1].month-1):"—"}); five months of scaled data then raise Round B (${fmt.usd(R[2]?R[2].amount:0)}, ${R[2]?calLbl(R[2].month-1):"—"}).</p>
+  <div class="tiles" style="margin-top:10px">
+    <div class="tile hero"><div class="lbl">Year ${ly+1} revenue</div><div class="val">${fmt.usd(revL)}</div><div class="delta">EBITDA ${fmt.usd(ebL)} · ${revL>0?pct0(ebL/revL):"—"} margin</div></div>
+    <div class="tile"><div class="lbl">Proof cohorts — payback</div><div class="val">${r.payback.proof?"Month "+r.payback.proof:"> 24 mo"}</div><div class="delta">${pct0(r.curveProof[3])} of acquisition cost back by month 4</div></div>
+    <div class="tile"><div class="lbl">EBITDA breakeven</div><div class="val">${r.be!=null?"M"+(r.be+1):"—"}</div><div class="delta">${r.be!=null?calLbl(r.be):"not in horizon"}</div></div>
+    <div class="tile"><div class="lbl">Total funding</div><div class="val">${fmt.usd(r.totalFunding)}</div><div class="delta">${R.length} rounds · peak need ${fmt.usd(r.peakNeed)}</div></div>
+    <div class="tile"><div class="lbl">Lowest cash point</div><div class="val">${fmt.usd(r.minCash)}</div><div class="delta ${r.minCash>=0?'up':'down'}">${calLbl(r.minCashM)} · ${r.minCash>=0?"funded throughout":"funding gap"}</div></div>
+    <div class="tile"><div class="lbl">Active traders ${calLbl(N-1)}</div><div class="val">${fmt.num(s.actives[N-1])}</div><div class="delta">${fmt.num(s.newU[N-1])} new / month</div></div>
+  </div>
+  <div class="card"><h3>Annual P&amp;L</h3><div class="twrap"><table id="ov-annual"></table></div></div>
+  <div class="grid2">
+    <div class="card"><h3>Monthly revenue</h3><p class="note">Rain earns on every trade twice: a dynamic trading fee, and the spread its own market-making desk captures.</p><div class="chart" id="ov-rev"></div></div>
+    <div class="card"><h3>Monthly EBITDA</h3><p class="note">Seed, Round A and Round B marked. Losses are planned while marketing scales ahead of maturing cohorts.</p><div class="chart" id="ov-eb"></div></div>
+    <div class="card"><h3>Operating cash &amp; market-making float</h3><p class="note">The float is Rain's own capital deployed as liquidity on its markets; it is funded from the rounds and stays an asset on the balance sheet.</p><div class="chart" id="ov-cash"></div></div>
+    <div class="card"><h3>Active traders</h3><div class="chart" id="ov-act"></div></div>
+  </div>
+  <div class="card"><h3>Basis of the plan &amp; what must be confirmed</h3>
+    <div class="warnbox"><b>Market access.</b> No marketing to, or trading from, countries that prohibit prediction markets. Brazil banned them, sports included, in April 2026 (CMN Resolution 5298; Anatel has blocked 28 platforms), so it is excluded alongside the US and other blocked jurisdictions. The geo-block list is set by counsel before launch and enforced at sign-up, payment and IP level.</div>
+    <div class="warnbox"><b>Licensing basis for a ${calLbl(0)} start.</b> The Gibraltar Prediction Market Authorisation is budgeted from month ${A.licence.startMonth}. Counsel must confirm the legal basis for operating before it is granted; the plan carries legal and licensing costs from month 1.</div>
+    <div class="warnbox"><b>In-house market making.</b> Rain's desk quotes both sides of its own markets. It earns the spread but bears inventory and adverse-selection risk, charged here at ${A.mmRiskPct}% of volume, and needs a capital float (minimum ${fmt.usd(A.floatMin)}, then ${A.floatPctVol}% of monthly volume). Customer balances are held separately and are never used as market-making capital.</div>
+  </div>`;
+  el.querySelector("#ov-annual").innerHTML=annualTable(plRows(s),N);
+  const xl=t=>calLbl(t);
+  xyChart(document.getElementById("ov-rev"),
+    [{name:"Trading fees",color:sColor(0),values:s.feeRev},{name:"Market-making spread",color:sColor(5),values:s.sprRev},{name:"Float yield",color:sColor(3),values:s.floatYield}],{stacked:true,h:250,xl,fmt:v=>fmt.usd(v,1)});
+  xyChart(document.getElementById("ov-eb"),[{name:"EBITDA",color:sColor(2),values:s.ebitda,kind:"bar"}],{h:250,xl,marks:roundMarks()});
+  xyChart(document.getElementById("ov-cash"),
+    [{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float}],{h:250,xl,marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
+  xyChart(document.getElementById("ov-act"),[{name:"Active traders",color:sColor(2),values:s.actives,kind:"area"}],{h:250,xl,fmt:v=>fmt.num(v)});
+}
+
+/* ---------------- TAB: 4-MONTH PROOF ---------------- */
+function renderProof(){
+  const el=document.getElementById("tab-proof"), r=MR, s=r.s, P=r.aM-1;
+  const H=18, mo=t=>"Mo "+(t+1);
+  const first=r.curveProof[0];
+  const marks=[{t:Math.min(H-1,P-1),label:`Month ${P}: Round A raise`}];
+  if(r.payback.proof&&r.payback.proof<=H) marks.push({t:r.payback.proof-1,label:"Payback month "+r.payback.proof,dy:16});
+  el.innerHTML=`
+  <h2>The ${P}-month proof</h2>
+  <p class="sub">Round A is raised on one picture: how fast a cohort of paid traders earns back what it cost to acquire. The curve below is the cumulative contribution of a proof-phase cohort (revenue after market-making risk and all variable costs) divided by its acquisition cost. By month ${P} it is still below 100%, which is expected, but its slope shows payback is coming; investors fund the scale-up on that slope.</p>
+  <div class="tiles" style="margin-top:10px">
+    <div class="tile hero"><div class="lbl">Recovered by month ${P}</div><div class="val">${pct0(r.curveProof[P-1])}</div><div class="delta">of acquisition cost, per proof cohort</div></div>
+    <div class="tile"><div class="lbl">Payback month</div><div class="val">${r.payback.proof?"Month "+r.payback.proof:"> 24"}</div><div class="delta">${pct0(r.curveProof[11])} by month 12</div></div>
+    <div class="tile"><div class="lbl">First-month return</div><div class="val">${pct0(first)}</div><div class="delta">contribution in month 1 ÷ CPA</div></div>
+    <div class="tile"><div class="lbl">Cost per funded trader</div><div class="val">${fmt.usd(A.cpa.proof,0)}</div><div class="delta">proof phase · ${fmt.usd(A.cpa.a,0)} Round A · ${fmt.usd(A.cpa.b,0)} scale</div></div>
+    <div class="tile"><div class="lbl">Still trading after 1 / 3 / 6 months</div><div class="val">${pct0(r.ret.m1)}</div><div class="delta">${pct0(r.ret.m3)} · ${pct0(r.ret.m6)} · ${pct0(r.ret.m12)} at 12</div></div>
+    <div class="tile"><div class="lbl">Volume per active trader</div><div class="val">${fmt.usd(A.volCore,0)}</div><div class="delta">per month · premium ×${A.hvVolMult}</div></div>
+  </div>
+  <div class="card"><h3>Cohort value curve — contribution per $1 of acquisition cost</h3><p class="note">Proof, Round A and scale cohorts differ only in what they cost to acquire. Dashed line = payback.</p><div class="chart" id="pf-curve"></div></div>
+  <div class="card"><h3>Proof months in detail</h3><div class="twrap"><table id="pf-months"></table></div></div>
+  <div class="card"><h3>What Round A investors should see by month ${P}</h3><p class="note">Each line is a live metric Rain reports monthly from day 1. Plan values come from the assumptions; a result at or better than plan is the case for Round A.</p><div class="twrap"><table id="pf-kpis"></table></div></div>`;
+  xyChart(document.getElementById("pf-curve"),
+    [{name:"Proof cohorts",color:sColor(0),values:r.curveProof.slice(0,H)},
+     {name:"Round A cohorts",color:sColor(2),values:r.curveA.slice(0,H)},
+     {name:"Scale cohorts",color:sColor(5),values:r.curveB.slice(0,H)}],
+    {w:1240,h:340,xl:mo,fmt:pct0,href:{v:1,label:"Payback — 100%"},marks});
+  const cols=[...Array(P).keys()];
+  const row=(n,f)=>`<tr><td>${n}</td>${cols.map(t=>`<td>${f(t)}</td>`).join("")}</tr>`;
+  el.querySelector("#pf-months").innerHTML=`<thead><tr><th></th>${cols.map(t=>`<th>${calLbl(t)}</th>`).join("")}</tr></thead><tbody>`+
+    row("Marketing spend",t=>fmt.usd(s.spend[t]))+row("Cost per funded trader",t=>fmt.usd(s.cpa[t],0))+
+    row("New funded traders",t=>fmt.num(s.newU[t]))+row("Active traders",t=>fmt.num(s.actives[t]))+
+    row("Traded volume",t=>fmt.usd(s.vol[t]))+row("Revenue",t=>fmt.usd(s.rev[t]))+
+    row("Contribution after marketing",t=>`<span class="${s.contrib[t]<0?'neg':''}">${fmt.usd(s.contrib[t])}</span>`)+
+    row("EBITDA",t=>`<span class="${s.ebitda[t]<0?'neg':''}">${fmt.usd(s.ebitda[t])}</span>`)+
+    row("Cash at month end",t=>fmt.usd(s.cashOp[t]))+"</tbody>";
+  const k=[
+    ["Cost per funded trader (first trade made)",fmt.usd(A.cpa.proof,0)+" or less","Sets how many traders each marketing dollar buys; the cheapest crypto channels are found and kept in these months."],
+    ["Traders still active after month 1",pct0(r.ret.m1)+" or more","The earliest signal of product fit; quick-trade markets bring traders back daily."],
+    ["Traded volume per active trader",fmt.usd(A.volCore,0)+"/month or more","Drives both fee and spread revenue; sports and quick-trade markets set the pace."],
+    ["Market-making result",(A.sportsSpread*A.mixSports/100+A.quickSpread*(1-A.mixSports/100)-A.mmRiskPct).toFixed(2)+"% of volume or more","Spread captured by Rain's desk minus its trading losses; proves the in-house desk earns its keep."],
+    [`Acquisition cost recovered by month ${P}`,pct0(r.curveProof[P-1])+" or more","The headline number of the Round A raise."],
+    ["Projected payback month",r.payback.proof?"Month "+r.payback.proof+" or sooner":"—","Where the measured curve crosses 100%, projected from months 1–"+P+"."]
+  ];
+  el.querySelector("#pf-kpis").innerHTML="<thead><tr><th>Metric</th><th>Plan</th><th style='text-align:left'>Why it matters</th></tr></thead><tbody>"+
+    k.map(x=>`<tr><td>${x[0]}</td><td style="font-weight:650">${x[1]}</td><td style="text-align:left;white-space:normal;color:var(--ink-2);font-size:12px">${x[2]}</td></tr>`).join("")+"</tbody>";
+}
+
+/* ---------------- TAB: MONTHLY P&L ---------------- */
+function renderPnL(){
+  const el=document.getElementById("tab-pnl"), s=MR.s, N=MR.N;
+  el.innerHTML=`<h2>Monthly P&amp;L</h2><p class="sub">Every month of the plan. Phase changes follow the funding rounds: ${PH.proof} to ${calLbl(MR.aM-2)}, ${PH.a} to ${calLbl(MR.bM-2)}, then ${PH.b}.</p>
+  <div class="card"><div class="twrap"><table id="pl-m"></table></div></div>`;
+  const rows=plRows(s);
+  let h="<thead><tr><th></th>"+[...Array(N).keys()].map(t=>`<th>${calLbl(t)}<br><span style="font-weight:400;color:var(--ink-3);font-size:10.5px">${PH[s.phase[t]].split(" ")[0]}</span></th>`).join("")+"</tr></thead><tbody>";
+  const monthly={"Traded volume":s.vol,"New funded traders":s.newU,"Active traders (year end)":s.actives};
+  for(const r of rows){
+    if(r.s){ h+=`<tr class="section"><td colspan="${N+1}">${r.s}</td></tr>`; continue; }
+    const name=r.n==="Active traders (year end)"?"Active traders":r.n;
+    h+=`<tr class="${r.tot?'total':''}"><td>${name}</td>`+[...Array(N).keys()].map(t=>{
+      if(r.n==="EBITDA margin") return `<td>${s.rev[t]>0?pct0(s.ebitda[t]/s.rev[t]):"—"}</td>`;
+      if(monthly[r.n]) return `<td>${r.n==="Traded volume"?fmt.usd(monthly[r.n][t]):fmt.num(monthly[r.n][t])}</td>`;
+      const v=r.a[t]; return `<td class="${(!r.neg&&v<0)?'neg':''}">${r.neg?(Math.abs(v)<0.5?"—":"−"+fmt.usd(Math.abs(v))):fmt.usd(v)}</td>`;
+    }).join("")+"</tr>";
+  }
+  el.querySelector("#pl-m").innerHTML=h+"</tbody>";
+}
+
+/* ---------------- TAB: CASH & FUNDING ---------------- */
+function renderCash(){
+  const el=document.getElementById("tab-cash"), r=MR, s=r.s, N=r.N, R=rounds();
+  const phases=["proof","a","b"].map(ph=>{
+    const ts=[...Array(N).keys()].filter(t=>s.phase[t]===ph); if(!ts.length) return null;
+    const sum=a=>ts.reduce((x,t)=>x+a[t],0);
+    return {ph,from:ts[0],to:ts[ts.length-1],mkt:sum(s.spend),opex:sum(s.rev)-sum(s.ebitda)-sum(s.spend),rev:sum(s.rev),
+      float:sum(s.dFloat),lic:sum(s.licUpfront),tax:sum(s.tax),net:-sum(s.netcf)};
+  }).filter(Boolean);
+  el.innerHTML=`<h2>Cash &amp; funding</h2>
+  <p class="sub">Three steps of funding, each released by evidence from the step before. Operating cash excludes the market-making float, which is capital at work on Rain's markets.</p>
+  <div class="tiles" style="margin-top:10px">
+    ${R.map((f,i)=>`<div class="tile ${i===0?'':''}"><div class="lbl">${f.name}</div><div class="val">${fmt.usd(f.amount)}</div><div class="delta">${calLbl(f.month-1)} · month ${f.month}</div></div>`).join("")}
+    <div class="tile"><div class="lbl">Peak funding need</div><div class="val">${fmt.usd(r.peakNeed)}</div><div class="delta">vs ${fmt.usd(r.totalFunding)} raised</div></div>
+    <div class="tile"><div class="lbl">Cash at ${calLbl(N-1)}</div><div class="val">${fmt.usd(s.cashOp[N-1])}</div><div class="delta">plus ${fmt.usd(s.float[N-1])} market-making float</div></div>
+  </div>
+  <div class="card"><h3>Operating cash by month</h3><div class="chart" id="cs-cash"></div></div>
+  <div class="card"><h3>Where each step's money goes</h3><div class="twrap"><table id="cs-uses"></table></div></div>
+  <div class="card sliders"><h3>Funding rounds</h3><div class="fields" id="cs-edit"></div>
+  <p class="note" style="margin-top:8px">${R.map(f=>`<b>${f.name}:</b> ${f.note||""}`).join("<br>")}</p></div>`;
+  xyChart(document.getElementById("cs-cash"),[{name:"Operating cash",color:sColor(0),values:s.cashOp,kind:"area"},{name:"Market-making float",color:sColor(5),values:s.float}],{w:1240,h:300,xl:t=>calLbl(t),marks:roundMarks(),fmt:v=>fmt.usd(v,1)});
+  el.querySelector("#cs-uses").innerHTML="<thead><tr><th></th>"+phases.map(p=>`<th>${PH[p.ph]}<br><span style="font-weight:400;color:var(--ink-3);font-size:11px">${calLbl(p.from)} – ${calLbl(p.to)}</span></th>`).join("")+"</tr></thead><tbody>"+
+    [["Revenue",p=>fmt.usd(p.rev)],["Marketing",p=>"−"+fmt.usd(p.mkt)],["Team, desk, data, legal, G&A & variable costs",p=>"−"+fmt.usd(p.opex)],
+     ["Market-making float added",p=>p.float?"−"+fmt.usd(p.float):"—"],["Licence application & tax",p=>(p.lic+p.tax)?"−"+fmt.usd(p.lic+p.tax):"—"],
+     ["Net cash used",p=>`<b>${fmt.usd(p.net)}</b>`]].map(([n,f])=>`<tr${n==="Net cash used"?' class="total"':''}><td>${n}</td>${phases.map(p=>`<td>${f(p)}</td>`).join("")}</tr>`).join("")+"</tbody>";
+  const fd=el.querySelector("#cs-edit");
+  A.funding.forEach(f=>{ fd.appendChild(field(f.name+" — month",numInput(f,"month",{step:1,min:1}),"M#"));
+    fd.appendChild(field(f.name+" — amount",numInput(f,"amount",{step:100000,min:0}),"$")); });
+}
+
+/* ---------------- TAB: ASSUMPTIONS ---------------- */
+function renderAssump(){
+  const el=document.getElementById("tab-assump"), r=MR; el.innerHTML=`<h2>Assumptions</h2><p class="sub">Every number in the plan. Changes recalculate everything immediately; "Save current numbers as new default" at the bottom makes them the plan everyone sees.</p>`;
+  const card=(title,note,fields)=>{ const c=document.createElement("div"); c.className="card sliders";
+    c.innerHTML=`<h3>${title}</h3>${note?`<p class="note">${note}</p>`:""}`; const fl=document.createElement("div"); fl.className="fields";
+    fields.forEach(f=>fl.appendChild(f)); c.appendChild(fl); el.appendChild(c); };
+  const P=r.aM-1;
+  card("1 · Marketing budget",`Proof phase: a fixed test budget per month to find the cheapest crypto channels (KOLs and crypto creators, Telegram and community, referral, crypto ad networks, sports tipsters). After Round A the budget ramps monthly; after Round B it scales towards the cap.`,[
+    ...[...Array(P).keys()].map(i=>{ if(A.mkt.proofBudget[i]==null) A.mkt.proofBudget[i]=A.mkt.proofBudget[A.mkt.proofBudget.length-1]; return field(`Proof budget — ${calLbl(i)}`,numInput(A.mkt.proofBudget,i,{step:1000,min:0}),"$/mo"); }),
+    field("Round A — first month budget",numInput(A.mkt,"aStart",{step:5000}),"$/mo"),
+    field("Round A — monthly growth",numInput(A.mkt,"aGrowth",{step:1}),"%/mo"),
+    field("Scale — first month budget",numInput(A.mkt,"bStart",{step:10000}),"$/mo"),
+    field("Scale — monthly growth",numInput(A.mkt,"bGrowth",{step:0.5}),"%/mo"),
+    field("Monthly budget cap",numInput(A.mkt,"cap",{step:25000}),"$/mo")]);
+  card("2 · Acquisition",`Cost per funded trader = marketing spend ÷ new traders who deposit and make a first trade. Referral and organic traders arrive on top of paid ones and grow as the community and referral programme mature.`,[
+    field("Cost per funded trader — proof",numInput(A.cpa,"proof",{step:5}),"$"),
+    field("Cost per funded trader — Round A",numInput(A.cpa,"a",{step:5}),"$"),
+    field("Cost per funded trader — scale",numInput(A.cpa,"b",{step:5}),"$"),
+    field("Referral & organic — at launch",numInput(A,"organic0",{step:1}),"% of paid"),
+    field("Referral & organic — monthly increase",numInput(A,"organicStep",{step:0.5}),"pp/mo"),
+    field("Referral & organic — cap",numInput(A,"organicCap",{step:1}),"% of paid")]);
+  card("3 · Retention",`Monthly churn starts high and settles to a long-term rate: churn(month) = tail + (first-month − tail) × decay^month. Implied share still trading: ${pct0(r.ret.m1)} after 1 month, ${pct0(r.ret.m3)} after 3, ${pct0(r.ret.m6)} after 6, ${pct0(r.ret.m12)} after 12. Premium traders churn more slowly.`,[
+    field("Churn in first month",numInput(A,"churnEarly",{step:1}),"%"),
+    field("Long-term monthly churn",numInput(A,"churnTail",{step:0.5}),"%"),
+    field("Decay per month",numInput(A,"churnDecay",{step:0.02}),"factor"),
+    field("Premium traders — share of new",numInput(A,"hvShare",{step:1}),"%"),
+    field("Premium retention multiple",numInput(A,"hvRetMult",{step:0.1}),"×")]);
+  card("4 · Trading activity & products",`Sports markets (pre-match and live) and quick trades (short-duration markets on price moves and in-game events that settle in minutes to hours) are the two product lines. Quick trades bring traders back daily, which is what lifts volume per active trader.`,[
+    field("Volume per active trader",numInput(A,"volCore",{step:50}),"$/mo"),
+    field("Premium volume multiple",numInput(A,"hvVolMult",{step:0.25}),"×"),
+    field("First-month activity boost",numInput(A,"firstMonthBoost",{step:0.05}),"×"),
+    field("Sports share of volume",numInput(A,"mixSports",{step:5}),"% (rest quick trades)")]);
+  card("5 · Take rate",`Rain's take on traded value = dynamic trading fee (capped) + spread captured by its own market-making desk. Current blend: fee ${r.take.feePct.toFixed(2)}% + spread ${r.take.sprPct.toFixed(2)}% = ${r.take.blend.toFixed(2)}% (sports ${r.take.sports.toFixed(2)}%, quick trades ${r.take.quick.toFixed(2)}%). Comparable venues: Kalshi's schedule prices a mid-odds sports trade at about 2.2% all-in; sportsbooks hold 10–12% of stakes.`,[
+    field("Sports — trading fee",numInput(A,"sportsFee",{step:0.05}),"% of volume"),
+    field("Sports — market-making spread",numInput(A,"sportsSpread",{step:0.05}),"% of volume"),
+    field("Quick trades — trading fee",numInput(A,"quickFee",{step:0.05}),"% of volume"),
+    field("Quick trades — market-making spread",numInput(A,"quickSpread",{step:0.05}),"% of volume"),
+    field("Trading fee cap",numInput(A,"feeCap",{step:0.1}),"%")]);
+  card("6 · In-house market making",`Rain's desk provides liquidity on its own markets. Costs are carried here: the desk team (by phase, in fixed costs), trading risk on volume, and the float of company capital it trades with. The float earns treasury yield while deployed. Customer balances are never used as desk capital.`,[
+    field("Trading risk (inventory & adverse selection)",numInput(A,"mmRiskPct",{step:0.05}),"% of volume"),
+    field("Minimum float",numInput(A,"floatMin",{step:50000}),"$"),
+    field("Float as share of monthly volume",numInput(A,"floatPctVol",{step:1}),"%"),
+    field("Yield on float",numInput(A,"floatYield",{step:0.25}),"%/yr"),
+    field("Desk team — proof",numInput(A.mmTeam,"proof",{step:1000}),"$/mo"),
+    field("Desk team — Round A",numInput(A.mmTeam,"a",{step:1000}),"$/mo"),
+    field("Desk team — scale",numInput(A.mmTeam,"b",{step:1000}),"$/mo")]);
+  card("7 · Fixed costs by phase",`Kept deliberately small in the proof phase. Team costs grow by the step below from year 3.`,[
+    field("Team — proof",numInput(A.team,"proof",{step:5000}),"$/mo"),
+    field("Team — Round A",numInput(A.team,"a",{step:5000}),"$/mo"),
+    field("Team — scale",numInput(A.team,"b",{step:10000}),"$/mo"),
+    field("Team step from year 3",numInput(A.team,"y3Step",{step:5}),"%"),
+    field("Sports data & oracles — proof",numInput(A.data,"proof",{step:1000}),"$/mo"),
+    field("Sports data & oracles — Round A",numInput(A.data,"a",{step:1000}),"$/mo"),
+    field("Sports data & oracles — scale",numInput(A.data,"b",{step:1000}),"$/mo"),
+    field("Legal & compliance — proof",numInput(A.legal,"proof",{step:1000}),"$/mo"),
+    field("Legal & compliance — Round A",numInput(A.legal,"a",{step:1000}),"$/mo"),
+    field("Legal & compliance — scale",numInput(A.legal,"b",{step:1000}),"$/mo"),
+    field("G&A — proof",numInput(A.ga,"proof",{step:1000}),"$/mo"),
+    field("G&A — Round A",numInput(A.ga,"a",{step:1000}),"$/mo"),
+    field("G&A — scale",numInput(A.ga,"b",{step:1000}),"$/mo"),
+    field("Fixed hosting",numInput(A,"infraFixed",{step:1000}),"$/mo")]);
+  card("8 · Variable costs, licence & tax",`Gibraltar Prediction Market Authorisation from the month below (application + annual fee); 0.15% duty on Rain's commission; 15% corporate tax after loss relief.`,[
+    field("Infrastructure",numInput(A,"infraPctRev",{step:0.5}),"% of revenue"),
+    field("Payments & on-ramp absorbed",numInput(A,"paymentsPctVol",{step:0.05}),"% of volume"),
+    field("Onboarding & KYC",numInput(A,"kycPerNew",{step:0.5}),"$ per new trader"),
+    field("Support",numInput(A,"supportPerActive",{step:0.1}),"$ per active/mo"),
+    field("Licence — application",numInput(A.licence,"upfront",{step:1000}),"$"),
+    field("Licence — annual fee",numInput(A.licence,"annual",{step:1000}),"$/yr"),
+    field("Licence — first month",numInput(A.licence,"startMonth",{step:1,min:1}),"M#"),
+    field("Regulatory duty",numInput(A,"dutyPct",{step:0.01}),"% of commission"),
+    field("Corporate tax",numInput(A,"corpTaxPct",{step:1}),"%")]);
+}
+
+/* ---------------- tabs, router, save/load ---------------- */
+const TABS=[["overview","Overview"],["proof","4-Month Proof"],["pnl","Monthly P&L"],["cash","Cash & Funding"],["assump","Assumptions"]];
+let activeTab="overview";
+const nav=document.getElementById("nav");
+TABS.forEach(([id,label])=>{
+  const b=document.createElement("button"); b.textContent=label; b.dataset.tab=id;
+  b.onclick=()=>{ activeTab=id; document.querySelectorAll("button[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===id));
+    document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.id==="tab-"+id)); renderTab(id); };
+  nav.appendChild(b);
+});
+function renderTab(id){
+  if(!MR) recompute();
+  if(id==="overview") renderOverview(); else if(id==="proof") renderProof(); else if(id==="pnl") renderPnL();
+  else if(id==="cash") renderCash(); else if(id==="assump") renderAssump();
+}
+function showDefToast(msg){
+  let t=document.getElementById("defToast");
+  if(!t){ t=document.createElement("div"); t.id="defToast";
+    t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink-1);color:var(--surface-1);padding:12px 20px;border-radius:12px;font-size:13px;z-index:200;max-width:560px;box-shadow:0 8px 30px rgba(0,0,0,.25)";
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>{t.style.display="none";},9000);
+}
+document.getElementById("btnSaveDefault").onclick=async()=>{
+  const json=JSON.stringify(A,null,2);
+  try{
+    if(!location.protocol.startsWith("http")) throw new Error("offline");
+    const r=await fetch("/api/defaults?plan=rainpm",{method:"POST",headers:{"Content-Type":"application/json"},body:json});
+    if(!r.ok){ let m=""; try{ m=(await r.json()).error||""; }catch(e){} throw new Error("save failed ("+r.status+")"+(m?": "+m:"")); }
+    showDefToast("Saved as the new default — everyone who opens this plan now sees these numbers. Previous versions are kept."); return;
+  }catch(e){
+    const blob=new Blob([json],{type:"application/json"}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="rain-pm-launch-numbers.json"; a.click(); URL.revokeObjectURL(a.href);
+    showDefToast("Could not save to the server — a copy was downloaded instead. Reason: "+String(e&&e.message||e));
+  }
+};
+document.getElementById("btnTheme").onclick=()=>{ const r=document.documentElement; r.dataset.theme=r.dataset.theme==="dark"?"light":"dark"; renderTab(activeTab); };
+recompute();
+document.querySelector('nav button[data-tab="overview"]').classList.add("on");
+document.getElementById("tab-overview").classList.add("on");
+renderTab("overview");
+(async()=>{
+  if(!location.protocol.startsWith("http")) return;
+  try{
+    const r=await fetch("/api/defaults?plan=rainpm",{cache:"no-store"}); if(!r.ok) return;
+    const j=await r.json();
+    if(j&&j.meta&&j.funding&&j.mkt){
+      if(j.meta.bakeId!==DEFAULT_OVERRIDES.meta.bakeId){ showDefToast("Saved numbers belong to an older version of the plan and were not applied — showing the current plan."); return; }
+      A=j; refresh(); }
+  }catch(e){}
+})();
+
+</script>
+</body>
+</html>
