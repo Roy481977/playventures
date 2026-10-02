@@ -317,7 +317,7 @@ function xyChart(el, series, opts){
 
 
 
-const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startYear":2026,"startCalMonth":11,"bakeId":"rpm1-2026-10-02"},"funding":[{"name":"Bootstrap — Rain seed","month":1,"amount":600000,"note":"Rain's own launch funding in month 1. Rain group top-ups (shown separately) cover any month where operating cash would fall below the minimum."},{"name":"Round A — Proof of ROAS","month":5,"amount":2000000,"note":"Raised on four months of live cohort data: cost per funded trader by channel, retention, volume per trader, market-making result and the cohort value curve heading to payback."},{"name":"Round B — Scale","month":10,"amount":6000000,"note":"Raised five months later on proven payback; funds the marketing scale-up and the larger market-making float."},{"name":"Round C — Growth to breakeven","month":16,"amount":13000000,"note":"Raised in Feb-28, when Round B is spent, on 15 months of trading history and scaled cohort economics. Carries the business through EBITDA breakeven in mid-2029 with about $1M of cushion."}],"mkt":{"proofBudget":[10000,20000,30000,40000],"aStart":60000,"aGrowth":15,"bStart":180000,"bGrowth":7,"cap":650000},"cpa":{"proof":80,"a":65,"b":70},"organic0":10,"organicStep":1,"organicCap":35,"hvShare":8,"hvVolMult":4,"hvRetMult":1.4,"churnEarly":32,"churnTail":4,"churnDecay":0.72,"volCore":1100,"firstMonthBoost":1.2,"mixSports":60,"sportsFee":1.2,"sportsSpread":0.8,"quickFee":1.5,"quickSpread":0.8,"feeCap":2.5,"mmRiskPct":0.25,"floatMin":100000,"floatPctVol":5,"floatYield":3,"infraPctRev":6,"infraFixed":6000,"kycPerNew":3,"supportPerActive":0.6,"paymentsPctVol":0.1,"dutyPct":0.15,"team":{"proof":45000,"a":110000,"b":220000,"y3Step":20},"mmTeam":{"proof":12000,"a":30000,"b":60000},"data":{"proof":5000,"a":12000,"b":20000},"legal":{"proof":10000,"a":15000,"b":25000},"ga":{"proof":5000,"a":15000,"b":30000},"licence":{"upfront":39000,"annual":129000,"startMonth":3},"corpTaxPct":15,"rainOpex":900000,"rainOpexStep":0,"rainSupport":{"enabled":true,"floor":250000}}/*__END_DEFAULTS__*/;
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":36,"startYear":2026,"startCalMonth":11,"bakeId":"rpm1-2026-10-02"},"funding":[{"name":"Bootstrap — Rain seed","month":1,"amount":600000,"note":"Rain's own launch funding in month 1. Rain group top-ups (shown separately) cover any month where operating cash would fall below the minimum."},{"name":"Round A — Proof of ROAS","month":5,"amount":2000000,"note":"Raised on four months of live cohort data: cost per funded trader by channel, retention, volume per trader, market-making result and the cohort value curve heading to payback."},{"name":"Round B — Scale","month":10,"amount":6000000,"note":"Raised five months later on proven payback; funds the marketing scale-up and the larger market-making float."},{"name":"Round C — Growth to breakeven","month":16,"amount":13000000,"note":"Raised in Feb-28, when Round B is spent, on 15 months of trading history and scaled cohort economics. Carries the business through EBITDA breakeven in mid-2029 with about $1M of cushion."}],"mkt":{"proofBudget":[10000,20000,30000,40000],"aStart":60000,"aGrowth":15,"bStart":180000,"bGrowth":7,"cap":1500000,"cStart":760000,"cGrowth":25},"cpa":{"proof":80,"a":65,"b":70},"organic0":10,"organicStep":1,"organicCap":35,"hvShare":8,"hvVolMult":4,"hvRetMult":1.4,"churnEarly":32,"churnTail":4,"churnDecay":0.72,"volCore":1100,"firstMonthBoost":1.2,"mixSports":60,"sportsFee":1.2,"sportsSpread":0.8,"quickFee":1.5,"quickSpread":0.8,"feeCap":2.5,"mmRiskPct":0.25,"floatMin":100000,"floatPctVol":5,"floatYield":3,"infraPctRev":6,"infraFixed":6000,"kycPerNew":3,"supportPerActive":0.6,"paymentsPctVol":0.1,"dutyPct":0.15,"team":{"proof":45000,"a":110000,"b":220000,"y3Step":20},"mmTeam":{"proof":12000,"a":30000,"b":60000},"data":{"proof":5000,"a":12000,"b":20000},"legal":{"proof":10000,"a":15000,"b":25000},"ga":{"proof":5000,"a":15000,"b":30000},"licence":{"upfront":39000,"annual":129000,"startMonth":3},"corpTaxPct":15,"rainOpex":900000,"rainOpexStep":0,"rainSupport":{"enabled":true,"floor":250000}}/*__END_DEFAULTS__*/;
 
 /* ============================================================
    RAIN PREDICTION MARKETS — LAUNCH PLAN (standalone)
@@ -327,6 +327,7 @@ function computeRPM(R){
   const N=R.meta.months, Z=()=>Array(N).fill(0);
   const rounds=[...R.funding].sort((a,b)=>a.month-b.month);
   const aM=rounds[1]?+rounds[1].month:5, bM=rounds[2]?+rounds[2].month:10;      // phases follow the rounds
+  const cM=rounds[3]?+rounds[3].month:Infinity;                                  // marketing steps up again after Round C
   const phaseOf=t=> (t+1)<aM?"proof":((t+1)<bM?"a":"b");
   const early=R.churnEarly/100, tail=R.churnTail/100, dec=R.churnDecay;
   const churn=(age,mult)=>Math.min(.95,(tail+(early-tail)*Math.pow(dec,age))/mult);
@@ -344,6 +345,7 @@ function computeRPM(R){
     const ph=phaseOf(t); s.phase[t]=ph;
     if(ph==="proof") budget=+R.mkt.proofBudget[Math.min(t,R.mkt.proofBudget.length-1)]||0;
     else if(ph==="a") budget=(t+1===aM)?R.mkt.aStart:budget*(1+R.mkt.aGrowth/100);
+    else if((t+1)>=cM && R.mkt.cStart!=null) budget=(t+1===cM)?Math.max(budget,R.mkt.cStart):Math.min(R.mkt.cap,budget*(1+(+R.mkt.cGrowth||0)/100));
     else budget=(t+1===bM)?R.mkt.bStart:Math.min(R.mkt.cap,budget*(1+R.mkt.bGrowth/100));
     s.spend[t]=budget;
     const cpa=+R.cpa[ph]||1; s.cpa[t]=cpa;
@@ -630,12 +632,14 @@ function renderAssump(){
     c.innerHTML=`<h3>${title}</h3>${note?`<p class="note">${note}</p>`:""}`; const fl=document.createElement("div"); fl.className="fields";
     fields.forEach(f=>fl.appendChild(f)); c.appendChild(fl); el.appendChild(c); };
   const P=r.aM-1;
-  card("1 · Marketing budget",`Proof phase: a fixed test budget per month to find the cheapest crypto channels (KOLs and crypto creators, Telegram and community, referral, crypto ad networks, sports tipsters). After Round A the budget ramps monthly; after Round B it scales towards the cap.`,[
+  card("1 · Marketing budget",`Proof phase: a fixed test budget per month to find the cheapest crypto channels (KOLs and crypto creators, Telegram and community, referral, crypto ad networks, sports tipsters). After Round A the budget ramps monthly and after Round B it steps up again. Round A and Round B money goes mostly to Rain's operating costs, so the big marketing push comes with Round C: the budget triples in the month it lands and grows 25% a month to the cap. That is the most the funding allows without asking Rain for more money. That is the most the funding allows without asking Rain for more money.`,[
     ...[...Array(P).keys()].map(i=>{ if(A.mkt.proofBudget[i]==null) A.mkt.proofBudget[i]=A.mkt.proofBudget[A.mkt.proofBudget.length-1]; return field(`Proof budget — ${calLbl(i)}`,numInput(A.mkt.proofBudget,i,{step:1000,min:0}),"$/mo"); }),
     field("Round A — first month budget",numInput(A.mkt,"aStart",{step:5000}),"$/mo"),
     field("Round A — monthly growth",numInput(A.mkt,"aGrowth",{step:1}),"%/mo"),
     field("Scale — first month budget",numInput(A.mkt,"bStart",{step:10000}),"$/mo"),
     field("Scale — monthly growth",numInput(A.mkt,"bGrowth",{step:0.5}),"%/mo"),
+    field("After Round C — first month budget",numInput(A.mkt,"cStart",{step:50000}),"$/mo"),
+    field("After Round C — monthly growth",numInput(A.mkt,"cGrowth",{step:1}),"%/mo"),
     field("Monthly budget cap",numInput(A.mkt,"cap",{step:25000}),"$/mo")]);
   card("2 · Acquisition",`Cost per funded trader = marketing spend ÷ new traders who deposit and make a first trade. Referral and organic traders arrive on top of paid ones and grow as the community and referral programme mature.`,[
     field("Cost per funded trader — proof",numInput(A.cpa,"proof",{step:5}),"$"),
