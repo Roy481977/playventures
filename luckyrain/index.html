@@ -432,6 +432,8 @@ function compute(A, sim){
     const contentPct = gh.contentPct;
     const hold = clamp(g.hold/100*S.holdMult, 0.05, 0.95);
     const mShare = clamp((g.mediaSharePct||0)/100, 0, 1);
+    // bonus cost: per-GEO override if set (blank = global); the Simulate bonus slider overrides all
+    const bpG = (S.bonusPct==null && g.bonusPct!=null && g.bonusPct!=="" && !isNaN(+g.bonusPct)) ? (+g.bonusPct)/100 : bonusPct;
 
     const spend=Array(N).fill(0);
     for(let t=0;t<N;t++) spend[t]=marketingSpend(g, t+1, S.mktMult, A.global);
@@ -479,7 +481,7 @@ function compute(A, sim){
       const turnover = actives[t]*turnPerActive;
       const deposits = ggr/hold;
       const withdrawals = Math.max(0, deposits-ggr);
-      const bonus = ggr*bonusPct;
+      const bonus = ggr*bpG;
       const jackpot = turnover*(A.global.jackpotPctWager/100);
       const ngr = ggr - bonus - jackpot;
       const content = ggr*contentPct;
@@ -514,7 +516,7 @@ function compute(A, sim){
     row.r=Array.from({length:N},(_,a2)=>CHANNELS.reduce((sm,c)=>sm+w[c.key]*rCh[c.key][a2],0));
     const spendTot=spend.reduce((a,b)=>a+b,0);
     const effCAC = fSum>0 ? spendTot/fSum : 0;   // paid spend ÷ ALL new depositors (incl. RS + organic)
-    const ngrPA = ggrPerActive*(1-bonusPct);
+    const ngrPA = ggrPerActive*(1-bpG);
     const varPA = ngrPA - ggrPerActive*contentPct
       - (ggrPerActive/hold)*(g.feeDep/100) - Math.max(0,ggrPerActive/hold-ggrPerActive)*(g.feeWd/100)
       - ggrPerActive*(g.tax/100);
@@ -1111,7 +1113,15 @@ function normalizeSeed(){   // once, Oct-2026: small seed round funds a 3-month 
     A.funding.unshift({name:"Seed \u2014 Setup",month:0,amount:330000,
       note:"Small pre-launch round: 3 months of setup \u2014 company & licence purchase, legal, first operational hires, content and platform agreements. Ends at launch, when Round 1 lands."});
 }
-function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); M=compute(A,null); }
+function normalizeCanada(){   // once, Oct-2026 (Roy): fix Canada unit economics
+  if(A.meta.migCA) return; A.meta.migCA=true;
+  const g=A.geos.find(x=>x.id==="ca"); if(!g) return;
+  g.feeDep=5;                 // Interac / open banking + some crypto instead of 7% card processing
+  g.cpaAff=160; g.cpaMedia=150;   // negotiated fixed CPA (Tier-1 median ≈ $250)
+  g.bonusPct=12;              // leaner bonus policy in Canada (global stays as set)
+  g.m6=18;                    // VIP/CRM programme lifts month-6 retention
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1306,7 +1316,7 @@ function buildGeoEditor(){
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>GEO KPIs — market parameters</h3><p class="note">Aff CPA = per affiliate-CPA-deal FTD; Media CPA = per media-buy FTD; Media % = budget share to media buying — kept low: no whitehat Google/Meta without a recognized local license; media = push/native/PWA/ASO with ban-churn overhead priced into the CPA · bet mult & hrs/mo calibrate ARPU vs the Tier-1 game engine · M1/M3/M6 = % of an FTD cohort still depositing after 1/3/6 months (curve interpolates, decays beyond M6) · hold = GGR as % of deposits · reserve % = PSP rolling reserve withheld on deposits (working capital, released after ${A.wc.reserveMonths} months).</p>
   <div class="twrap"><table class="editable geotbl"><thead><tr>
-    <th>On</th><th>GEO</th><th>Aff CPA $</th><th>Media CPA $</th><th>Media %</th><th>Bet mult</th><th>Hrs/mo</th><th>M1 %</th><th>M3 %</th><th>M6 %</th><th>Hold %</th><th>Tax % GGR</th><th>Fee dep %</th><th>Fee wd %</th><th>Reserve %</th><th>Mkt start</th><th>Mkt $ init/mo</th><th>Growth %/mo</th><th>Cap $/mo</th><th>Mix</th><th></th>
+    <th>On</th><th>GEO</th><th>Aff CPA $</th><th>Media CPA $</th><th>Media %</th><th>Bet mult</th><th>Hrs/mo</th><th>M1 %</th><th>M3 %</th><th>M6 %</th><th>Hold %</th><th>Tax % GGR</th><th>Bonus % GGR</th><th>Fee dep %</th><th>Fee wd %</th><th>Reserve %</th><th>Mkt start</th><th>Mkt $ init/mo</th><th>Growth %/mo</th><th>Cap $/mo</th><th>Mix</th><th></th>
   </tr></thead><tbody></tbody></table></div>`;
   const tb=card.querySelector("tbody");
   A.geos.forEach(g=>{
@@ -1318,8 +1328,9 @@ function buildGeoEditor(){
     const nm=document.createElement("input"); nm.type="text"; nm.value=g.name; nm.style.cssText="width:150px;font-weight:600";
     nm.addEventListener("input",()=>{ g.name=nm.value; queueRefresh(); });
     td1.appendChild(nm); tr.appendChild(td1);
-    [["cpaAff",5],["cpaMedia",5],["mediaSharePct",5],["betMult",0.05],["hours",0.5],["m1",1],["m3",1],["m6",1],["hold",1],["tax",1],["feeDep",0.5],["feeWd",0.25],["resPct",1],["mkStart",1],["mkInit",5000],["mkGrowth",1],["mkCap",10000]].forEach(([k,st])=>{
+    [["cpaAff",5],["cpaMedia",5],["mediaSharePct",5],["betMult",0.05],["hours",0.5],["m1",1],["m3",1],["m6",1],["hold",1],["tax",1],["bonusPct",0.5],["feeDep",0.5],["feeWd",0.25],["resPct",1],["mkStart",1],["mkInit",5000],["mkGrowth",1],["mkCap",10000]].forEach(([k,st])=>{
       const td=document.createElement("td"); const inp=numInput(g,k,{step:st});
+      if(k==="bonusPct"){ inp.placeholder=String(A.global.bonusPctGGR); inp.title="Blank = global bonus cost ("+A.global.bonusPctGGR+"% of GGR)"; if(g.bonusPct==null) inp.value=""; }
       if(k==="mkInit"||k==="mkCap") inp.classList.add("wide");
       td.appendChild(inp); tr.appendChild(td); });
     // per-GEO game-mix override (advanced — tucked behind a toggle)
