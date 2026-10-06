@@ -1394,20 +1394,33 @@ function buildPersonnelEditor(){
 function buildLicenseEditor(){
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>Licenses</h3><p class="note">Curaçao LOK ≈ $100K yr-1, $85K/yr after, 0% GGR tax. Brazil: R$30M grant (~$5.2M) + ~26% effective tax — if you enable it, also set Brazil GEO tax in the GEO table. India RMG is banned (Aug 2025): crypto-only, flagged high-risk. Liberia is already held (via Rain Trade) — kept opted out to keep this entity at arm’s length; enabling it books the $2K/mo sublicense fee.</p>
-  <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th></tr></thead><tbody></tbody></table></div>`;
+  <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th><th></th></tr></thead><tbody></tbody></table></div>
+  <button class="ghost-btn addlic">+ Add licence</button>`;
   const ltb=card.querySelector("tbody");
+  if(!A.licenses.some(l=>/cura/i.test(l.name))) A.licenses.push({name:"Cura\u00e7ao LOK (B2C)",enabled:false,upfront:30000,annual:85000,startMonth:1});  // always offer Curaçao, even on older saved numbers
   A.licenses.forEach(l=>{
     const tr=document.createElement("tr");
     const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=l.enabled;
     cb.onchange=()=>{ l.enabled=cb.checked; queueRefresh(); };
     const td0=document.createElement("td"); td0.appendChild(cb); tr.appendChild(td0);
-    const td1=document.createElement("td"); td1.textContent=l.name; tr.appendChild(td1);
+    const td1=document.createElement("td"); const ni=document.createElement("input"); ni.type="text"; ni.value=l.name; ni.style.width="300px"; ni.style.textAlign="left";
+    ni.addEventListener("input",()=>{ l.name=ni.value; queueRefresh(); }); td1.appendChild(ni); tr.appendChild(td1);
     [["upfront",1000],["annual",1000],["startMonth",1]].forEach(([k,st])=>{
       const td=document.createElement("td"); const inp=numInput(l,k,{step:st});
       if(k!=="startMonth") inp.classList.add("wide");
       td.appendChild(inp); tr.appendChild(td); });
+    const tdX=document.createElement("td"); tdX.className="rowbtns";
+    const del=document.createElement("button"); del.textContent="✕"; del.title="Remove licence";
+    del.onclick=()=>{ A.licenses.splice(A.licenses.indexOf(l),1); refresh(); };
+    tdX.appendChild(del); tr.appendChild(tdX);
     ltb.appendChild(tr);
   });
+  card.querySelector(".addlic").onclick=()=>{
+    const hasCw=A.licenses.some(l=>/cura/i.test(l.name));
+    A.licenses.push(hasCw?{name:"New licence",enabled:true,upfront:0,annual:0,startMonth:1}
+      :{name:"Cura\u00e7ao LOK (B2C)",enabled:true,upfront:30000,annual:85000,startMonth:1});
+    refresh();
+  };
   if(A.certs){
     const c=A.certs;
     const sec=document.createElement("div"); sec.style.marginTop="16px";

@@ -527,11 +527,11 @@ function compute(A, sim){
         n_a += rr*ngrPA;
       }
       acc+=c_a; cum.push(acc);
-      ltv36+=n_a; if(a2<6)ltv6+=n_a; if(a2<12)ltv12+=n_a;
+      if(a2<36)ltv36+=n_a; if(a2<6)ltv6+=n_a; if(a2<12)ltv12+=n_a;
       if(payback===null && acc>=effCAC) payback=a2;
     }
     row.unit={effCAC, contribPerFTD: cum.length?cum[0]:0, cumContrib:cum, payback, ltvNGR36:ltv36, ltvNGR6:ltv6, ltvNGR12:ltv12,
-      ltvCac: effCAC>0? cum[N-1]/effCAC : Infinity };
+      ltvCac: effCAC>0? cum[Math.min(36,N)-1]/effCAC : Infinity };
     perGeo.push(row);
   }
 
@@ -1387,12 +1387,13 @@ function buildLicenseEditor(){
   <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th><th></th></tr></thead><tbody></tbody></table></div>
   <button class="ghost-btn addlic">+ Add licence</button>`;
   const ltb=card.querySelector("tbody");
+  if(!A.licenses.some(l=>/cura/i.test(l.name))) A.licenses.push({name:"Cura\u00e7ao LOK (B2C)",enabled:false,upfront:30000,annual:85000,startMonth:1});  // always offer Curaçao, even on older saved numbers
   A.licenses.forEach(l=>{
     const tr=document.createElement("tr");
     const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=l.enabled;
     cb.onchange=()=>{ l.enabled=cb.checked; queueRefresh(); };
     const td0=document.createElement("td"); td0.appendChild(cb); tr.appendChild(td0);
-    const td1=document.createElement("td"); const ni=document.createElement("input"); ni.type="text"; ni.value=l.name; ni.style.width="300px";
+    const td1=document.createElement("td"); const ni=document.createElement("input"); ni.type="text"; ni.value=l.name; ni.style.width="300px"; ni.style.textAlign="left";
     ni.addEventListener("input",()=>{ l.name=ni.value; queueRefresh(); }); td1.appendChild(ni); tr.appendChild(td1);
     [["upfront",1000],["annual",1000],["startMonth",1]].forEach(([k,st])=>{
       const td=document.createElement("td"); const inp=numInput(l,k,{step:st});
@@ -1612,7 +1613,7 @@ function renderGeos(){
     tr.innerHTML=`<td><span class="sw" style="background:${sColor(i)};display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:7px"></span>${g.name}</td>
       <td>${fmt.usd(g.ggrPerActive,0)}</td><td>${fmt.usd(g.unit.effCAC,0)}</td>
       <td>${fmt.usd(g.unit.ltvNGR6,0)}</td><td>${fmt.usd(g.unit.ltvNGR36,0)}</td>
-      <td>${fmt.usd(g.unit.cumContrib[M.N-1],0)}</td>
+      <td>${fmt.usd(g.unit.cumContrib[Math.min(36,M.N)-1],0)}</td>
       <td style="font-weight:650">${fmt.x(g.unit.ltvCac)}</td>
       <td>${g.unit.payback!=null?"M"+(g.unit.payback+1):">36"}</td>
       <td>${fmt.usd(spend)}</td><td>${fmt.num(f)}</td>`;
@@ -1863,7 +1864,7 @@ function blendedCohort(){
     unit:{effCAC, contribPerFTD:M.perGeo.reduce((s,g,i)=>s+w[i]*g.unit.contribPerFTD,0),
       cumContrib:cum, payback,
       ltvNGR36:M.perGeo.reduce((s,g,i)=>s+w[i]*g.unit.ltvNGR36,0),
-      ltvCac:effCAC>0?cum[N-1]/effCAC:0}};
+      ltvCac:effCAC>0?cum[Math.min(36,N)-1]/effCAC:0}};
 }
 function renderCohorts(){
   const el=document.getElementById("tab-cohorts");
@@ -1877,7 +1878,7 @@ function renderCohorts(){
     <div class="tile"><div class="lbl">Effective CAC</div><div class="val">${fmt.usd(g.unit.effCAC,0)}</div><div class="delta">paid spend ÷ all new depositors (incl. organic & revshare)</div></div>
     <div class="tile"><div class="lbl">Contribution / FTD / active-month</div><div class="val">${fmt.usd(g.unit.contribPerFTD,0)}</div><div class="delta">GGR/active ${fmt.usd(g.ggrPerActive,0)}/mo</div></div>
     <div class="tile"><div class="lbl">Payback</div><div class="val">${g.unit.payback!=null?"M"+(g.unit.payback+1):"&gt;36m"}</div><div class="delta">cohort age when CAC is covered</div></div>
-    <div class="tile"><div class="lbl">36-mo contribution LTV</div><div class="val">${fmt.usd(g.unit.cumContrib[M.N-1],0)}</div><div class="delta">${fmt.x(g.unit.ltvCac)} of CAC — strictest basis: after ALL variable costs, at day-one PSP fees</div></div>
+    <div class="tile"><div class="lbl">36-mo contribution LTV</div><div class="val">${fmt.usd(g.unit.cumContrib[Math.min(36,M.N)-1],0)}</div><div class="delta">${fmt.x(g.unit.ltvCac)} of CAC — strictest basis: after ALL variable costs, at day-one PSP fees</div></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Retention curve — ${g.name}</h3><p class="note">Share of the FTD cohort still depositing at each age.</p><div class="chart" id="ch-ret"></div></div>
