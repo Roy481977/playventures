@@ -124,6 +124,11 @@
   .sim-cta:hover{background:var(--accent);color:#fff}
   .sim-cta.on{background:var(--accent);color:#fff;animation:none}
   @media (prefers-reduced-motion: reduce){.sim-cta{animation:none}}
+
+  /* market table: keep the on/off box and the market name visible while scrolling right */
+  .geotbl th:first-child,.geotbl td:first-child{width:38px;min-width:38px;max-width:38px;z-index:2}
+  .geotbl th:nth-child(2),.geotbl td:nth-child(2){position:sticky;left:38px;background:var(--surface-1);z-index:2;box-shadow:6px 0 6px -6px rgba(0,0,0,.18)}
+  .geotbl tr > td[colspan]{position:static}
 </style>
 </head>
 <body>
@@ -1276,7 +1281,7 @@ function mixTotalBar(getVals, onRescale){
 function buildGeoEditor(){
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>GEO KPIs — market parameters</h3><p class="note">Aff CPA = per affiliate-CPA-deal FTD; Media CPA = per media-buy FTD; Media % = budget share to media buying — kept low: no whitehat Google/Meta without a recognized local license; media = push/native/PWA/ASO with ban-churn overhead priced into the CPA · bet mult & hrs/mo calibrate ARPU vs the Tier-1 game engine · M1/M3/M6 = % of an FTD cohort still depositing after 1/3/6 months (curve interpolates, decays beyond M6) · hold = GGR as % of deposits · reserve % = PSP rolling reserve withheld on deposits (working capital, released after ${A.wc.reserveMonths} months).</p>
-  <div class="twrap"><table class="editable"><thead><tr>
+  <div class="twrap"><table class="editable geotbl"><thead><tr>
     <th>On</th><th>GEO</th><th>Aff CPA $</th><th>Media CPA $</th><th>Media %</th><th>Bet mult</th><th>Hrs/mo</th><th>M1 %</th><th>M3 %</th><th>M6 %</th><th>Hold %</th><th>Tax % GGR</th><th>Fee dep %</th><th>Fee wd %</th><th>Reserve %</th><th>Mkt start</th><th>Mkt $ init/mo</th><th>Growth %/mo</th><th>Cap $/mo</th><th>Mix</th>
   </tr></thead><tbody></tbody></table></div>`;
   const tb=card.querySelector("tbody");
