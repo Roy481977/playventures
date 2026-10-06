@@ -549,8 +549,12 @@ function compute(A, sim){
     A.funding=[{name:"Founding capital", month:1, amount:A.meta.startingCapital||0, note:""}];
   const fundingIn=Z();
   for(const f of A.funding){ const m=Math.round(+f.month)-1; if(m>=0&&m<N) fundingIn[m]+=(+f.amount||0); }
-  const totalFunding=fundingIn.reduce((a,b)=>a+b,0);
-  let bal=0, cumOp=0, maxNeed=0, breakeven=null, minCash=Infinity, minCashMonth=0, cumEbitda=0, cumTaxable=0;
+  // pre-launch setup period (month 0): seed round in, setup budget out, before M1
+  const seedIn=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
+  const setupCost=setupTotal(A);
+  const totalFunding=fundingIn.reduce((a,b)=>a+b,0)+seedIn;
+  let bal=seedIn-setupCost, cumOp=-setupCost, maxNeed=setupCost, breakeven=null, minCash=Infinity, minCashMonth=0, cumEbitda=0, cumTaxable=0;
+  const openCash=bal;
   const K=Math.max(0,Math.round(A.wc.reserveMonths||0));
   for(let t=0;t<N;t++){
     const per=personnelAt(A,t+1);
@@ -600,7 +604,7 @@ function compute(A, sim){
   for(let t=0;t<N;t++){ if(ebitda[t]>0 && (t===N-1||ebitda[t+1]>0)){breakeven=t;break;} }
   const peakNeed = Math.max(0, maxNeed);
 
-  return {N, perGeo, agg, opex, ebitda, ebit, corpTax, netIncome, cumEbitdaArr, netcf, cash, breakeven, minCash, minCashMonth, peakNeed, ggrByGame, fundingIn, totalFunding,
+  return {N, perGeo, agg, opex, ebitda, ebit, corpTax, netIncome, cumEbitdaArr, netcf, cash, breakeven, minCash, minCashMonth, peakNeed, ggrByGame, fundingIn, totalFunding, seedIn, setupCost, openCash,
     grossProfit, mktTotal, contribAfterMkt, opexTotal, cogsTotal, reserveBal, reserveDelta,
     bonusPct, affRS, channels:CHANNELS.map(c=>({key:c.key,name:c.name}))};
 }
@@ -984,16 +988,17 @@ function timelineChart(el){
     lb.textContent=ph.label; svg.appendChild(lb);
   }
   // funding rounds above the bar (alternating heights)
-  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  const rounds=[...(A.funding||[])].filter(f=>Math.round(+f.month)>0).sort((a,b)=>a.month-b.month);   // seed sits before M1, shown in the Cash tab
   rounds.forEach((f,i)=>{
-    const x=X(Math.round(f.month)-1), hy=i%2?26:40;
+    const x=X(Math.max(0,Math.round(f.month)-1)), hy=i%2?26:40;
     svg.appendChild(svgEl("line",{x1:x,x2:x,y1:H-yBar-18+hy,y2:yBar-5,stroke:"var(--axis)","stroke-width":1}));
     svg.appendChild(svgEl("circle",{cx:x,cy:yBar,r:6,fill:cssv("--s1"),stroke:"var(--surface-1)","stroke-width":2}));
     const lx=Math.max(52,Math.min(W-52,x));
     const t1=svgEl("text",{x:lx,y:hy-8,"text-anchor":"middle",fill:"var(--ink-1)","font-size":11,"font-weight":700});
-    t1.textContent="R"+(i+1)+" "+fmt.usd(f.amount); svg.appendChild(t1);
+    const nSeed=rounds.filter(r=>Math.round(+r.month)<=0).length;
+    t1.textContent=(Math.round(+f.month)<=0?"Seed":"R"+(i+1-nSeed))+" "+fmt.usd(f.amount); svg.appendChild(t1);
     const t2=svgEl("text",{x:lx,y:hy+3,"text-anchor":"middle",fill:"var(--ink-3)","font-size":9.5});
-    t2.textContent="M"+f.month+" · "+cal(Math.round(f.month)-1); svg.appendChild(t2);
+    t2.textContent=Math.round(+f.month)<=0? "Setup · "+setupLabel() : "M"+f.month+" · "+cal(Math.round(f.month)-1); svg.appendChild(t2);
   });
   // break-even diamond
   if(M.breakeven!=null){
@@ -1059,7 +1064,54 @@ TABS.forEach(([id,label])=>{
   else nav.appendChild(b);
 });
 
-function recompute(){ M=compute(A,null); }
+function normalizeLicences(){   // runs before every compute, so older saved numbers pick these up too
+  if(!A.meta.migAcq){   // once, Oct-2026: buying a Curaçao-licensed company ($120K) replaces the LOK application route
+    A.meta.migAcq=true;
+    if(!A.licenses.some(l=>/cura/i.test(l.name)&&!/acqui/i.test(l.name))) A.licenses.push({name:"Cura\u00e7ao LOK (B2C)",enabled:true,upfront:0,annual:85000,startMonth:1});
+    if(!A.licenses.some(l=>/acqui/i.test(l.name)))
+      A.licenses.push({name:"Acquisition \u2014 Cura\u00e7ao-licensed company",enabled:true,upfront:120000,annual:0,startMonth:1});
+    const cw=A.licenses.find(l=>/cura/i.test(l.name)&&!/acqui/i.test(l.name));
+    if(cw){ cw.enabled=true; cw.upfront=0; cw.name="Cura\u00e7ao LOK \u2014 annual fees + local substance"; }
+  }
+}
+function setupTotal(A){ const S=A.setup; if(!S||!S.enabled) return 0; return (S.items||[]).reduce((a,i)=>a+(+i.amount||0),0); }
+function setupLabel(){ const S=A.setup||{}, n=Math.max(1,+S.months||3), sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1;
+  const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const ab=(sy*12+smc-1)-n, ae=(sy*12+smc-1)-1;
+  return MO[ab%12]+(Math.floor(ab/12)!==Math.floor(ae/12)?" "+Math.floor(ab/12):"")+"\u2013"+MO[ae%12]+" "+Math.floor(ae/12); }
+function roundWhen(f){ return Math.round(+f.month)<=0 ? "Setup ("+setupLabel()+")" : "Month "+f.month; }
+function normalizePlan(){   // one-time plan decisions applied to defaults AND older saved numbers
+  if(!A.meta.migRS){   // Oct-2026 (Roy): affiliates mainly on fixed CPA/QCPA deals — revshare 40% → 10%;
+    A.meta.migRS=true; // caps ×1.5 keep player volume roughly where it was (~1M FTDs over 5 years)
+    A.global.rsShareAff=10;
+    A.geos.forEach(g=>{ g.mkCap=Math.round((+g.mkCap||0)*1.5); });
+  }
+}
+function normalizeSeed(){   // once, Oct-2026: small seed round funds a 3-month pre-launch setup (Oct–Dec 2026)
+  if(A.meta.migSeed) return; A.meta.migSeed=true;
+  const L=A.payrollLoad!=null?1+A.payrollLoad/100:1.28;
+  const sal=re=>{ const p=A.personnel.find(x=>re.test(x.role)); return p?(+p.salary||0):0; };
+  const hires=Math.round((sal(/Payments & Risk/)+sal(/MLRO/))*L*3/1000)*1000;   // CTO: part-time, paid outside the company during setup
+  let acq=120000;
+  const ai=A.licenses.findIndex(l=>/acqui/i.test(l.name));
+  if(ai>=0){ acq=+A.licenses[ai].upfront||acq; A.licenses.splice(ai,1); }   // purchase now happens in setup
+  const items=[
+    {name:"Cura\u00e7ao-licensed company \u2014 purchase",amount:acq,note:"Existing B2C LOK licence; CGA change-of-control approval"},
+    {name:"Legal & corporate",amount:35000,note:"Due diligence on the company, CGA change-of-control filing, entity structuring, PSP & provider contracts"},
+    {name:"Initial operational hires (3 months, loaded)",amount:hires,note:"Head of Payments & Risk + Compliance/MLRO from day one; part-time CTO paid outside the company during setup; CEO salary deferred until launch"},
+    {name:"Content & platform agreements",amount:30000,note:"Aggregator onboarding/integration fee, first provider deals, turnkey platform setup deposit"},
+    {name:"Cura\u00e7ao licence fees + local substance (Q4)",amount:21000,note:"One quarter of the $85K/yr LOK fees + resident director/office; the licence row takes over from M1"},
+    {name:"Tech setup",amount:20000,note:"Domains, staging hosting, KYC/AML vendor setup, security"},
+  ];
+  const sub=items.reduce((a,i)=>a+i.amount,0);
+  items.push({name:"Contingency (~10%)",amount:Math.round(sub*0.1/1000)*1000,note:"Unbudgeted setup costs"});
+  A.setup={enabled:true,months:3,items};
+  const tot=items.reduce((a,i)=>a+i.amount,0);
+  if(!A.funding.some(f=>Math.round(+f.month)<=0))
+    A.funding.unshift({name:"Seed \u2014 Setup",month:0,amount:330000,
+      note:"Small pre-launch round: 3 months of setup \u2014 company & licence purchase, legal, first operational hires, content and platform agreements. Ends at launch, when Round 1 lands."});
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1106,7 +1158,7 @@ function renderDashboard(){
       <div class="tile hero"><div class="lbl">Year-3 GGR run-rate</div><div class="val">${fmt.usd(y3run)}</div><div class="delta">EBITDA run-rate ${fmt.usd(ebitdaRun)}/yr</div></div>
       <div class="tile"><div class="lbl">Cumulative EBITDA (36 mo)</div><div class="val">${fmt.usd(M.cumEbitdaArr[N-1])}</div><div class="delta ${M.cumEbitdaArr[N-1]>=0?'up':'down'}">${M.cumEbitdaArr[N-1]>=0?"profitable horizon":"below breakeven"}</div></div>
       <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">${M.breakeven!=null?cal(M.breakeven)+" · min cash "+fmt.usd(M.minCash):"not within horizon"}</div></div>
-      <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(totalRaise)}</div><div class="delta">${rounds.length} rounds · R1 ${fmt.usd(rounds[0]?rounds[0].amount:0)} committed</div></div>
+      <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(totalRaise)}</div><div class="delta">${(()=>{const sd=rounds.filter(f=>Math.round(+f.month)<=0), rr=rounds.filter(f=>Math.round(+f.month)>0); return (sd.length?"Seed "+fmt.usd(sd.reduce((a,f)=>a+(+f.amount||0),0))+" + ":"")+rr.length+" rounds · R1 "+fmt.usd(rr[0]?rr[0].amount:0);})()}</div></div>
       <div class="tile"><div class="lbl">Marketing ROI (blended)</div><div class="val">${fmt.x(blend.roi)}</div><div class="delta">CAC ${fmt.usd(blend.cac,0)} → LTV ${fmt.usd(blend.ltv,0)} · payback M${Math.round(blend.payback)}</div></div>
       <div class="tile"><div class="lbl">Active depositors M60</div><div class="val">${fmt.num(M.agg.actives[N-1])}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])} new FTDs / mo</div></div>
     </div>
@@ -1138,7 +1190,7 @@ function renderDashboard(){
     M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.ggr})), {stacked:true,h:250});
   xyChart(document.getElementById("ch-cash"),
     [{name:"Cash balance",color:sColor(0),values:M.cash,kind:"area"}],
-    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
   xyChart(document.getElementById("ch-ebitda"),
     [{name:"EBITDA",color:sColor(2),values:M.ebitda,kind:"bar"}],{h:250});
   const marginPct=M.agg.ggr.map((g,t)=>g>1000?clamp(100*M.ebitda[t]/g,-60,60):-60);
@@ -1383,11 +1435,10 @@ function buildPersonnelEditor(){
 
 function buildLicenseEditor(){
   const card=document.createElement("div"); card.className="card";
-  card.innerHTML=`<h3>Licenses</h3><p class="note">Gibraltar B2C Gaming Operator Licence is the base case. <b>Curaçao LOK</b> (new framework, official fees announced 12-Feb-2025): application €4,592 one-off + €47,450/yr (€24,490 government + €22,960 Curaçao Gaming Authority supervision), 0% GGR tax; prefilled at $30K upfront (application, UBO checks, local entity &amp; legal setup) and $85K/yr (official fees ≈ $55K + local director/substance ≈ $30K) — tick it to model Curaçao alongside or instead of Gibraltar. Brazil: R$30M grant (~$5.2M) + ~26% effective tax — if you enable it, also set Brazil GEO tax in the GEO table. India RMG is banned (Aug 2025): crypto-only, flagged high-risk. Liberia is already held (via Rain Trade) — kept opted out to keep this entity at arm’s length; enabling it books the $2K/mo sublicense fee.</p>
+  card.innerHTML=`<h3>Licenses</h3><p class="note">Gibraltar B2C Gaming Operator Licence is the base case. <b>Curaçao route:</b> we acquire an existing Curaçao-licensed company for <b>$120K</b> (one-off, purchase price) instead of applying from scratch — CGA approval of the new owners (UBO change, €128 per person + fit-and-proper review). The licence then carries the official LOK annual fees, €47,450/yr for B2C (€24,490 licence fee to the Treasury + €22,960 CGA supervision ≈ $55K; source: CGA fee announcement, 12-Feb-2025), plus ≈ $30K/yr local substance (resident director, registered office, local accounting) — our estimate, not an official fee — prefilled at $85K/yr. 0% GGR tax in Curaçao. Brazil: R$30M grant (~$5.2M) + ~26% effective tax — if you enable it, also set Brazil GEO tax in the GEO table. India RMG is banned (Aug 2025): crypto-only, flagged high-risk. Liberia is already held (via Rain Trade) — kept opted out to keep this entity at arm’s length; enabling it books the $2K/mo sublicense fee.</p>
   <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th><th></th></tr></thead><tbody></tbody></table></div>
   <button class="ghost-btn addlic">+ Add licence</button>`;
   const ltb=card.querySelector("tbody");
-  if(!A.licenses.some(l=>/cura/i.test(l.name))) A.licenses.push({name:"Cura\u00e7ao LOK (B2C)",enabled:false,upfront:30000,annual:85000,startMonth:1});  // always offer Curaçao, even on older saved numbers
   A.licenses.forEach(l=>{
     const tr=document.createElement("tr");
     const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=l.enabled;
@@ -1427,6 +1478,58 @@ function buildLicenseEditor(){
     fl.appendChild(field("RNG certification month",numInput(c,"rngMonth",{step:1,min:1}),"M#"));
     sec.appendChild(fl); card.appendChild(sec);
   }
+  // dated schedule of every licensing & certification cost
+  const sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1;
+  const cal=t=>{ const mi=smc-1+(t-1); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][((mi%12)+12)%12]+" "+(sy+Math.floor(mi/12))+" (M"+t+")"; };
+  const rows=[];
+  A.licenses.filter(l=>l.enabled).forEach(l=>{
+    if(+l.upfront) rows.push({t:+l.startMonth,item:l.name+(/acqui/i.test(l.name)?" \u2014 purchase price":" \u2014 upfront / application"),one:+l.upfront,rec:""});
+    if(+l.annual) rows.push({t:+l.startMonth,item:l.name+" \u2014 annual fee",one:0,rec:fmt.usd(+l.annual)+"/yr from here ("+fmt.usd(+l.annual/12)+"/mo accrued)"});
+  });
+  if(A.certs&&A.certs.enabled){ const c=A.certs;
+    if(+c.rngCost) rows.push({t:+c.rngMonth||1,item:"Platform RNG certification (one-time)",one:+c.rngCost,rec:""});
+    if(+c.initialGames) rows.push({t:+c.startMonth||1,item:"Game certification \u2014 launch batch ("+c.initialGames+" titles \u00d7 "+fmt.usd(+c.costPerGame)+")",one:(+c.initialGames)*(+c.costPerGame),rec:""});
+    if(+c.gamesPerMonth) rows.push({t:(+c.startMonth||1)+1,item:"Game certification \u2014 new titles ("+c.gamesPerMonth+"/mo \u00d7 "+fmt.usd(+c.costPerGame)+")",one:0,rec:fmt.usd(c.gamesPerMonth*c.costPerGame)+"/mo from here"});
+  }
+  rows.sort((a,b)=>a.t-b.t);
+  const sch=document.createElement("div"); sch.style.marginTop="16px";
+  sch.innerHTML=`<h3 style="font-size:14px;margin:0 0 4px">Licensing &amp; certification schedule</h3><p class="note">Every dated cost from the two tables above, on the calendar (M1 = ${cal(1).split(" (")[0]}). One-off items are cash outflows (investing, below EBITDA); annual fees and per-title certification run through opex. Change a month or amount above and this updates.</p>
+  <div class="twrap"><table><thead><tr><th>When</th><th style="text-align:left">Item</th><th>One-off</th><th style="text-align:left">Recurring</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${cal(r.t)}</td><td style="text-align:left">${r.item}</td><td>${r.one?fmt.usd(r.one):"\u2014"}</td><td style="text-align:left">${r.rec||"\u2014"}</td></tr>`).join("")}
+  <tr style="font-weight:650"><td></td><td style="text-align:left">Total one-off</td><td>${fmt.usd(rows.reduce((a,r)=>a+r.one,0))}</td><td></td></tr></tbody></table></div>`;
+  card.appendChild(sch);
+  return card;
+}
+
+function buildSetupEditor(){
+  const S=A.setup||(A.setup={enabled:true,months:3,items:[]});
+  const seed=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
+  const tot=setupTotal(A);
+  const card=document.createElement("div"); card.className="card";
+  card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the seed (${setupLabel()})</h3><p class="note">The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the seed round (a funding round with month 0); whatever is left opens the cash line at M1, when Round 1 lands. These costs come before the 60-month P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.</p>
+  <div class="twrap"><table class="editable"><thead><tr><th style="text-align:left">Item</th><th>Amount $</th><th style="text-align:left">What it covers</th><th></th></tr></thead><tbody></tbody></table></div>
+  <button class="ghost-btn addbtn">+ Add item</button>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile"><div class="lbl">Setup budget</div><div class="val">${fmt.usd(tot)}</div><div class="delta">${S.months} months pre-launch</div></div>
+    <div class="tile"><div class="lbl">Seed round</div><div class="val">${fmt.usd(seed)}</div><div class="delta">${seed?"edit the amount in the funding table above":"add a round with month 0"}</div></div>
+    <div class="tile"><div class="lbl">Left at launch</div><div class="val">${fmt.usd(seed-tot)}</div><div class="delta">${seed-tot<0?"\u26a0 seed too small \u2014 raise it or trim the setup":"opening cash at M1"}</div></div>
+  </div><div class="fields" style="margin-top:12px"></div>`;
+  const tb=card.querySelector("tbody");
+  S.items.forEach((it,ii)=>{
+    const tr=document.createElement("tr");
+    const t1=document.createElement("td"); const ni=document.createElement("input"); ni.type="text"; ni.value=it.name; ni.style.width="300px"; ni.style.textAlign="left";
+    ni.addEventListener("input",()=>{it.name=ni.value;}); t1.appendChild(ni); tr.appendChild(t1);
+    const t2=document.createElement("td"); const ai=numInput(it,"amount",{step:5000,min:0}); ai.classList.add("wide"); t2.appendChild(ai); tr.appendChild(t2);
+    const t3=document.createElement("td"); const no=document.createElement("input"); no.type="text"; no.value=it.note||""; no.style.width="460px"; no.style.textAlign="left";
+    no.addEventListener("input",()=>{it.note=no.value;}); t3.appendChild(no); tr.appendChild(t3);
+    const tx=document.createElement("td"); tx.className="rowbtns"; const del=document.createElement("button"); del.textContent="\u2715"; del.title="Remove item";
+    del.onclick=()=>{ S.items.splice(ii,1); refresh(); }; tx.appendChild(del); tr.appendChild(tx);
+    tb.appendChild(tr);
+  });
+  card.querySelector(".addbtn").onclick=()=>{ S.items.push({name:"New setup item",amount:0,note:""}); refresh(); };
+  const fl=card.querySelector(".fields");
+  const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!S.enabled; cb.onchange=()=>{S.enabled=cb.checked; refresh();};
+  fl.appendChild(field("Include pre-launch setup",cb));
+  fl.appendChild(field("Setup length (months before M1)",numInput(S,"months",{step:1,min:1}),"label only"));
   return card;
 }
 
@@ -1448,7 +1551,7 @@ function renderAssumptions(){
 
   // 1 — Funding & horizon
   const fCard=addCard(`<h3>1 · Funding rounds & horizon</h3><p class="note">Staged capital raises — each round lands in the cash flow in its month. The Cash Flow tab shows the timing against the burn curve; keep the lowest cash point comfortably above zero (rule of thumb: 3 months of burn as buffer). The model's true external need ("peak funding need") is computed independently of this plan.</p>
-  <div class="twrap"><table class="editable"><thead><tr><th>Round</th><th>Month</th><th>Amount $</th><th></th></tr></thead><tbody id="fundTb"></tbody></table></div>
+  <div class="twrap"><table class="editable"><thead><tr><th>Round</th><th>Month <span style="font-weight:400;color:var(--ink-3)">(0 = pre-launch setup)</span></th><th>Amount $</th><th></th></tr></thead><tbody id="fundTb"></tbody></table></div>
   <button class="ghost-btn addbtn" id="addRound">+ Add round</button>`,[
     field("Horizon (months)",numInput(A.meta,"months",{step:1,min:12})),
     field("Model starts — year",numInput(A.meta,"startYear",{step:1,min:2024})),
@@ -1458,11 +1561,11 @@ function renderAssumptions(){
   (A.funding||[]).forEach((f,fi)=>{
     const tr=document.createElement("tr");
     const tdN=document.createElement("td");
-    const ni=document.createElement("input"); ni.type="text"; ni.value=f.name; ni.style.width="220px";
+    const ni=document.createElement("input"); ni.type="text"; ni.value=f.name; ni.style.width="260px"; ni.style.textAlign="left";
     ni.addEventListener("input",()=>{f.name=ni.value; queueRefresh();});
     tdN.appendChild(ni); tr.appendChild(tdN);
     [["month",1],["amount",250000]].forEach(([k,st])=>{
-      const td=document.createElement("td"); const inp=numInput(f,k,{step:st,min:k==="month"?1:0});
+      const td=document.createElement("td"); const inp=numInput(f,k,{step:st,min:0});
       if(k==="amount") inp.classList.add("wide");
       td.appendChild(inp); tr.appendChild(td); });
     const tdX=document.createElement("td"); tdX.className="rowbtns";
@@ -1474,6 +1577,7 @@ function renderAssumptions(){
   fCard.querySelector("#addRound").onclick=()=>{
     A.funding.push({name:"Round "+(A.funding.length+1), month:12, amount:1000000, note:""}); refresh();
   };
+  root.appendChild(buildSetupEditor());
 
   // 2 — Gaming KPIs (games)
   root.appendChild(buildGamesEditor());
@@ -1484,7 +1588,7 @@ function renderAssumptions(){
   // 4 — Acquisition & funnel
   if(A.global.cpaElasticity==null) A.global.cpaElasticity=0.10;
   addCard(`<h3>4 · Acquisition structure — channels</h3><p class="note">Per-GEO channel pricing lives in the GEO table (affiliate CPA, media-buy CPA, media share of budget). Globals here: revshare-deal share of affiliate volume, organic uplift, and per-channel retention quality (affiliate ~1.05× the GEO base, media-buy ~0.85×, organic ~1.25× — each channel ages on its own cohort curve). Research: affiliates drive 30–60% of new players; revshare norm 25–45% of NGR; streamers ~£5–6 back per £1. ⚠ Media buying is structurally limited for an offshore/Curaçao license: Google & Meta only certify advertisers with recognized local licenses, so "media" here means push/pop/native networks (PropellerAds/RichAds-class), PWA & webview apps, ASO and Telegram — or blackhat cloaking with account-ban churn. Media CPAs are prefilled with that overhead and media share is capped low; affiliates and streamers carry the volume.</p>`,[
-    field("Affiliate FTDs on revshare deals (%)",numInput(A.global,"rsShareAff",{step:5,min:0}),"no upfront cost; pay % of their NGR forever"),
+    field("Affiliate FTDs on revshare / hybrid deals (%)",numInput(A.global,"rsShareAff",{step:5,min:0}),"rest are fixed CPA/QCPA deals (paid from the GEO budgets). Revshare players cost nothing upfront but pay affiliates a % of their NGR for life. Plan: mainly fixed deals, 10%"),
     field("Affiliate revshare (% of NGR)",numInput(A.global,"affRevsharePct",{step:1})),
     field("Organic FTDs (% of paid — global)",numInput(A.global,"organicPct",{step:1,min:0}),"brand/SEO/word-of-mouth; deliberately global, not a per-GEO lever"),
     field("Retention × — affiliate traffic",numInput(A.global,"retMultAff",{step:0.05})),
@@ -2114,14 +2218,15 @@ function renderCash(){
     const from=Math.round(f.month)-1;
     const to=(i+1<rounds.length)? Math.round(rounds[i+1].month)-2 : N-1;
     let low=Infinity, lowT=from;
+    if(from<0){ low=M.openCash; lowT=-1; }
     for(let t=Math.max(0,from);t<=Math.min(N-1,to);t++){ if(M.cash[t]<low){low=M.cash[t];lowT=t;} }
     const cum=rounds.slice(0,i+1).reduce((s,x)=>s+(+x.amount||0),0);
     return `<tr>
       <td style="font-weight:650">${f.name}</td>
-      <td style="text-align:center"><span class="badge" style="font-size:12px">Month ${f.month}</span></td>
+      <td style="text-align:center"><span class="badge" style="font-size:12px">${roundWhen(f)}</span></td>
       <td style="font-weight:650">${fmt.usd(f.amount)}</td>
       <td>${fmt.usd(cum)}</td>
-      <td class="${low<0?'neg':''}">${fmt.usd(low)} <span style="color:var(--ink-3)">at M${lowT+1}</span></td>
+      <td class="${low<0?'neg':''}">${fmt.usd(low)} <span style="color:var(--ink-3)">${lowT<0?"at launch":"at M"+(lowT+1)}</span></td>
       <td style="text-align:left;white-space:normal;color:var(--ink-2);font-size:12px;min-width:260px">${f.note||""}</td>
     </tr>`;
   }).join("");
@@ -2146,11 +2251,12 @@ function renderCash(){
   <div class="card"><div class="twrap" style="max-height:480px;overflow:auto"><table id="cashTable"></table></div></div>`;
   xyChart(document.getElementById("ch-cash2"),
     [{name:"Cash",color:sColor(0),values:M.cash,kind:"area"}],
-    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
   xyChart(document.getElementById("ch-ncf"),
     [{name:"Net CF",color:sColor(2),values:M.netcf,kind:"bar"}],{h:250});
   const tbl=el.querySelector("#cashTable");
   let html="<thead><tr><th>Month</th><th>Funding in</th><th>EBITDA</th><th>Corp tax</th><th>Platform capex</th><th>License upfronts</th><th>Reserve Δ</th><th>Reserve held</th><th>Net cash flow</th><th>Cash balance</th></tr></thead><tbody>";
+  if(M.seedIn||M.setupCost) html+=`<tr><td style="white-space:nowrap">Setup (${setupLabel()})</td><td style="font-weight:650">${M.seedIn?fmt.usd(M.seedIn):"\u2014"}</td><td class="neg">${fmt.usd(-M.setupCost)}</td><td>\u2014</td><td>\u2014</td><td>\u2014</td><td>\u2014</td><td>\u2014</td><td class="${M.openCash<0?'neg':''}">${fmt.usd(M.seedIn-M.setupCost)}</td><td class="${M.openCash<0?'neg':''}">${fmt.usd(M.openCash)}</td></tr>`;
   for(let t=0;t<N;t++){
     html+=`<tr><td>M${t+1}</td><td style="${M.fundingIn[t]?'font-weight:650':''}">${M.fundingIn[t]?fmt.usd(M.fundingIn[t]):"—"}</td><td class="${M.ebitda[t]<0?'neg':''}">${fmt.usd(M.ebitda[t])}</td>
       <td>${M.corpTax[t]?("−"+fmt.usd(M.corpTax[t])):"—"}</td>
@@ -2479,7 +2585,7 @@ function renderGroup(){
      {name:"Shared substance",color:sColor(7),values:G.shared.map(x=>-x)}],{h:250});
   xyChart(document.getElementById("g-cash"),
     [{name:"Group cash",color:sColor(0),values:G.cash,kind:"area"}],
-    {h:250,marks:rounds.map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
   xyChart(document.getElementById("g-cum"),
     [{name:"Cumulative EBITDA",color:sColor(3),values:G.cumE,kind:"area"}],{h:250});
 
