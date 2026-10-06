@@ -1384,20 +1384,32 @@ function buildPersonnelEditor(){
 function buildLicenseEditor(){
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>Licenses</h3><p class="note">Gibraltar B2C Gaming Operator Licence is the base case. <b>Curaçao LOK</b> (new framework, official fees announced 12-Feb-2025): application €4,592 one-off + €47,450/yr (€24,490 government + €22,960 Curaçao Gaming Authority supervision), 0% GGR tax; prefilled at $30K upfront (application, UBO checks, local entity &amp; legal setup) and $85K/yr (official fees ≈ $55K + local director/substance ≈ $30K) — tick it to model Curaçao alongside or instead of Gibraltar. Brazil: R$30M grant (~$5.2M) + ~26% effective tax — if you enable it, also set Brazil GEO tax in the GEO table. India RMG is banned (Aug 2025): crypto-only, flagged high-risk. Liberia is already held (via Rain Trade) — kept opted out to keep this entity at arm’s length; enabling it books the $2K/mo sublicense fee.</p>
-  <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th></tr></thead><tbody></tbody></table></div>`;
+  <div class="twrap"><table class="editable"><thead><tr><th>On</th><th>License</th><th>Upfront $</th><th>Annual $</th><th>Start month</th><th></th></tr></thead><tbody></tbody></table></div>
+  <button class="ghost-btn addlic">+ Add licence</button>`;
   const ltb=card.querySelector("tbody");
   A.licenses.forEach(l=>{
     const tr=document.createElement("tr");
     const cb=document.createElement("input"); cb.type="checkbox"; cb.checked=l.enabled;
     cb.onchange=()=>{ l.enabled=cb.checked; queueRefresh(); };
     const td0=document.createElement("td"); td0.appendChild(cb); tr.appendChild(td0);
-    const td1=document.createElement("td"); td1.textContent=l.name; tr.appendChild(td1);
+    const td1=document.createElement("td"); const ni=document.createElement("input"); ni.type="text"; ni.value=l.name; ni.style.width="300px";
+    ni.addEventListener("input",()=>{ l.name=ni.value; queueRefresh(); }); td1.appendChild(ni); tr.appendChild(td1);
     [["upfront",1000],["annual",1000],["startMonth",1]].forEach(([k,st])=>{
       const td=document.createElement("td"); const inp=numInput(l,k,{step:st});
       if(k!=="startMonth") inp.classList.add("wide");
       td.appendChild(inp); tr.appendChild(td); });
+    const tdX=document.createElement("td"); tdX.className="rowbtns";
+    const del=document.createElement("button"); del.textContent="✕"; del.title="Remove licence";
+    del.onclick=()=>{ A.licenses.splice(A.licenses.indexOf(l),1); refresh(); };
+    tdX.appendChild(del); tr.appendChild(tdX);
     ltb.appendChild(tr);
   });
+  card.querySelector(".addlic").onclick=()=>{
+    const hasCw=A.licenses.some(l=>/cura/i.test(l.name));
+    A.licenses.push(hasCw?{name:"New licence",enabled:true,upfront:0,annual:0,startMonth:1}
+      :{name:"Cura\u00e7ao LOK (B2C)",enabled:true,upfront:30000,annual:85000,startMonth:1});
+    refresh();
+  };
   if(A.certs){
     const c=A.certs;
     const sec=document.createElement("div"); sec.style.marginTop="16px";
@@ -1690,12 +1702,12 @@ function renderTeam(){
   const at=(t)=>personnelAt(A,t);
   const m1=at(1), m12=at(12), m24=at(24), m36=at(Math.min(36,N));
   const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
-  const wk1=A.personnel.filter(p=>p.wk1 && phaseOf(p)==="core");
+  const wk1=A.personnel.filter(p=>phaseOf(p)==="core" && (+p.start||1)<=1 && (+(p.h||[])[0]||0)>0);  // live: core phase + starts M1 + Y1 heads > 0
   const wk1Cost=wk1.reduce((s,p)=>s+(p.salary+(+p.bonus||0)*attain)*(+p.h[0]||1),0)*load;
   const depts=[...new Set([...DEPT_ORDER.filter(d=>A.personnel.some(p=>(p.dept||"Other")===d)),
     ...A.personnel.map(p=>p.dept||"Other")])];
   el.innerHTML=`<h2>Team &amp; Employment phases</h2>
-  <p class="sub">Minimum viable team → scale plan. All personnel assumptions (roles, salaries, bonuses, headcount ramp) are edited in the table at the bottom of this page — everything above recomputes from it. You are CEO; ${wk1.length} seats total in week 1 (week-1 signings = core-phase roles; set phase per role in the table below). Structure follows the money: monetization, product, VIP, user acquisition, payments & risk, compliance.</p>
+  <p class="sub">Minimum viable team → scale plan. All personnel assumptions (roles, salaries, bonuses, headcount ramp) are edited in the table at the bottom of this page — everything above recomputes from it. You are CEO; ${wk1.length} seats total in week 1 (week-1 signings = core-phase roles that start in month 1 — change a role's phase, start month or Y1 heads in the table below and this list updates). Structure follows the money: monetization, product, VIP, user acquisition, payments & risk, compliance.</p>
   <div class="tiles">
     <div class="tile"><div class="lbl">Founding team (week 1)</div><div class="val">${wk1.length}</div><div class="delta">${fmt.usd(wk1Cost)}/mo loaded, incl. you</div></div>
     <div class="tile"><div class="lbl">End of year 1</div><div class="val">${m12.heads}</div><div class="delta">${fmt.usd(m12.cost)}/mo</div></div>
@@ -1703,7 +1715,7 @@ function renderTeam(){
     <div class="tile"><div class="lbl">End of year 3</div><div class="val">${m36.heads}</div><div class="delta">${fmt.usd(m36.cost)}/mo</div></div>
   </div>
   <div class="card"><h3>Sign these ${wk1.filter(p=>!/CEO/.test(p.role)).length} this week</h3>
-  <p class="note">Every one of them gates the critical path. ${wk1.some(p=>/MLRO/.test(p.role))?"The MLRO files Curaçao LOK immediately — its 3–5 month lead time sets your launch date; everything else parallelizes behind it.":"The LOK filing still gates the launch date — the MLRO (growth phase, starts M1) files it; these signings parallelize the build behind it."}</p>
+  <p class="note">Every one of them gates the critical path. ${wk1.some(p=>/MLRO/.test(p.role))?"The MLRO files the licence application immediately — its lead time sets your launch date; everything else parallelizes behind it.":"The licence filing still gates the launch date — the MLRO files it; these signings parallelize the build behind it."}</p>
   <div id="wk1List"></div></div>
   <div class="card" style="padding:12px 18px"><div class="legend" style="margin:0">
     <span style="font-weight:650;margin-right:6px">Hiring phases:</span>

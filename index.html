@@ -1698,7 +1698,7 @@ function renderTeam(){
   const at=(t)=>personnelAt(A,t);
   const m1=at(1), m12=at(12), m24=at(24), m36=at(Math.min(36,N));
   const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
-  const wk1=A.personnel.filter(p=>p.wk1 && phaseOf(p)==="core");
+  const wk1=A.personnel.filter(p=>phaseOf(p)==="core" && (+p.start||1)<=1 && (+(p.h||[])[0]||0)>0);
   const wk1Cost=wk1.reduce((s,p)=>s+(p.salary+(+p.bonus||0)*attain)*(+p.h[0]||1),0)*load;
   const depts=[...new Set([...DEPT_ORDER.filter(d=>A.personnel.some(p=>(p.dept||"Other")===d)),
     ...A.personnel.map(p=>p.dept||"Other")])];
