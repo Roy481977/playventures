@@ -151,7 +151,12 @@
   <div id="tab-cash" class="tab"></div>
   <div id="tab-sim" class="tab"></div>
   <footer>
-    <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px;margin-bottom:10px">Save current numbers as new default</button>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <button class="ghost-btn" id="btnSaveDefault" style="font-size:13px;padding:9px 18px">Save current numbers as new default</button>
+      <button class="ghost-btn" id="btnVersions" style="font-size:13px;padding:9px 18px">Earlier versions…</button>
+      <select id="selVersions" style="display:none;font:inherit;font-size:13px;padding:8px"></select>
+      <button class="ghost-btn" id="btnLoadVersion" style="display:none;font-size:13px;padding:9px 18px">Load this version</button>
+    </div>
     <div>All figures USD · 60-month horizon · Jan-2027 launch · Lucky Rain — crypto-first casino · Gibraltar B2C Gaming Operator Licence · all assumptions editable</div>
   </footer>
 </main>
@@ -2268,6 +2273,32 @@ const _btnSD=document.getElementById("btnSaveDefault"); if(_btnSD) _btnSD.onclic
   a.click(); URL.revokeObjectURL(a.href);
   showDefToast("Could not save to the server \u2014 a copy was downloaded instead."+(window._saveErr?" Reason: "+window._saveErr:""));
 };
+
+/* Version history: every save is kept; load any earlier one onto the screen, then Save to make it the default again. */
+(()=>{
+  const bV=document.getElementById("btnVersions"), sel=document.getElementById("selVersions"), bL=document.getElementById("btnLoadVersion");
+  if(!bV) return;
+  bV.onclick=async()=>{
+    try{
+      const r=await fetch("/api/defaults?plan=luckyrain&list=1",{cache:"no-store"});
+      if(!r.ok) throw new Error("status "+r.status);
+      const list=await r.json();
+      if(!list.length){ showDefToast("No saved versions yet \u2014 the plan is showing its built-in numbers."); return; }
+      sel.innerHTML=list.map((v,i)=>`<option value="${v.path}">${new Date(v.uploadedAt).toLocaleString()}${i===0?" (current default)":""}</option>`).join("");
+      sel.style.display=""; bL.style.display="";
+    }catch(e){ showDefToast("Could not load the version list: "+String(e&&e.message||e)); }
+  };
+  bL.onclick=async()=>{
+    try{
+      const r=await fetch("/api/defaults?plan=luckyrain&version="+encodeURIComponent(sel.value),{cache:"no-store"});
+      if(!r.ok) throw new Error("status "+r.status);
+      const j=await r.json();
+      if(!(j&&j.meta&&j.geos&&j.games&&j.personnel)) throw new Error("not a plan file");
+      A=j; refresh();
+      showDefToast("Loaded the version from "+sel.options[sel.selectedIndex].text+". It is on your screen only \u2014 click Save to make it the default again.");
+    }catch(e){ showDefToast("Could not load that version: "+String(e&&e.message||e)); }
+  };
+})();
 document.getElementById("btnTheme").onclick=()=>{
   const r=document.documentElement;
   r.dataset.theme = r.dataset.theme==="dark" ? "light" : "dark";

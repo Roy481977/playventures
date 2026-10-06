@@ -1,6 +1,7 @@
 // Model defaults API (Vercel Blob) — one store, each plan in its own folder.
 // GET  /api/defaults?plan=main|luckyrain|rainpm   -> latest saved assumption set (404 if none yet)
-// GET  /api/defaults?plan=...&list=1              -> version history
+// GET  /api/defaults?plan=...&list=1              -> version history (newest first)
+// GET  /api/defaults?plan=...&version=<path>      -> one earlier version
 // GET  /api/defaults?diag=1                       -> which storage settings are present (names only, never values)
 // POST /api/defaults?plan=main|luckyrain          -> save new default (timestamped version; history kept)
 // Works with both connection styles: BLOB_STORE_ID + automatic Vercel login (new) or BLOB_READ_WRITE_TOKEN (classic),
@@ -36,9 +37,16 @@ export default async function handler(req, res) {
       if (req.query && req.query.list)
         return res.status(200).json(blobs.map(b => ({ path: b.pathname, uploadedAt: b.uploadedAt, size: b.size })));
       if (!blobs.length) return res.status(404).json({ error: 'no defaults saved yet' });
+      let target = blobs[0].pathname;                                  // newest by default
+      const want = req.query && req.query.version;
+      if (want) {                                                       // a specific earlier version of THIS plan only
+        const hit = blobs.find(b => b.pathname === want);
+        if (!hit) return res.status(404).json({ error: 'version not found' });
+        target = hit.pathname;
+      }
       let text = null;
       for (const access of ['private', 'public']) {
-        try { text = await readText(blobs[0].pathname, access); if (text) break; } catch (e) { /* try the other mode */ }
+        try { text = await readText(target, access); if (text) break; } catch (e) { /* try the other mode */ }
       }
       if (!text) return res.status(500).json({ error: 'could not read the latest saved version' });
       return res.status(200).json(JSON.parse(text));
