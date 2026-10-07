@@ -409,7 +409,11 @@ function compute(A, sim){
   const N = A.meta.months;
   const bonusPct = (S.bonusPct!=null?S.bonusPct:A.global.bonusPctGGR)/100;
   const affRS = A.global.affRevsharePct/100 * S.rsMult;
-  const orgPct = (A.global.organicPct!=null?A.global.organicPct:15)/100;
+  // organic ramps in: starts low at launch (no brand, no SEO history) and grows linearly to the target
+  const orgTarget = (A.global.organicPct!=null?A.global.organicPct:15)/100;
+  const orgStart = (A.global.organicStartPct!=null?A.global.organicStartPct:5)/100;
+  const orgRamp = Math.max(1, +(A.global.organicRampMonths!=null?A.global.organicRampMonths:36));
+  const orgAt = t => (t+1>=orgRamp || orgRamp<=1) ? orgTarget : orgStart + (orgTarget-orgStart)*t/(orgRamp-1);
   const rsShare = clamp((A.global.rsShareAff!=null?A.global.rsShareAff:40),0,90)/100;
 
   const geos = A.geos.filter(g=>g.enabled);
@@ -452,7 +456,7 @@ function compute(A, sim){
       const fm = g.cpaMedia>0 ? spend[t]*mShare/(g.cpaMedia*S.cpaMult*sf) : 0;
       const fa = g.cpaAff>0 ? spend[t]*(1-mShare)/(g.cpaAff*S.cpaMult*sf) : 0;
       const fr = fa*rsShare/(1-rsShare);
-      const fo = (fm+fa+fr)*orgPct;
+      const fo = (fm+fa+fr)*orgAt(t);
       fCh.media[t]=fm; fCh.affcpa[t]=fa; fCh.affrs[t]=fr; fCh.organic[t]=fo;
     }
     const ftds=Array(N).fill(0);
@@ -998,7 +1002,7 @@ function timelineChart(el){
     const lx=Math.max(52,Math.min(W-52,x));
     const t1=svgEl("text",{x:lx,y:hy-8,"text-anchor":"middle",fill:"var(--ink-1)","font-size":11,"font-weight":700});
     const nSeed=rounds.filter(r=>Math.round(+r.month)<=0).length;
-    t1.textContent=(Math.round(+f.month)<=0?"Seed":"R"+(i+1-nSeed))+" "+fmt.usd(f.amount); svg.appendChild(t1);
+    t1.textContent=roundShort(f,i)+" "+fmt.usd(f.amount); svg.appendChild(t1);
     const t2=svgEl("text",{x:lx,y:hy+3,"text-anchor":"middle",fill:"var(--ink-3)","font-size":9.5});
     t2.textContent=Math.round(+f.month)<=0? "Setup · "+setupLabel() : "M"+f.month+" · "+cal(Math.round(f.month)-1); svg.appendChild(t2);
   });
@@ -1081,6 +1085,7 @@ function setupLabel(){ const S=A.setup||{}, n=Math.max(1,+S.months||3), sy=A.met
   const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const ab=(sy*12+smc-1)-n, ae=(sy*12+smc-1)-1;
   return MO[ab%12]+(Math.floor(ab/12)!==Math.floor(ae/12)?" "+Math.floor(ab/12):"")+"\u2013"+MO[ae%12]+" "+Math.floor(ae/12); }
+function roundShort(f,i){ const n=String(f.name||"").split(/\s+[\u2014\u2013-]\s+/)[0].trim(); return n||("R"+(i+1)); }
 function roundWhen(f){ return Math.round(+f.month)<=0 ? "Setup ("+setupLabel()+")" : "Month "+f.month; }
 function normalizePlan(){   // one-time plan decisions applied to defaults AND older saved numbers
   if(!A.meta.migRS){   // Oct-2026 (Roy): affiliates mainly on fixed CPA/QCPA deals — revshare 40% → 10%;
@@ -1121,7 +1126,21 @@ function normalizeCanada(){   // once, Oct-2026 (Roy): fix Canada unit economics
   g.bonusPct=12;              // leaner bonus policy in Canada (global stays as set)
   g.m6=18;                    // VIP/CRM programme lifts month-6 retention
 }
-function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); M=compute(A,null); }
+function normalizeFunding(){   // once, Oct-2026 (Roy): pre-seed $350K → seed $2M → A $2.5M → B $3M+ ($7.85M)
+  if(A.meta.migFund9) return; A.meta.migFund9=true;
+  const preAmt=350000, seed=2000000, ra=2500000, rb=3000000;
+  A.funding=[
+    {name:"Pre-seed \u2014 Setup",month:0,amount:preAmt,
+     note:"3 months pre-launch (Oct\u2013Dec 2026): Cura\u00e7ao-licensed company purchase, legal, first operational hires, content & platform agreements."},
+    {name:"Seed \u2014 Launch",month:1,amount:seed,
+     note:"Lands at launch (Jan 2027). Funds the first 5 months live: platform build, core team, first marketing in every market \u2014 enough to produce real cohort data."},
+    {name:"Series A \u2014 Prove",month:6,amount:ra,
+     note:"Raised on 5 months of live cohorts (CPA, retention, payback by market). Funds M6\u2013M11, including the M11 marketing scale-up."},
+    {name:"Series B \u2014 Scale ($3M+)",month:12,amount:rb,
+     note:"Raised once payback is proven at scale. Minimum $3M carries the business through EBITDA break-even (~M21) with a cash buffer, no further raise needed. Sized up if the numbers are good \u2014 which we expect \u2014 to expedite growth: higher market budget caps, new markets, faster brand build. Modelled at the $3M minimum."}
+  ];
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1166,9 +1185,9 @@ function renderDashboard(){
   el.innerHTML=`
     <div class="tiles" style="margin-top:10px">
       <div class="tile hero"><div class="lbl">Year-3 GGR run-rate</div><div class="val">${fmt.usd(y3run)}</div><div class="delta">EBITDA run-rate ${fmt.usd(ebitdaRun)}/yr</div></div>
-      <div class="tile"><div class="lbl">Cumulative EBITDA (36 mo)</div><div class="val">${fmt.usd(M.cumEbitdaArr[N-1])}</div><div class="delta ${M.cumEbitdaArr[N-1]>=0?'up':'down'}">${M.cumEbitdaArr[N-1]>=0?"profitable horizon":"below breakeven"}</div></div>
+      <div class="tile"><div class="lbl">Cumulative EBITDA (${N} mo)</div><div class="val">${fmt.usd(M.cumEbitdaArr[N-1])}</div><div class="delta ${M.cumEbitdaArr[N-1]>=0?'up':'down'}">${M.cumEbitdaArr[N-1]>=0?"profitable horizon":"below breakeven"}</div></div>
       <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">${M.breakeven!=null?cal(M.breakeven)+" · min cash "+fmt.usd(M.minCash):"not within horizon"}</div></div>
-      <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(totalRaise)}</div><div class="delta">${(()=>{const sd=rounds.filter(f=>Math.round(+f.month)<=0), rr=rounds.filter(f=>Math.round(+f.month)>0); return (sd.length?"Seed "+fmt.usd(sd.reduce((a,f)=>a+(+f.amount||0),0))+" + ":"")+rr.length+" rounds · R1 "+fmt.usd(rr[0]?rr[0].amount:0);})()}</div></div>
+      <div class="tile"><div class="lbl">Raise plan</div><div class="val">${fmt.usd(totalRaise)}</div><div class="delta">${(()=>{const sd=rounds.filter(f=>Math.round(+f.month)<=0), rr=rounds.filter(f=>Math.round(+f.month)>0); return (sd.length?roundShort(sd[0],0)+" "+fmt.usd(sd.reduce((a,f)=>a+(+f.amount||0),0))+" + ":"")+rr.map((f,i)=>roundShort(f,i)+" "+fmt.usd(f.amount)).join(" · ");})()}</div></div>
       <div class="tile"><div class="lbl">Marketing ROI (blended)</div><div class="val">${fmt.x(blend.roi)}</div><div class="delta">CAC ${fmt.usd(blend.cac,0)} → LTV ${fmt.usd(blend.ltv,0)} · payback M${Math.round(blend.payback)}</div></div>
       <div class="tile"><div class="lbl">Active depositors M60</div><div class="val">${fmt.num(M.agg.actives[N-1])}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])} new FTDs / mo</div></div>
     </div>
@@ -1200,7 +1219,7 @@ function renderDashboard(){
     M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.ggr})), {stacked:true,h:250});
   xyChart(document.getElementById("ch-cash"),
     [{name:"Cash balance",color:sColor(0),values:M.cash,kind:"area"}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("ch-ebitda"),
     [{name:"EBITDA",color:sColor(2),values:M.ebitda,kind:"bar"}],{h:250});
   const marginPct=M.agg.ggr.map((g,t)=>g>1000?clamp(100*M.ebitda[t]/g,-60,60):-60);
@@ -1516,12 +1535,12 @@ function buildSetupEditor(){
   const seed=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
   const tot=setupTotal(A);
   const card=document.createElement("div"); card.className="card";
-  card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the seed (${setupLabel()})</h3><p class="note">The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the seed round (a funding round with month 0); whatever is left opens the cash line at M1, when Round 1 lands. These costs come before the 60-month P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.</p>
+  card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the pre-seed (${setupLabel()})</h3><p class="note">The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the pre-seed (a funding round with month 0); whatever is left opens the cash line at M1, when the seed lands. These costs come before the 60-month P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.</p>
   <div class="twrap"><table class="editable"><thead><tr><th style="text-align:left">Item</th><th>Amount $</th><th style="text-align:left">What it covers</th><th></th></tr></thead><tbody></tbody></table></div>
   <button class="ghost-btn addbtn">+ Add item</button>
   <div class="tiles" style="margin-top:12px">
     <div class="tile"><div class="lbl">Setup budget</div><div class="val">${fmt.usd(tot)}</div><div class="delta">${S.months} months pre-launch</div></div>
-    <div class="tile"><div class="lbl">Seed round</div><div class="val">${fmt.usd(seed)}</div><div class="delta">${seed?"edit the amount in the funding table above":"add a round with month 0"}</div></div>
+    <div class="tile"><div class="lbl">Pre-seed round</div><div class="val">${fmt.usd(seed)}</div><div class="delta">${seed?"edit the amount in the funding table above":"add a round with month 0"}</div></div>
     <div class="tile"><div class="lbl">Left at launch</div><div class="val">${fmt.usd(seed-tot)}</div><div class="delta">${seed-tot<0?"\u26a0 seed too small \u2014 raise it or trim the setup":"opening cash at M1"}</div></div>
   </div><div class="fields" style="margin-top:12px"></div>`;
   const tb=card.querySelector("tbody");
@@ -1598,10 +1617,14 @@ function renderAssumptions(){
 
   // 4 — Acquisition & funnel
   if(A.global.cpaElasticity==null) A.global.cpaElasticity=0.10;
+  if(A.global.organicStartPct==null) A.global.organicStartPct=5;
+  if(A.global.organicRampMonths==null) A.global.organicRampMonths=36;
   addCard(`<h3>4 · Acquisition structure — channels</h3><p class="note">Per-GEO channel pricing lives in the GEO table (affiliate CPA, media-buy CPA, media share of budget). Globals here: revshare-deal share of affiliate volume, organic uplift, and per-channel retention quality (affiliate ~1.05× the GEO base, media-buy ~0.85×, organic ~1.25× — each channel ages on its own cohort curve). Research: affiliates drive 30–60% of new players; revshare norm 25–45% of NGR; streamers ~£5–6 back per £1. ⚠ Media buying is structurally limited for an offshore/Curaçao license: Google & Meta only certify advertisers with recognized local licenses, so "media" here means push/pop/native networks (PropellerAds/RichAds-class), PWA & webview apps, ASO and Telegram — or blackhat cloaking with account-ban churn. Media CPAs are prefilled with that overhead and media share is capped low; affiliates and streamers carry the volume.</p>`,[
     field("Affiliate FTDs on revshare / hybrid deals (%)",numInput(A.global,"rsShareAff",{step:5,min:0}),"rest are fixed CPA/QCPA deals (paid from the GEO budgets). Revshare players cost nothing upfront but pay affiliates a % of their NGR for life. Plan: mainly fixed deals, 10%"),
     field("Affiliate revshare (% of NGR)",numInput(A.global,"affRevsharePct",{step:1})),
-    field("Organic FTDs (% of paid — global)",numInput(A.global,"organicPct",{step:1,min:0}),"brand/SEO/word-of-mouth; deliberately global, not a per-GEO lever"),
+    field("Organic FTDs at launch (% of paid)",numInput(A.global,"organicStartPct",{step:1,min:0}),"no brand or SEO history yet"),
+    field("Organic FTDs — target (% of paid)",numInput(A.global,"organicPct",{step:1,min:0}),"brand/SEO/word-of-mouth once established; global, not a per-GEO lever"),
+    field("Organic reaches target by month",numInput(A.global,"organicRampMonths",{step:1,min:1}),"linear ramp from launch"),
     field("Retention × — affiliate traffic",numInput(A.global,"retMultAff",{step:0.05})),
     field("Retention × — media-buy traffic",numInput(A.global,"retMultMedia",{step:0.05})),
     field("Retention × — organic traffic",numInput(A.global,"retMultOrganic",{step:0.05})),
@@ -1768,7 +1791,7 @@ function renderMarketing(){
   <div class="grid2">
     <div class="card"><h3>Monthly spend by GEO</h3><p class="note">CPA budgets only; ramps + the ×${A.global.scaleMult} scale-up step.</p><div class="chart" id="ch-mspend"></div></div>
     <div class="card"><h3>Where the marketing money goes</h3><p class="note">Cash budgets split by channel, plus revshare (paid from NGR) and brand/streamers.</p><div class="chart" id="ch-mcomp"></div></div>
-    <div class="card"><h3>New depositors by channel</h3><p class="note">Organic is the free ${A.global.organicPct}% riding on paid volume; revshare affiliates cost nothing upfront but pay ${A.global.affRevsharePct}% of their players\u2019 NGR.</p><div class="chart" id="ch-mftd"></div></div>
+    <div class="card"><h3>New depositors by channel</h3><p class="note">Organic rides free on paid volume, ramping from ${A.global.organicStartPct!=null?A.global.organicStartPct:5}% at launch to ${A.global.organicPct}% by M${A.global.organicRampMonths!=null?A.global.organicRampMonths:36}; revshare affiliates cost nothing upfront but pay ${A.global.affRevsharePct}% of their players\u2019 NGR.</p><div class="chart" id="ch-mftd"></div></div>
     <div class="card"><h3>Marketing as % of GGR</h3><p class="note">High during launch (buying ahead of revenue), settling as cohorts stack.</p><div class="chart" id="ch-mratio"></div></div>
   </div>
   <div class="card"><h3>Channel economics by GEO</h3>
@@ -2262,7 +2285,7 @@ function renderCash(){
   <div class="card"><div class="twrap" style="max-height:480px;overflow:auto"><table id="cashTable"></table></div></div>`;
   xyChart(document.getElementById("ch-cash2"),
     [{name:"Cash",color:sColor(0),values:M.cash,kind:"area"}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("ch-ncf"),
     [{name:"Net CF",color:sColor(2),values:M.netcf,kind:"bar"}],{h:250});
   const tbl=el.querySelector("#cashTable");
@@ -2370,7 +2393,7 @@ function runSim(){
       <div class="delta ${cls}">${isBase?"base":"base "+fmtF(basev)+" · "+(d>=0?"+":"−")+fmtF(Math.abs(d)).replace("−","")}</div></div>`;
   }
   kEl.innerHTML=
-    tile("Cumulative EBITDA (36 mo)",sc.cumEbitdaArr[N-1],base.cumEbitdaArr[base.N-1],v=>fmt.usd(v),true)+
+    tile("Cumulative EBITDA ("+N+" mo)",sc.cumEbitdaArr[N-1],base.cumEbitdaArr[base.N-1],v=>fmt.usd(v),true)+
     tile("Y3 GGR run-rate",sc.agg.ggr[N-1]*12,base.agg.ggr[base.N-1]*12,v=>fmt.usd(v),true)+
     tile("Peak funding need",sc.peakNeed,base.peakNeed,v=>fmt.usd(v),false)+
     `<div class="tile"><div class="lbl">Break-even</div><div class="val">${sc.breakeven!=null?"M"+(sc.breakeven+1):"—"}</div><div class="delta">base ${base.breakeven!=null?"M"+(base.breakeven+1):"—"}</div></div>`+
@@ -2596,7 +2619,7 @@ function renderGroup(){
      {name:"Shared substance",color:sColor(7),values:G.shared.map(x=>-x)}],{h:250});
   xyChart(document.getElementById("g-cash"),
     [{name:"Group cash",color:sColor(0),values:G.cash,kind:"area"}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:"R"+(i+1)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("g-cum"),
     [{name:"Cumulative EBITDA",color:sColor(3),values:G.cumE,kind:"area"}],{h:250});
 
