@@ -349,8 +349,15 @@ function gameHourly(games, betMult, mixOv){
 
 function marketingSpend(g, t, mktMult, glob){ // t is 1-based month
   if(t < g.mkStart) return 0;
-  const raw = g.mkInit*Math.pow(1+g.mkGrowth/100, t-g.mkStart);
-  let v = Math.min(raw, g.mkCap);
+  const curve = tt => Math.min(g.mkInit*Math.pow(1+g.mkGrowth/100, tt-g.mkStart), g.mkCap);   // launch ramp, capped
+  let v;
+  // expansion phase (brand at scale, paid from operating profit): from expMonth each market's budget compounds
+  // expGrowth %/month until expEnd, then expGrowth2 %/month. A market gets 12 months of normal ramp first.
+  const E = (glob && glob.expMonth && glob.expGrowth) ? Math.max(+glob.expMonth, g.mkStart+12) : 0;
+  if(E && t>=E){
+    const end = +glob.expEnd || 9999;
+    v = curve(E-1) * Math.pow(1+glob.expGrowth/100, Math.min(t,end)-E+1) * Math.pow(1+(+glob.expGrowth2||0)/100, Math.max(0,t-end));
+  } else v = curve(t);
   if(glob && glob.scaleMonth && t>=glob.scaleMonth) v*= (glob.scaleMult||1); // post-ROI-proof scale-up
   return v*mktMult;
 }
@@ -578,7 +585,7 @@ function compute(A, sim){
     opex.kyc[t]=agg.ftds[t]*A.global.kycPerFTD;
     opex.support[t]=agg.actives[t]*A.global.supportPerActive;
     opex.crmTools[t]=A.global.crmMonthly+A.global.toolsMonthly;
-    opex.brand[t]= (t+1>=A.global.brandStartMonth)? A.global.brandMonthly*S.mktMult : 0;
+    opex.brand[t]= (t+1>=A.global.brandStartMonth)? Math.max(A.global.brandMonthly*S.mktMult, (t+1>=(+A.global.brandPctStart||9999)? (+A.global.brandPct||0)/100*agg.marketing[t] : 0)) : 0;
     opex.fraud[t]=agg.ggr[t]*(A.global.fraudPctGGR/100);
     // COGS: direct cost of delivering the gaming service
     cogsTotal[t]=agg.content[t]+agg.pay[t]+agg.tax[t]+opex.kyc[t]
@@ -1140,7 +1147,22 @@ function normalizeFunding(){   // once, Oct-2026 (Roy): pre-seed $350K → seed 
      note:"Raised once payback is proven at scale. Minimum $3M carries the business through EBITDA break-even (~M21) with a cash buffer, no further raise needed. Sized up if the numbers are good \u2014 which we expect \u2014 to expedite growth: higher market budget caps, new markets, faster brand build. Modelled at the $3M minimum."}
   ];
 }
-function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); M=compute(A,null); }
+function normalizeExpansion(){   // once, Oct-2026 (Roy): aim far beyond a $1.6M/mo brand after years 3–4
+  if(A.meta.migExp) return; A.meta.migExp=true;
+  A.geos.forEach(g=>{ if(g.id==="ca"||g.id==="cr") g.mkCap=Math.round((+g.mkCap||0)*2); });   // best payback markets
+  A.global.expMonth=25; A.global.expGrowth=13; A.global.expEnd=48; A.global.expGrowth2=2;   // ≈ $13M/mo by M48
+  A.global.brandPct=8; A.global.brandPctStart=25;
+  // team grows with the business: ops roles ×2 in Y4, ×3 in Y5 (vs Y3); leadership added for scale
+  A.personnel.forEach(p=>{ if(phaseOf(p)==="core") return; const NY=Math.ceil(A.meta.months/12);
+    while(p.h.length<NY) p.h.push(p.h[p.h.length-1]); const y3=+p.h[2]||0;
+    if(NY>=4) p.h[3]=Math.ceil(y3*2); if(NY>=5) p.h[4]=Math.ceil(y3*3); });
+  const add=(role,dept,salary,start,note)=>{ if(!A.personnel.some(p=>p.role===role))
+    A.personnel.push({role,dept,phase:"later",salary,bonus:0,start,h:[0,0,1,1,1],note}); };
+  add("CFO","Finance & Ops",16000,25,"Joins at break-even: treasury at scale, audit, reporting to the Series B board, M&A readiness.");
+  add("Head of Brand & Partnerships","User Acquisition",13000,25,"Owns the brand-at-scale budget: sponsorships, streamers, partnerships.");
+  add("COO","Executive",18000,37,"Runs operations across markets as the business passes $100M NGR.");
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1198,7 +1220,7 @@ function renderDashboard(){
       <div class="tile"><div class="lbl">Content cost (% GGR)</div><div class="val">${fmt.pct(gh0.contentPct,1)}</div></div>
       <div class="tile"><div class="lbl">Own-content GGR share</div><div class="val">${fmt.pct(ownShare,0)}</div></div>
       <div class="tile"><div class="lbl">Headcount Y3</div><div class="val">${fmt.num(M.opex.heads[N-1])}</div></div>
-      <div class="tile"><div class="lbl">Cash at M36</div><div class="val">${fmt.usd(M.cash[N-1])}</div></div>
+      <div class="tile"><div class="lbl">Cash at M${M.N}</div><div class="val">${fmt.usd(M.cash[N-1])}</div></div>
     </div>
     <div class="card"><h3>The P&amp;L waterfall — how a GGR dollar becomes EBITDA (month 36)</h3>
     <p class="note">Shared jargon, one picture: GGR = players' losses. NGR = GGR − bonuses. Gross profit = NGR − direct costs of running the casino (content, payments, KYC/tech, tax). Contribution = gross profit − all marketing (affiliates are paid twice: CPA budgets up front + ${A.global.affRevsharePct}% revshare on their players' NGR). EBITDA = contribution − people &amp; overhead. Hover any bar for $/month. <b>Note the basis:</b> this is the M36 exit month (margin ${(100*M.ebitda[N-1]/(M.agg.ggr[N-1]||1)).toFixed(0)}%); the year-3 <i>average</i> margin is ${(100*M.ebitda.slice(24,36).reduce((a,b)=>a+b,0)/(M.agg.ggr.slice(24,36).reduce((a,b)=>a+b,0)||1)).toFixed(1)}% — margin climbs through the year as cohorts stack.</p>
@@ -1630,8 +1652,14 @@ function renderAssumptions(){
     field("Retention × — organic traffic",numInput(A.global,"retMultOrganic",{step:0.05})),
     field("Brand / streamers budget ($/mo)",numInput(A.global,"brandMonthly",{step:5000})),
     field("Brand budget starts (month)",numInput(A.global,"brandStartMonth",{step:1,min:1})),
+    field("Brand at scale (% of performance marketing)",numInput(A.global,"brandPct",{step:1,min:0}),"sponsorships, streamers, partnerships \u2014 replaces the flat budget once larger"),
+    field("Brand at scale starts (month)",numInput(A.global,"brandPctStart",{step:1,min:1})),
     field("Scale-up month (ROI proven)",numInput(A.global,"scaleMonth",{step:1,min:1}),"the smoking gun: budgets jump when cohort payback is proven"),
     field("Scale-up multiplier (×)",numInput(A.global,"scaleMult",{step:0.25,min:1}),"applied to all GEO marketing budgets from that month"),
+    field("Expansion phase starts (month)",numInput(A.global,"expMonth",{step:1,min:1}),"after break-even: every market's budget compounds, past its launch cap \u2014 paid from operating profit"),
+    field("Expansion growth (%/month)",numInput(A.global,"expGrowth",{step:0.5,min:0}),"13%/mo \u2248 \u00d74.3 a year; 0 = budgets stay at their caps"),
+    field("Expansion fast growth until (month)",numInput(A.global,"expEnd",{step:1,min:1})),
+    field("Growth after that (%/month)",numInput(A.global,"expGrowth2",{step:0.5,min:0}),"mature-brand growth"),
     field("CPA scale elasticity",numInput(A.global,"cpaElasticity",{step:0.05,min:0}),"CPA rises as (budget ÷ month-12 budget)^this once a market spends past its M12 level. 0 = flat CPA; 0.10 ≈ +7% CPA at 2× budget, +15% at 4×; 0.15 ≈ +11% / +23%")
   ]);
 
@@ -1740,7 +1768,7 @@ function renderGeos(){
   <div id="geoEd"></div>
   <div class="card"><h3>Unit economics (computed)</h3><p class="note">GGR/active/month comes from the game engine × bet multiplier × play-hours. LTV = 36-month NGR per FTD; contribution LTV nets content, payments, tax and affiliate revshare. Payback = months until cumulative contribution per FTD covers effective CAC.</p>
   <div class="twrap"><table id="geoUnit"><thead><tr>
-    <th>GEO</th><th>GGR / active / mo</th><th>Eff. CAC</th><th>LTV (NGR, 6mo)</th><th>LTV (NGR, 36mo)</th><th>Contribution LTV</th><th>LTV:CAC</th><th>Payback</th><th>Spend 36mo</th><th>FTDs 36mo</th>
+    <th>GEO</th><th>GGR / active / mo</th><th>Eff. CAC</th><th>LTV (NGR, 6mo)</th><th>LTV (NGR, 36mo)</th><th>Contribution LTV</th><th>LTV:CAC</th><th>Payback</th><th>Spend ${M.N} mo</th><th>FTDs ${M.N} mo</th>
   </tr></thead><tbody></tbody></table></div></div>
   <div class="card"><h3>Active depositors by GEO</h3><div class="chart" id="ch-act"></div></div>`;
   el.querySelector("#geoEd").appendChild(buildGeoEditor());
@@ -1780,13 +1808,13 @@ function renderMarketing(){
   const ggr36=S(M.agg.ggr);
   const ratio=Array.from({length:N},(_,t)=>M.agg.ggr[t]>0?Math.min(3,M.mktTotal[t]/M.agg.ggr[t]):0);
   el.innerHTML=`<h2>Marketing</h2>
-  <p class="sub">The acquisition machine end to end: what is spent, where it goes (GEO × channel), what it buys, and what it costs per depositor. Budgets ramp per GEO from launch (M${Math.min(...A.geos.filter(g=>g.enabled).map(g=>g.mkStart))}), then jump ×${A.global.scaleMult} at the M${A.global.scaleMonth} smoking gun. Media buying is structurally capped for an offshore license (no whitehat Google/Meta) — affiliates and streamers carry the volume.</p>
+  <p class="sub">The acquisition machine end to end: what is spent, where it goes (GEO × channel), what it buys, and what it costs per depositor. Budgets ramp per GEO from launch (M${Math.min(...A.geos.filter(g=>g.enabled).map(g=>g.mkStart))}), then jump ×${A.global.scaleMult} at the M${A.global.scaleMonth} smoking gun.${A.global.expMonth&&A.global.expGrowth?` From M${A.global.expMonth} (after break-even) budgets compound ${A.global.expGrowth}%/month to M${A.global.expEnd||A.meta.months}${A.global.expGrowth2?`, then ${A.global.expGrowth2}%/month`:''} — the brand-at-scale phase, paid from operating profit.`:''} Media buying is structurally capped for an offshore license (no whitehat Google/Meta) — affiliates and streamers carry the volume.</p>
   <div class="tiles">
-    <div class="tile hero"><div class="lbl">Total marketing (36 mo)</div><div class="val">${fmt.usd(all36)}</div><div class="delta">CPA budgets ${fmt.usd(cpaBudget36)} · revshare ${fmt.usd(rs36)} · brand ${fmt.usd(brand36)}</div></div>
-    <div class="tile"><div class="lbl">Monthly spend at M36</div><div class="val">${fmt.usd(M.mktTotal[N-1])}</div><div class="delta">${fmt.pct(M.agg.ggr[N-1]>0?M.mktTotal[N-1]/M.agg.ggr[N-1]:0,0)} of GGR</div></div>
-    <div class="tile"><div class="lbl">New depositors (36 mo)</div><div class="val">${fmt.num(ftds36)}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])}/mo at M36</div></div>
+    <div class="tile hero"><div class="lbl">Total marketing (${M.N} mo)</div><div class="val">${fmt.usd(all36)}</div><div class="delta">CPA budgets ${fmt.usd(cpaBudget36)} · revshare ${fmt.usd(rs36)} · brand ${fmt.usd(brand36)}</div></div>
+    <div class="tile"><div class="lbl">Monthly spend at M${M.N}</div><div class="val">${fmt.usd(M.mktTotal[N-1])}</div><div class="delta">${fmt.pct(M.agg.ggr[N-1]>0?M.mktTotal[N-1]/M.agg.ggr[N-1]:0,0)} of GGR</div></div>
+    <div class="tile"><div class="lbl">New depositors (${M.N} mo)</div><div class="val">${fmt.num(ftds36)}</div><div class="delta">${fmt.num(M.agg.ftds[N-1])}/mo at M${M.N}</div></div>
     <div class="tile"><div class="lbl">Blended CAC</div><div class="val">${fmt.usd(blendedCAC,0)}</div><div class="delta">paid budgets ÷ all depositors (incl. organic & revshare)</div></div>
-    <div class="tile"><div class="lbl">Marketing ÷ 36-mo GGR</div><div class="val">${fmt.pct(ggr36>0?all36/ggr36:0,0)}</div><div class="delta">industry band 20–40%</div></div>
+    <div class="tile"><div class="lbl">Marketing ÷ ${M.N}-mo GGR</div><div class="val">${fmt.pct(ggr36>0?all36/ggr36:0,0)}</div><div class="delta">industry band 20–40%</div></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Monthly spend by GEO</h3><p class="note">CPA budgets only; ramps + the ×${A.global.scaleMult} scale-up step.</p><div class="chart" id="ch-mspend"></div></div>
@@ -1796,7 +1824,7 @@ function renderMarketing(){
   </div>
   <div class="card"><h3>Channel economics by GEO</h3>
   <div class="twrap"><table><thead><tr>
-    <th>GEO</th><th>Spend 36 mo</th><th>Share</th><th>Aff CPA</th><th>Media CPA</th><th>Media %</th><th>FTDs 36 mo</th><th>Eff. CAC</th><th>ROI (NGR)</th><th>Payback</th>
+    <th>GEO</th><th>Spend ${M.N} mo</th><th>Share</th><th>Aff CPA</th><th>Media CPA</th><th>Media %</th><th>FTDs ${M.N} mo</th><th>Eff. CAC</th><th>ROI (NGR)</th><th>Payback</th>
   </tr></thead><tbody id="mkTb"></tbody></table></div></div>`;
   xyChart(document.getElementById("ch-mspend"),
     M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.spend})),{stacked:true,h:250});
@@ -2274,8 +2302,8 @@ function renderCash(){
     <div class="tile"><div class="lbl">Total external need</div><div class="val">${fmt.usd(M.peakNeed)}</div><div class="delta">deepest cumulative burn — the minimum you must raise in total</div></div>
     <div class="tile"><div class="lbl">Minimum cash (funded plan)</div><div class="val">${fmt.usd(M.minCash)}</div><div class="delta">at month ${M.minCashMonth+1}${M.minCash<0?" — round too small or too late":""}</div></div>
     <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${M.breakeven!=null?"M"+(M.breakeven+1):"—"}</div><div class="delta">sustained positive</div></div>
-    <div class="tile"><div class="lbl">Cash at month 36</div><div class="val">${fmt.usd(M.cash[N-1])}</div><div class="delta">${M.cash[N-1]>A.meta.startingCapital?"capital returned":"still below starting capital"}</div></div>
-    <div class="tile"><div class="lbl">PSP reserve held at M36</div><div class="val">${fmt.usd(M.reserveBal[N-1])}</div><div class="delta">cash locked at processors</div></div>
+    <div class="tile"><div class="lbl">Cash at month ${M.N}</div><div class="val">${fmt.usd(M.cash[N-1])}</div><div class="delta">${M.cash[N-1]>A.meta.startingCapital?"capital returned":"still below starting capital"}</div></div>
+    <div class="tile"><div class="lbl">PSP reserve held at M${M.N}</div><div class="val">${fmt.usd(M.reserveBal[N-1])}</div><div class="delta">cash locked at processors</div></div>
   </div>
   ${M.minCash<0?`<div class="warnbox">⚠ Cash goes negative at month ${M.minCashMonth+1}. Move a round earlier, raise ≈ ${fmt.usd(-M.minCash)} more, or slow the marketing ramp.</div>`:""}
   <div class="grid2">
