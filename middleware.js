@@ -49,8 +49,8 @@ export default function middleware(req) {
   }
   if (cookies.includes('rg_auth=' + LUCKY)) {                  // Lucky Rain only
     if (inLucky) return;
-    if (url.pathname === '/api/defaults') {                     // read-only access to the Lucky Rain slot
-      if (req.method === 'GET' && url.searchParams.get('plan') === 'luckyrain') return;
+    if (url.pathname === '/api/defaults') {                     // read + save, Lucky Rain slot only
+      if (url.searchParams.get('plan') === 'luckyrain' && (req.method === 'GET' || req.method === 'POST')) return;
       return new Response(JSON.stringify({ error: 'read-only access' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
     return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
