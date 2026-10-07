@@ -129,6 +129,47 @@
   .geotbl th:first-child,.geotbl td:first-child{width:38px;min-width:38px;max-width:38px;z-index:2}
   .geotbl th:nth-child(2),.geotbl td:nth-child(2){position:sticky;left:38px;background:var(--surface-1);z-index:2;box-shadow:6px 0 6px -6px rgba(0,0,0,.18)}
   .geotbl tr > td[colspan]{position:static}
+  /* ---------- PDF report (print only) ---------- */
+  #report{display:none}
+  @media print{
+    @page{size:A4;margin:12mm 11mm}
+    body{background:#fff!important}
+    body>*:not(#report){display:none!important}
+    #report{display:block!important;color:#0b0b0b;font-size:9pt;line-height:1.35}
+    #report section{break-before:page}
+    #report section:first-child{break-before:auto}
+    #report h1{font-size:30pt;margin:6mm 0 2mm;letter-spacing:-0.02em}
+    #report h2{font-size:12.5pt;margin:5mm 0 2mm}
+    #report h3{font-size:9.5pt;margin:3mm 0 1.5mm;color:#52514e}
+    #report .rp-kicker{font-size:9pt;color:#52514e;text-transform:uppercase;letter-spacing:.06em;margin-top:8mm}
+    #report .rp-lead{font-size:11pt;color:#52514e;margin-bottom:6mm}
+    #report .rp-hdr{font-size:7.5pt;color:#898781;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #e1e0d9;padding-bottom:1.5mm;margin-bottom:2mm}
+    #report .rp-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:2.5mm;margin:2mm 0 4mm}
+    #report .rp-tiles>div{border:1px solid #e1e0d9;border-radius:2mm;padding:3mm;break-inside:avoid}
+    #report .rp-tiles span{display:block;font-size:7.5pt;color:#52514e}
+    #report .rp-tiles b{display:block;font-size:15pt;margin:1mm 0;font-variant-numeric:tabular-nums}
+    #report .rp-tiles em{font-style:normal;font-size:7.5pt;color:#898781}
+    #report .rp-bullets{padding-left:4.5mm;margin:0}
+    #report .rp-bullets li{margin:0 0 2mm}
+    #report .rp-note{font-size:7.5pt;color:#898781;margin-top:5mm}
+    #report .rp-p{margin:0 0 2mm;color:#52514e}
+    #report table.rp-t{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;break-inside:auto;margin-bottom:2mm}
+    #report .rp-t th,#report .rp-t td{position:static;background:none;padding:1.1mm 1.6mm;border-bottom:1px solid #eeede8;text-align:right;white-space:nowrap;font-size:8.3pt}
+    #report .rp-t th{color:#52514e;font-weight:600;border-bottom:1px solid #c3c2b7}
+    #report .rp-t td:first-child,#report .rp-t th:first-child{text-align:left}
+    #report .rp-left td,#report .rp-left th{text-align:left}
+    #report .rp-wrap{white-space:normal!important;color:#52514e;font-size:7.6pt!important}
+    #report .rp-small th,#report .rp-small td{font-size:7.6pt;padding:.8mm 1.2mm}
+    #report .rp-sub{display:block;font-weight:400;color:#898781;font-size:7pt}
+    #report tr.rp-strong td{font-weight:650;border-top:1px solid #c3c2b7}
+    #report tr.rp-total td{font-weight:700;border-top:1.5px solid #0b0b0b;border-bottom:1.5px solid #0b0b0b}
+    #report tr.rp-pct td{color:#52514e;font-style:italic}
+    #report td.neg{color:#b42318}
+    #report .rp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:5mm;align-items:start}
+    #report .rp-chart svg{width:100%;height:auto;display:block}
+    #report .rp-chart .legend{font-size:7.5pt}
+    #report tr{break-inside:avoid}
+  }
 </style>
 </head>
 <body>
@@ -137,6 +178,7 @@
     <div class="brand">Lucky Rain <span>Business Plan</span></div>
     <nav id="nav"></nav>
     <div class="hd-actions">
+      <button class="ghost-btn" id="btnReport" title="Download a PDF summary of the plan (choose “Save as PDF” in the print dialog)">PDF report</button>
       <button class="ghost-btn" id="btnTheme" title="Toggle dark mode">◐</button>
       <a class="ghost-btn" href="/logout" title="Sign out" style="text-decoration:none">Log out</a>
     </div>
@@ -299,7 +341,7 @@ var defaultAssumptions = function(){ return {
 
 /* Saved-default overrides: baked in by Claude when you send a saved default file.
    The durable "DB" lives in the claude.ai project (claude/model-defaults.json). */
-const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":60,"startingCapital":0,"startYear":2027,"startCalMonth":1,"note":"Lucky Rain (frozen copy, Oct-2026, maintained separately from the Rain plan): crypto-first casino \u2014 ~75-80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable \u2014 scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty).","bakeId":"lr2-2026-10-07","migAcq":true,"migRS":true,"migSeed":true,"migCA":true,"migFund9":true,"migExp":true,"migTax":true},"funding":[{"name":"Pre-seed \u2014 Setup","month":0,"amount":350000,"note":"3 months pre-launch (Oct\u2013Dec 2026): Cura\u00e7ao-licensed company purchase, legal, first operational hires, content & platform agreements."},{"name":"Seed \u2014 Launch","month":1,"amount":2000000,"note":"Lands at launch (Jan 2027). Funds the first 5 months live: platform build, core team, first marketing in every market \u2014 enough to produce real cohort data."},{"name":"Series A \u2014 Prove","month":6,"amount":2500000,"note":"Raised on 5 months of live cohorts (CPA, retention, payback by market). Funds M6\u2013M11, including the M11 marketing scale-up."},{"name":"Series B \u2014 Scale ($3M+)","month":12,"amount":3000000,"note":"Raised once payback is proven at scale. Minimum $3M carries the business through EBITDA break-even (~M21) with a cash buffer, no further raise needed. Sized up if the numbers are good \u2014 which we expect \u2014 to expedite growth: higher market budget caps, new markets, faster brand build. Modelled at the $3M minimum."}],"global":{"bonusPctGGR":18,"fraudPctGGR":2.5,"kycPerFTD":2,"supportPerActive":1.5,"crmMonthly":6000,"toolsMonthly":3000,"brandMonthly":10000,"brandStartMonth":6,"rsShareAff":10,"affRevsharePct":30,"organicPct":15,"retMultAff":1.05,"retMultMedia":0.85,"retMultOrganic":1.25,"jackpotPctWager":0,"scaleMonth":11,"scaleMult":2,"feeCompressPP":2,"feeCompressAtDep":3000000,"cpaElasticity":0.1,"expMonth":25,"expGrowth":13,"expEnd":48,"expGrowth2":2,"brandPct":8,"brandPctStart":25,"organicStartPct":5,"organicRampMonths":36},"personnel":[{"role":"CEO (Roy)","dept":"Executive","phase":"core","salary":25000,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five. Also owns cohort analytics & the smoking-gun dashboard (with Claude) until the analyst hire at M8 \u2014 the M7 scale-up call is the CEO's number."},{"role":"CTO","dept":"Engineering","phase":"core","salary":14000,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},{"role":"Head of Product","dept":"Product","phase":"core","salary":15000,"bonus":0,"start":7,"h":[1,1,1,1,1],"wk1":true,"note":"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},{"role":"Head of User Acquisition","dept":"User Acquisition","phase":"core","salary":10500,"bonus":20000,"start":2,"h":[1,1,1,1,1],"wk1":true,"note":"Base $10.5K + up to $23K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},{"role":"Head of Payments & Risk","dept":"Payments & Risk","phase":"growth","salary":6500,"bonus":0,"start":1,"h":[1,1,1,2,3],"wk1":true,"note":"2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},{"role":"Compliance Officer / MLRO","dept":"Compliance","phase":"growth","salary":6000,"bonus":0,"start":1,"h":[1,1,1,2,3],"wk1":true,"note":"Gibraltar licence applications (gaming) filed pre-launch. KYC/AML program, RG policies, geo-blocking matrix."},{"role":"Legal advisor (external retainer)","dept":"Compliance","phase":"core","salary":4500,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"External gaming counsel on retainer \u2014 entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},{"role":"Head of CRM & Monetization","dept":"Monetization/CRM","phase":"growth","salary":7500,"bonus":5000,"start":4,"h":[1,1,1,2,3],"note":"Base $7.5K + up to $5K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost \u2264 target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention \u2265 model M1."},{"role":"Casino Manager (curation & integrations)","dept":"Product","phase":"growth","salary":7500,"bonus":0,"start":3,"h":[1,1,1,2,3],"note":"Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},{"role":"Platform engineers","dept":"Engineering","phase":"growth","salary":11000,"bonus":0,"start":2,"h":[3,3,4,8,12],"note":"PAM, wallet, cashier, integrations, site."},{"role":"Game devs (in-house studio)","dept":"Games Studio","phase":"growth","salary":11000,"bonus":0,"start":5,"h":[1,1,2,4,6],"note":"Crash + instant titles = the 20% internal-GGR margin play. Launch runs on external content; ship own title #1 by M9, #2 by M12."},{"role":"Affiliate managers","dept":"User Acquisition","phase":"growth","salary":5500,"bonus":11000,"start":3,"h":[1,1,2,4,6],"note":"Base $5.5K + up to $11K/mo bonus on payback-qualified FTDs (not raw volume). Pre-launch deal pipeline from M3, then program ops, deal compliance, affiliate fraud watch."},{"role":"Media buyers","dept":"User Acquisition","phase":"growth","salary":5000,"bonus":4000,"start":5,"h":[1,1,2,4,6],"note":"Base $5K + up to $4K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},{"role":"CRM executives","dept":"Monetization/CRM","phase":"later","salary":5000,"bonus":0,"start":6,"h":[1,1,2,4,6],"note":"Base $5K + up to $3K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},{"role":"VIP managers","dept":"VIP","phase":"growth","salary":4500,"bonus":13000,"start":6,"h":[1,2,4,8,12],"note":"Base $4.5K + up to $13K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35\u201360% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15\u201325% of VIP GGR; ratio ~1 host per 150\u2013250 VIPs."},{"role":"Payment ops & payouts","dept":"Payments & Risk","phase":"growth","salary":5500,"bonus":0,"start":6,"h":[2,2,4,8,12],"note":"Payout review, PSP reconciliation, chargeback representment, rail failover. Partially automated; scales with deposit volume (~$95M/mo at M36)."},{"role":"Risk & fraud analysts","dept":"Payments & Risk","phase":"later","salary":5000,"bonus":0,"start":7,"h":[2,3,5,10,15],"note":"Salary-only by design \u2014 bonusing risk staff on volume creates the wrong incentive. Scales with FTD volume: ~1 analyst per 20\u201325K monthly FTDs. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},{"role":"Product designer","dept":"Product","phase":"growth","salary":6000,"bonus":0,"start":18,"h":[1,1,1,2,3],"note":"Site, promos, game art for in-house titles."},{"role":"Data analysts","dept":"Data","phase":"growth","salary":8000,"bonus":0,"start":8,"h":[1,1,2,4,6],"note":"Takes over the cohort/LTV dashboard from the CEO at M8. Cohort tracking vs this model; owns actual-vs-model on every base KPI from then on."},{"role":"Support leads","dept":"Support","phase":"growth","salary":4500,"bonus":0,"start":3,"h":[1,2,3,6,9],"note":"Manage the outsourced 24/7 agent pool (the $-per-active variable line \u2248 110\u2013150 agents at M36). ~1 lead per 25\u201335 agents."},{"role":"Finance & admin","dept":"Finance & Ops","phase":"growth","salary":6000,"bonus":0,"start":4,"h":[1,1,1,2,3],"note":"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."},{"role":"CFO","dept":"Finance & Ops","phase":"later","salary":16000,"bonus":0,"start":25,"h":[0,0,1,1,1],"note":"Joins at break-even: treasury at scale, audit, reporting to the Series B board, M&A readiness."},{"role":"Head of Brand & Partnerships","dept":"User Acquisition","phase":"later","salary":13000,"bonus":0,"start":25,"h":[0,0,1,1,1],"note":"Owns the brand-at-scale budget: sponsorships, streamers, partnerships."},{"role":"COO","dept":"Executive","phase":"later","salary":18000,"bonus":0,"start":37,"h":[0,0,1,1,1],"note":"Runs operations across markets as the business passes $100M NGR."}],"bonusAttainPct":50,"payrollLoad":28,"platform":{"capexTotal":500000,"capexMonths":9,"amortMonths":24},"cogs":{"hostingStart":8000,"hostingStartMonth":3,"hostingGrowthPct":3,"hostingCap":45000,"softwareMonthly":10000,"softwareStartMonth":4,"aggregatorMin":5000,"antifraudMonthly":2500,"aggregatorStartMonth":3},"ga":{"legal":4000,"office":5000,"travel":4000,"misc":5000,"contingencyPct":5},"corpTaxPct":15,"wc":{"reserveMonths":4},"licenses":[{"name":"Gibraltar B2C Gaming Operator Licence","enabled":false,"upfront":39000,"annual":129000,"startMonth":1},{"name":"Cura\u00e7ao LOK \u2014 annual fees + local substance","enabled":true,"upfront":0,"annual":85000,"startMonth":1}],"games":[{"id":"vslots","name":"Video slots","source":"ext","rs":9,"rtp":95,"velocity":400,"avgBet":0.9,"mix":37.9},{"id":"oslots","name":"Slots (own)","source":"own","rs":0,"rtp":96.2,"velocity":400,"avgBet":0.9,"mix":15.6},{"id":"jslots","name":"Jackpot slots (progressive)","source":"ext","rs":12,"rtp":92,"velocity":350,"avgBet":1,"mix":3},{"id":"roul","name":"RNG roulette","source":"ext","rs":7,"rtp":97.3,"velocity":100,"avgBet":4,"mix":1},{"id":"bj","name":"RNG blackjack","source":"ext","rs":7,"rtp":99,"velocity":180,"avgBet":6,"mix":1},{"id":"vpoker","name":"Video poker","source":"ext","rs":8,"rtp":99.2,"velocity":200,"avgBet":2.5,"mix":4.4},{"id":"scratch","name":"Scratch & instant win","source":"ext","rs":9,"rtp":95,"velocity":250,"avgBet":1,"mix":1.4},{"id":"live","name":"Live casino","source":"ext","rs":15,"rtp":97.5,"velocity":60,"avgBet":25,"mix":14.2},{"id":"crash","name":"Crash (own)","source":"own","rs":0,"rtp":97,"velocity":180,"avgBet":2,"mix":11.7},{"id":"inst","name":"Instant \u2014 Plinko/Mines (own)","source":"own","rs":0,"rtp":98,"velocity":150,"avgBet":1.5,"mix":9.8}],"geos":[{"id":"ca","name":"Canada","enabled":true,"cpaAff":160,"cpaMedia":150,"mediaSharePct":20,"betMult":1,"hours":8,"m1":31,"m3":23,"m6":18,"hold":35,"tax":0,"feeDep":5,"feeWd":1,"resPct":10,"mkStart":2,"mkInit":3887,"mkGrowth":10,"mkCap":300000,"mixOverride":null,"bonusPct":12},{"id":"nz","name":"New Zealand","enabled":true,"cpaAff":170,"cpaMedia":175,"mediaSharePct":20,"betMult":0.95,"hours":8.5,"m1":31,"m3":23,"m6":14.3,"hold":35,"tax":0,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":3,"mkInit":1693,"mkGrowth":10,"mkCap":120000,"mixOverride":null},{"id":"in","name":"India (crypto)","enabled":true,"cpaAff":30,"cpaMedia":15,"mediaSharePct":45,"betMult":0.13,"hours":9,"m1":27,"m3":13.8,"m6":7.1,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":4,"mkInit":4815,"mkGrowth":10,"mkCap":75000,"mixOverride":null},{"id":"sea","name":"SEA (TH/VN/ID/PH)","enabled":true,"cpaAff":60,"cpaMedia":48,"mediaSharePct":30,"betMult":0.3,"hours":9,"m1":31,"m3":18.4,"m6":9.5,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":2,"mkInit":9129,"mkGrowth":10,"mkCap":300000,"mixOverride":null},{"id":"br","name":"Brazil","enabled":false,"cpaAff":70,"cpaMedia":57,"mediaSharePct":40,"betMult":0.25,"hours":8,"m1":31,"m3":18.4,"m6":10.7,"hold":35,"tax":0,"feeDep":3,"feeWd":1,"resPct":5,"mkStart":3,"mkInit":0,"mkGrowth":10,"mkCap":0,"mixOverride":null},{"id":"lat","name":"LatAm other (MX/CL)","enabled":true,"cpaAff":75,"cpaMedia":29,"mediaSharePct":35,"betMult":0.26,"hours":8.5,"m1":30,"m3":17.3,"m6":9.5,"hold":35,"tax":0,"feeDep":3,"feeWd":1,"resPct":3,"mkStart":4,"mkInit":4966,"mkGrowth":10,"mkCap":150000,"mixOverride":null},{"id":"cr","name":"Crypto global","enabled":true,"cpaAff":128,"cpaMedia":145,"mediaSharePct":15,"betMult":1.45,"hours":10,"m1":31,"m3":18,"m6":12,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":1,"mkInit":17556,"mkGrowth":10,"mkCap":900000,"mixOverride":null}],"setup":{"enabled":true,"months":3,"items":[{"name":"Cura\u00e7ao-licensed company \u2014 purchase","amount":120000,"note":"Existing B2C LOK licence; CGA change-of-control approval"},{"name":"Legal & corporate","amount":35000,"note":"Due diligence on the company, CGA change-of-control filing, entity structuring, PSP & provider contracts"},{"name":"Initial operational hires (3 months, loaded)","amount":48000,"note":"Head of Payments & Risk + Compliance/MLRO from day one; part-time CTO paid outside the company during setup; CEO salary deferred until launch"},{"name":"Content & platform agreements","amount":30000,"note":"Aggregator onboarding/integration fee, first provider deals, turnkey platform setup deposit"},{"name":"Cura\u00e7ao licence fees + local substance (Q4)","amount":21000,"note":"One quarter of the $85K/yr LOK fees + resident director/office; the licence row takes over from M1"},{"name":"Tech setup","amount":20000,"note":"Domains, staging hosting, KYC/AML vendor setup, security"},{"name":"Contingency (~10%)","amount":27000,"note":"Unbudgeted setup costs"}]}}/*__END_DEFAULTS__*/;
+const DEFAULT_OVERRIDES = /*__DEFAULTS__*/{"meta":{"months":60,"startingCapital":0,"startYear":2027,"startCalMonth":1,"note":"Lucky Rain (frozen copy, Oct-2026, maintained separately from the Rain plan): crypto-first casino \u2014 ~75-80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable \u2014 scaled to ~$37M NGR in Y3 under the Gibraltar B2C Gaming Operator Licence (0.15% duty).","bakeId":"lr2-2026-10-07","migAcq":true,"migRS":true,"migSeed":true,"migCA":true,"migFund9":true,"migExp":true,"migTax":true,"migLat":true},"funding":[{"name":"Pre-seed \u2014 Setup","month":0,"amount":350000,"note":"3 months pre-launch (Oct\u2013Dec 2026): Cura\u00e7ao-licensed company purchase, legal, first operational hires, content & platform agreements."},{"name":"Seed \u2014 Launch","month":1,"amount":2000000,"note":"Lands at launch (Jan 2027). Funds the first 5 months live: platform build, core team, first marketing in every market \u2014 enough to produce real cohort data."},{"name":"Series A \u2014 Prove","month":6,"amount":2500000,"note":"Raised on 5 months of live cohorts (CPA, retention, payback by market). Funds M6\u2013M11, including the M11 marketing scale-up."},{"name":"Series B \u2014 Scale ($3M+)","month":12,"amount":3000000,"note":"Raised once payback is proven at scale. Minimum $3M carries the business through EBITDA break-even (~M21) with a cash buffer, no further raise needed. Sized up if the numbers are good \u2014 which we expect \u2014 to expedite growth: higher market budget caps, new markets, faster brand build. Modelled at the $3M minimum."}],"global":{"bonusPctGGR":18,"fraudPctGGR":2.5,"kycPerFTD":2,"supportPerActive":1.5,"crmMonthly":6000,"toolsMonthly":3000,"brandMonthly":10000,"brandStartMonth":6,"rsShareAff":10,"affRevsharePct":30,"organicPct":15,"retMultAff":1.05,"retMultMedia":0.85,"retMultOrganic":1.25,"jackpotPctWager":0,"scaleMonth":11,"scaleMult":2,"feeCompressPP":2,"feeCompressAtDep":3000000,"cpaElasticity":0.1,"expMonth":25,"expGrowth":13,"expEnd":48,"expGrowth2":2,"brandPct":8,"brandPctStart":25,"organicStartPct":5,"organicRampMonths":36},"personnel":[{"role":"CEO (Roy)","dept":"Executive","phase":"core","salary":25000,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"Capital, licensing, key vendor deals (platform, aggregator, PSPs), hiring the founding five. Also owns cohort analytics & the smoking-gun dashboard (with Claude) until the analyst hire at M8 \u2014 the M7 scale-up call is the CEO's number."},{"role":"CTO","dept":"Engineering","phase":"core","salary":14000,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"Own-platform architecture, build vs buy per component, hire 3 engineers in 60 days. 90-day KPI: staging platform with cashier + 1 aggregator integrated."},{"role":"Head of Product","dept":"Product","phase":"core","salary":15000,"bonus":0,"start":7,"h":[1,1,1,1,1],"wk1":true,"note":"Site UX, lobby, bonus engine spec, game roadmap incl. the 2 in-house titles. 90-day KPI: soft-launch product live in 1 geo."},{"role":"Head of User Acquisition","dept":"User Acquisition","phase":"core","salary":10500,"bonus":20000,"start":2,"h":[1,1,1,1,1],"wk1":true,"note":"Base $10.5K + up to $23K/mo performance bonus, paid on quarterly results. 90-day KPI: 20 affiliate contracts signed, first 500 FTDs, CPA within 20% of model."},{"role":"Head of Payments & Risk","dept":"Payments & Risk","phase":"growth","salary":6500,"bonus":0,"start":1,"h":[1,1,1,2,3],"wk1":true,"note":"2 crypto rails + 2 high-risk PSPs live pre-launch; cashier approval rate >80%; fraud rules. Owns hold %, reserve terms, chargebacks."},{"role":"Compliance Officer / MLRO","dept":"Compliance","phase":"growth","salary":6000,"bonus":0,"start":1,"h":[1,1,1,2,3],"wk1":true,"note":"Gibraltar licence applications (gaming) filed pre-launch. KYC/AML program, RG policies, geo-blocking matrix."},{"role":"Legal advisor (external retainer)","dept":"Compliance","phase":"core","salary":4500,"bonus":0,"start":1,"h":[1,1,1,1,1],"wk1":true,"note":"External gaming counsel on retainer \u2014 entity structuring, LOK application pack, PSP/provider contracts, ad-compliance opinions per GEO. Not headcount; scales to ad-hoc billing in G&A."},{"role":"Head of CRM & Monetization","dept":"Monetization/CRM","phase":"growth","salary":7500,"bonus":5000,"start":4,"h":[1,1,1,2,3],"note":"Base $7.5K + up to $5K/mo bonus on retention & NGR-per-active targets. Bonus economics (hold bonus cost \u2264 target % GGR), lifecycle campaigns, CRM stack selection. 90-day KPI: D30 depositor retention \u2265 model M1."},{"role":"Casino Manager (curation & integrations)","dept":"Product","phase":"growth","salary":7500,"bonus":0,"start":3,"h":[1,1,1,2,3],"note":"Curates the portfolio and lobby merchandising, owns provider/aggregator relationships and the new-game integration pipeline, RTP variants & jackpot config per market. The commercial owner of the casino floor."},{"role":"Platform engineers","dept":"Engineering","phase":"growth","salary":11000,"bonus":0,"start":2,"h":[3,3,4,8,12],"note":"PAM, wallet, cashier, integrations, site."},{"role":"Game devs (in-house studio)","dept":"Games Studio","phase":"growth","salary":11000,"bonus":0,"start":5,"h":[1,1,2,4,6],"note":"Crash + instant titles = the 20% internal-GGR margin play. Launch runs on external content; ship own title #1 by M9, #2 by M12."},{"role":"Affiliate managers","dept":"User Acquisition","phase":"growth","salary":5500,"bonus":11000,"start":3,"h":[1,1,2,4,6],"note":"Base $5.5K + up to $11K/mo bonus on payback-qualified FTDs (not raw volume). Pre-launch deal pipeline from M3, then program ops, deal compliance, affiliate fraud watch."},{"role":"Media buyers","dept":"User Acquisition","phase":"growth","salary":5000,"bonus":4000,"start":5,"h":[1,1,2,4,6],"note":"Base $5K + up to $4K/mo bonus on 90-day ROAS per geo. PPC/social/push per geo playbooks."},{"role":"CRM executives","dept":"Monetization/CRM","phase":"later","salary":5000,"bonus":0,"start":6,"h":[1,1,2,4,6],"note":"Base $5K + up to $3K/mo bonus on retention & reactivation uplift. Campaign ops per geo cluster."},{"role":"VIP managers","dept":"VIP","phase":"growth","salary":4500,"bonus":13000,"start":6,"h":[1,2,4,8,12],"note":"Base $4.5K + up to $13K/mo bonus on managed-book NGR & VIP retention. Top 1% of players = 35\u201360% of GGR. Personal hosts from first 1,000 FTDs; reinvestment 15\u201325% of VIP GGR; ratio ~1 host per 150\u2013250 VIPs."},{"role":"Payment ops & payouts","dept":"Payments & Risk","phase":"growth","salary":5500,"bonus":0,"start":6,"h":[2,2,4,8,12],"note":"Payout review, PSP reconciliation, chargeback representment, rail failover. Partially automated; scales with deposit volume (~$95M/mo at M36)."},{"role":"Risk & fraud analysts","dept":"Payments & Risk","phase":"later","salary":5000,"bonus":0,"start":7,"h":[2,3,5,10,15],"note":"Salary-only by design \u2014 bonusing risk staff on volume creates the wrong incentive. Scales with FTD volume: ~1 analyst per 20\u201325K monthly FTDs. Bonus-abuse rings, multi-accounting, payment fraud, AML alerts."},{"role":"Product designer","dept":"Product","phase":"growth","salary":6000,"bonus":0,"start":18,"h":[1,1,1,2,3],"note":"Site, promos, game art for in-house titles."},{"role":"Data analysts","dept":"Data","phase":"growth","salary":8000,"bonus":0,"start":8,"h":[1,1,2,4,6],"note":"Takes over the cohort/LTV dashboard from the CEO at M8. Cohort tracking vs this model; owns actual-vs-model on every base KPI from then on."},{"role":"Support leads","dept":"Support","phase":"growth","salary":4500,"bonus":0,"start":3,"h":[1,2,3,6,9],"note":"Manage the outsourced 24/7 agent pool (the $-per-active variable line \u2248 110\u2013150 agents at M36). ~1 lead per 25\u201335 agents."},{"role":"Finance & admin","dept":"Finance & Ops","phase":"growth","salary":6000,"bonus":0,"start":4,"h":[1,1,1,2,3],"note":"Multi-entity bookkeeping, PSP reconciliation, treasury incl. crypto."},{"role":"CFO","dept":"Finance & Ops","phase":"later","salary":16000,"bonus":0,"start":25,"h":[0,0,1,1,1],"note":"Joins at break-even: treasury at scale, audit, reporting to the Series B board, M&A readiness."},{"role":"Head of Brand & Partnerships","dept":"User Acquisition","phase":"later","salary":13000,"bonus":0,"start":25,"h":[0,0,1,1,1],"note":"Owns the brand-at-scale budget: sponsorships, streamers, partnerships."},{"role":"COO","dept":"Executive","phase":"later","salary":18000,"bonus":0,"start":37,"h":[0,0,1,1,1],"note":"Runs operations across markets as the business passes $100M NGR."}],"bonusAttainPct":50,"payrollLoad":28,"platform":{"capexTotal":500000,"capexMonths":9,"amortMonths":24},"cogs":{"hostingStart":8000,"hostingStartMonth":3,"hostingGrowthPct":3,"hostingCap":45000,"softwareMonthly":10000,"softwareStartMonth":4,"aggregatorMin":5000,"antifraudMonthly":2500,"aggregatorStartMonth":3},"ga":{"legal":4000,"office":5000,"travel":4000,"misc":5000,"contingencyPct":5},"corpTaxPct":15,"wc":{"reserveMonths":4},"licenses":[{"name":"Gibraltar B2C Gaming Operator Licence","enabled":false,"upfront":39000,"annual":129000,"startMonth":1},{"name":"Cura\u00e7ao LOK \u2014 annual fees + local substance","enabled":true,"upfront":0,"annual":85000,"startMonth":1}],"games":[{"id":"vslots","name":"Video slots","source":"ext","rs":9,"rtp":95,"velocity":400,"avgBet":0.9,"mix":37.9},{"id":"oslots","name":"Slots (own)","source":"own","rs":0,"rtp":96.2,"velocity":400,"avgBet":0.9,"mix":15.6},{"id":"jslots","name":"Jackpot slots (progressive)","source":"ext","rs":12,"rtp":92,"velocity":350,"avgBet":1,"mix":3},{"id":"roul","name":"RNG roulette","source":"ext","rs":7,"rtp":97.3,"velocity":100,"avgBet":4,"mix":1},{"id":"bj","name":"RNG blackjack","source":"ext","rs":7,"rtp":99,"velocity":180,"avgBet":6,"mix":1},{"id":"vpoker","name":"Video poker","source":"ext","rs":8,"rtp":99.2,"velocity":200,"avgBet":2.5,"mix":4.4},{"id":"scratch","name":"Scratch & instant win","source":"ext","rs":9,"rtp":95,"velocity":250,"avgBet":1,"mix":1.4},{"id":"live","name":"Live casino","source":"ext","rs":15,"rtp":97.5,"velocity":60,"avgBet":25,"mix":14.2},{"id":"crash","name":"Crash (own)","source":"own","rs":0,"rtp":97,"velocity":180,"avgBet":2,"mix":11.7},{"id":"inst","name":"Instant \u2014 Plinko/Mines (own)","source":"own","rs":0,"rtp":98,"velocity":150,"avgBet":1.5,"mix":9.8}],"geos":[{"id":"ca","name":"Canada","enabled":true,"cpaAff":160,"cpaMedia":150,"mediaSharePct":20,"betMult":1,"hours":8,"m1":31,"m3":23,"m6":18,"hold":35,"tax":0,"feeDep":5,"feeWd":1,"resPct":10,"mkStart":2,"mkInit":3887,"mkGrowth":10,"mkCap":300000,"mixOverride":null,"bonusPct":12},{"id":"nz","name":"New Zealand","enabled":true,"cpaAff":170,"cpaMedia":175,"mediaSharePct":20,"betMult":0.95,"hours":8.5,"m1":31,"m3":23,"m6":14.3,"hold":35,"tax":0,"feeDep":7,"feeWd":1,"resPct":10,"mkStart":3,"mkInit":1693,"mkGrowth":10,"mkCap":120000,"mixOverride":null},{"id":"in","name":"India (crypto)","enabled":true,"cpaAff":30,"cpaMedia":15,"mediaSharePct":45,"betMult":0.13,"hours":9,"m1":27,"m3":13.8,"m6":7.1,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":4,"mkInit":4815,"mkGrowth":10,"mkCap":75000,"mixOverride":null},{"id":"sea","name":"SEA (TH/VN/ID/PH)","enabled":true,"cpaAff":60,"cpaMedia":48,"mediaSharePct":30,"betMult":0.3,"hours":9,"m1":31,"m3":18.4,"m6":9.5,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":2,"mkInit":9129,"mkGrowth":10,"mkCap":300000,"mixOverride":null},{"id":"br","name":"Brazil","enabled":false,"cpaAff":70,"cpaMedia":57,"mediaSharePct":40,"betMult":0.25,"hours":8,"m1":31,"m3":18.4,"m6":10.7,"hold":35,"tax":0,"feeDep":3,"feeWd":1,"resPct":5,"mkStart":3,"mkInit":0,"mkGrowth":10,"mkCap":0,"mixOverride":null},{"id":"lat","name":"LatAm other (MX/CL)","enabled":true,"cpaAff":60,"cpaMedia":29,"mediaSharePct":35,"betMult":0.26,"hours":8.5,"m1":30,"m3":17.3,"m6":9.5,"hold":35,"tax":0,"feeDep":3,"feeWd":1,"resPct":3,"mkStart":4,"mkInit":4966,"mkGrowth":10,"mkCap":150000,"mixOverride":null},{"id":"cr","name":"Crypto global","enabled":true,"cpaAff":128,"cpaMedia":145,"mediaSharePct":15,"betMult":1.45,"hours":10,"m1":31,"m3":18,"m6":12,"hold":35,"tax":0,"feeDep":2,"feeWd":0.5,"resPct":0,"mkStart":1,"mkInit":17556,"mkGrowth":10,"mkCap":900000,"mixOverride":null}],"setup":{"enabled":true,"months":3,"items":[{"name":"Cura\u00e7ao-licensed company \u2014 purchase","amount":120000,"note":"Existing B2C LOK licence; CGA change-of-control approval"},{"name":"Legal & corporate","amount":35000,"note":"Due diligence on the company, CGA change-of-control filing, entity structuring, PSP & provider contracts"},{"name":"Initial operational hires (3 months, loaded)","amount":48000,"note":"Head of Payments & Risk + Compliance/MLRO from day one; part-time CTO paid outside the company during setup; CEO salary deferred until launch"},{"name":"Content & platform agreements","amount":30000,"note":"Aggregator onboarding/integration fee, first provider deals, turnkey platform setup deposit"},{"name":"Cura\u00e7ao licence fees + local substance (Q4)","amount":21000,"note":"One quarter of the $85K/yr LOK fees + resident director/office; the licence row takes over from M1"},{"name":"Tech setup","amount":20000,"note":"Domains, staging hosting, KYC/AML vendor setup, security"},{"name":"Contingency (~10%)","amount":27000,"note":"Unbudgeted setup costs"}]}}/*__END_DEFAULTS__*/;
 const _baseDefaults = defaultAssumptions;
 defaultAssumptions = function(){
   if(DEFAULT_OVERRIDES){ try{ return JSON.parse(JSON.stringify(DEFAULT_OVERRIDES)); }catch(e){} }
@@ -1168,7 +1210,11 @@ function normalizeTax(){   // once, Oct-2026 (Roy): Curaçao-only licence — no
   if(A.meta.migTax) return; A.meta.migTax=true;
   if(!A.licenses.some(l=>l.enabled && /gibraltar/i.test(l.name))) A.geos.forEach(g=>{ g.tax=0; });
 }
-function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); normalizeTax(); M=compute(A,null); }
+function normalizeLatam(){   // once, Oct-2026 (Roy): Mexico/Chile affiliate CPA $75 → $60 (was not paying back)
+  if(A.meta.migLat) return; A.meta.migLat=true;
+  const g=A.geos.find(x=>x.id==="lat"); if(g) g.cpaAff=60;
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); normalizeTax(); normalizeLatam(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -2738,6 +2784,240 @@ renderTab("dashboard");
       A=JSON.parse(JSON.stringify(j)); refresh(); }
   }catch(e){}
 })();
+
+/* ============================================================
+   PDF REPORT — data-oriented business plan summary, built live
+   from the current numbers and printed via the browser
+   (Save as PDF). Charts are SVG, so text stays sharp.
+   ============================================================ */
+function buildReport(){
+  const N=M.N, NY=Math.ceil(N/12), sum=a=>a.reduce((x,y)=>x+y,0);
+  const yr=(arr,i)=>sum(arr.slice(i*12,Math.min(N,i*12+12)));
+  const ye=(arr,i)=>arr[Math.min(N,i*12+12)-1];
+  const sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1;
+  const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const cal=t=>{ const ab=(smc-1)+t; return MO[((ab%12)+12)%12]+" "+(sy+Math.floor(ab/12)); };
+  const Ys=[...Array(NY).keys()];
+  const yLab=i=>`Y${i+1}<span class="rp-sub">${sy+Math.floor((smc-1+i*12)/12)}</span>`;
+  const u=v=>fmt.usd(v,Math.abs(v)<1e7?2:1), uf=v=>fmt.usd(v,2), pc=(a,b)=>b?fmt.pct(a/b,1):"—";
+  const neg=v=>v<0?' class="neg"':'';
+  const geos=A.geos.filter(g=>g.enabled), perGeo=M.perGeo;
+  const rounds=[...(A.funding||[])].sort((a,b)=>a.month-b.month);
+  const lic=A.licenses.filter(l=>l.enabled).map(l=>l.name.replace(/\s+—.*$/,"")).join(" + ")||"—";
+  const today=new Date(); const dstr=today.toISOString().slice(0,10);
+  const be=M.breakeven, eb5=sum(M.ebitda.slice(0,N));
+  const lastY=NY-1;
+  const ngrL=yr(M.agg.ngr,lastY), ggrL=yr(M.agg.ggr,lastY), ebL=yr(M.ebitda,lastY);
+  const ftdTot=sum(M.agg.ftds), mktTot=sum(M.agg.marketing);
+  const blend=(()=>{ let l=0,c=0,f=0; perGeo.forEach(g=>{ const ft=sum(g.ftds); l+=g.unit.cumContrib[Math.min(36,N)-1]*ft; c+=g.unit.effCAC*ft; f+=ft; }); return {ratio:c>0?l/c:0, cac:f>0?c/f:0, ltv:f>0?l/f:0}; })();
+  const heads=t=>personnelAt(A,t).heads;
+  const row=(label,vals,o)=>{ o=o||{}; return `<tr class="${o.cls||""}"><td>${label}</td>${vals.map(v=>`<td${neg(v)}>${o.f?o.f(v):u(v)}</td>`).join("")}</tr>`; };
+  const yearCols=extra=>`<tr><th></th>${Ys.map(i=>`<th>${yLab(i)}</th>`).join("")}${extra||""}</tr>`;
+  const annual=(arr,withTot)=>{ const v=Ys.map(i=>yr(arr,i)); if(withTot) v.push(sum(arr.slice(0,N))); return v; };
+  const techKyc=M.opex.kyc.map((v,t)=>v+M.opex.hosting[t]+M.opex.software[t]+M.opex.aggregator[t]);
+  const ga=M.opex.crmTools.map((v,t)=>v+M.opex.antifraud[t]+M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]);
+
+  // ---- sensitivities (live recompute)
+  const sens=[["Base case",B=>B,null]];
+  sens.push(["CPA +20% (all markets)",B=>B,{cpaMult:1.2}]);
+  sens.push(["Retention −15%",B=>B,{retMult:0.85}]);
+  sens.push(["Bonus cost +3 pp",B=>B,{bonusPct:(A.global.bonusPctGGR||0)+3}]);
+  sens.push(["Player spend −10%",B=>B,{betMult:0.9}]);
+  sens.push(["CPA scale elasticity 0.15",B=>{B.global.cpaElasticity=0.15;return B;},null]);
+  sens.push(["No expansion phase (budgets stay at caps)",B=>{B.global.expGrowth=0;return B;},null]);
+  const sensRows=sens.map(([n,f,sim])=>{ const B=f(JSON.parse(JSON.stringify(A)));
+    const S=Object.assign({cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1},sim||{});
+    const R=compute(B,S); const e=sum(R.ebitda.slice(0,N));
+    return `<tr${n==="Base case"?' class="rp-strong"':''}><td>${n}</td><td${neg(e)}>${u(e)}</td><td${neg(yr(R.ebitda,lastY))}>${u(yr(R.ebitda,lastY))}</td><td>${u(yr(R.agg.ngr,lastY))}</td><td>${u(R.peakNeed)}</td><td>${R.breakeven!=null?"M"+(R.breakeven+1):"—"}</td><td${neg(R.minCash)}>${u(R.minCash)}</td></tr>`; }).join("");
+
+  // ---- team by department (year-end heads)
+  const depts=[...new Set(A.personnel.map(p=>p.dept||"Other"))];
+  const teamRows=depts.map(d=>`<tr><td>${d}</td>${Ys.map(i=>`<td>${A.personnel.filter(p=>(p.dept||"Other")===d).reduce((s,p)=>s+headsAt(p,Math.min(N,i*12+12)),0)}</td>`).join("")}</tr>`).join("");
+
+  const R=document.getElementById("report");
+  R.innerHTML=`
+  <section class="rp-cover">
+    <div class="rp-kicker">Business plan summary · ${N}-month plan from ${cal(0)}</div>
+    <h1>Lucky Rain</h1>
+    <div class="rp-lead">Crypto-first online casino · ${lic} licence · ${geos.length} markets (${geos.map(g=>g.name.replace(/\s*\(.*\)/,"")).join(", ")})</div>
+    <div class="rp-tiles">
+      <div><span>Year-${NY} net revenue</span><b>${u(ngrL)}</b><em>GGR ${u(ggrL)}</em></div>
+      <div><span>Year-${NY} EBITDA</span><b>${u(ebL)}</b><em>${pc(ebL,ngrL)} of NGR</em></div>
+      <div><span>${N}-month cumulative EBITDA</span><b>${u(eb5)}</b><em>net income ${u(sum(M.netIncome.slice(0,N)))}</em></div>
+      <div><span>EBITDA break-even</span><b>${be!=null?"M"+(be+1):"—"}</b><em>${be!=null?cal(be):""}</em></div>
+      <div><span>Total raise</span><b>${u(M.totalFunding)}</b><em>${rounds.length} rounds</em></div>
+      <div><span>Peak cash need</span><b>${u(M.peakNeed)}</b><em>lowest cash ${u(M.minCash)} (M${M.minCashMonth+1})</em></div>
+      <div><span>Active depositors, M${N}</span><b>${fmt.num(M.agg.actives[N-1])}</b><em>${fmt.num(M.agg.ftds[N-1])} new / month</em></div>
+      <div><span>36-mo contribution LTV ÷ CAC</span><b>${fmt.x(blend.ratio)}</b><em>CAC ${fmt.usd(blend.cac,0)} → LTV ${fmt.usd(blend.ltv,0)}</em></div>
+    </div>
+    <h2>Plan at a glance</h2>
+    <table class="rp-t">
+      <tr><th></th><th>GGR</th><th>Net revenue</th><th>EBITDA</th><th>Margin (NGR)</th><th>New depositors</th><th>Active (year-end)</th><th>Marketing, all-in</th><th>Headcount</th><th>Closing cash</th></tr>
+      ${Ys.map(i=>`<tr><td><b>Y${i+1}</b> <span style="color:#898781">${sy+Math.floor((smc-1+i*12)/12)}</span></td><td>${u(yr(M.agg.ggr,i))}</td><td>${u(yr(M.agg.ngr,i))}</td><td${neg(yr(M.ebitda,i))}>${u(yr(M.ebitda,i))}</td><td>${pc(yr(M.ebitda,i),yr(M.agg.ngr,i))}</td><td>${fmt.num(yr(M.agg.ftds,i))}</td><td>${fmt.num(ye(M.agg.actives,i))}</td><td>${u(yr(M.mktTotal,i))}</td><td>${heads(Math.min(N,i*12+12))}</td><td${neg(ye(M.cash,i))}>${u(ye(M.cash,i))}</td></tr>`).join("")}
+    </table>
+    <h2>Summary</h2>
+    <ul class="rp-bullets">
+      <li><b>Model.</b> Crypto-first casino with an originals-led library (${pc(A.games.filter(g=>g.source==="own").reduce((s,g)=>s+(+g.mix||0),0),100)} of the game mix is in-house, with no provider fee). Licence: ${lic}${M.setupCost?`; pre-launch setup ${u(M.setupCost)} incl. purchase of an existing licensed company`:""}.</li>
+      <li><b>Acquisition.</b> Affiliates on fixed CPA deals (${100-(A.global.rsShareAff||0)}% of affiliate volume), media buying, organic ramping ${A.global.organicStartPct??5}% → ${A.global.organicPct}% of paid by M${A.global.organicRampMonths??36}. ${fmt.num(ftdTot)} new depositors over ${N} months at a blended CAC of ${fmt.usd(mktTot/Math.max(1,ftdTot),0)}.</li>
+      <li><b>Growth path.</b> Budgets ramp per market from launch, step up ×${A.global.scaleMult} at M${A.global.scaleMonth} once payback is proven${A.global.expGrowth?`, then compound ${A.global.expGrowth}%/month from M${A.global.expMonth} to M${A.global.expEnd} (paid from operating profit)`:""}. Marketing reaches ${u(M.agg.marketing[Math.min(N,48)-1])}/month by M${Math.min(N,48)}.</li>
+      <li><b>Funding.</b> ${rounds.map(f=>`${f.name.split(/\s+[—–-]\s+/)[0]} ${u(f.amount)} (${Math.round(+f.month)<=0?"pre-launch":cal(Math.round(f.month)-1)})`).join(" · ")}. Peak external need ${u(M.peakNeed)}; break-even ${be!=null?"M"+(be+1)+" ("+cal(be)+")":"not reached"}; cash at M${N} ${u(M.cash[N-1])}.</li>
+    </ul>
+    <div class="rp-note">Generated ${dstr} from the live plan model. All figures in USD. Months are plan months (M1 = ${cal(0)}).</div>
+  </section>
+
+  <section>
+    <div class="rp-hdr">Lucky Rain · Financials</div>
+    <h2>Profit &amp; loss — annual</h2>
+    <table class="rp-t">
+      ${yearCols("<th>Total</th>")}
+      ${row("Wagers (turnover)",annual(M.agg.turnover,1))}
+      ${row("<b>GGR</b>",annual(M.agg.ggr,1),{cls:"rp-strong"})}
+      ${row("Bonuses &amp; jackpots",annual(M.agg.bonus,1).map(v=>-v))}
+      ${row("<b>Net revenue (NGR)</b>",annual(M.agg.ngr,1),{cls:"rp-strong"})}
+      ${row("Game-provider fees",annual(M.agg.content,1).map(v=>-v))}
+      ${row("Payment processing",annual(M.agg.pay,1).map(v=>-v))}
+      ${row("Gaming tax",annual(M.agg.tax,1).map(v=>-v))}
+      ${row("KYC, hosting &amp; platform",annual(techKyc,1).map(v=>-v))}
+      ${row("<b>Gross profit</b>",annual(M.grossProfit,1),{cls:"rp-strong"})}
+      ${row("Performance marketing (CPA &amp; media)",annual(M.agg.marketing,1).map(v=>-v))}
+      ${row("Affiliate revenue share",annual(M.agg.affrs,1).map(v=>-v))}
+      ${row("Brand &amp; sponsorships",annual(M.opex.brand,1).map(v=>-v))}
+      ${row("<b>Contribution after marketing</b>",annual(M.contribAfterMkt,1),{cls:"rp-strong"})}
+      ${row("Personnel (loaded)",annual(M.opex.personnel,1).map(v=>-v))}
+      ${row("Player support",annual(M.opex.support,1).map(v=>-v))}
+      ${row("Fraud &amp; bonus abuse",annual(M.opex.fraud,1).map(v=>-v))}
+      ${row("Licences &amp; certification",annual(M.opex.licAnnual,1).map(v=>-v))}
+      ${row("G&amp;A, tools &amp; legal",annual(ga,1).map(v=>-v))}
+      ${row("Contingency",annual(M.opex.contingency,1).map(v=>-v))}
+      ${row("<b>EBITDA</b>",annual(M.ebitda,1),{cls:"rp-total"})}
+      <tr class="rp-pct"><td>EBITDA margin (% of NGR)</td>${[...Ys.map(i=>pc(yr(M.ebitda,i),yr(M.agg.ngr,i))),pc(eb5,sum(M.agg.ngr.slice(0,N)))].map(v=>`<td>${v}</td>`).join("")}</tr>
+      ${row("Depreciation &amp; amortisation",annual(M.opex.amort,1).map(v=>-v))}
+      ${row("EBIT",annual(M.ebit,1))}
+      ${row("Corporate income tax",annual(M.corpTax,1).map(v=>-v))}
+      ${row("<b>Net income</b>",annual(M.netIncome,1),{cls:"rp-total"})}
+    </table>
+    <div class="rp-grid2">
+      <div><h3>Monthly net revenue and EBITDA</h3><div id="rpc-pl" class="rp-chart"></div></div>
+      <div><h3>Marketing spend by market (monthly)</h3><div id="rpc-mkt" class="rp-chart"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rp-hdr">Lucky Rain · Cash &amp; funding</div>
+    <h2>Funding plan</h2>
+    <table class="rp-t rp-left">
+      <tr><th>Round</th><th>When</th><th>Amount</th><th>Cumulative</th><th>What it funds</th></tr>
+      ${rounds.map((f,i)=>`<tr><td><b>${f.name}</b></td><td>${Math.round(+f.month)<=0?"Pre-launch":"M"+f.month+" · "+cal(Math.round(f.month)-1)}</td><td>${u(f.amount)}</td><td>${u(rounds.slice(0,i+1).reduce((s,x)=>s+(+x.amount||0),0))}</td><td class="rp-wrap">${f.note||""}</td></tr>`).join("")}
+    </table>
+    ${M.setupCost?`<h3>Pre-launch setup (${(A.setup&&A.setup.months)||3} months), funded by the pre-seed</h3>
+    <table class="rp-t rp-left"><tr><th>Item</th><th>Amount</th><th>Covers</th></tr>
+      ${(A.setup.items||[]).map(it=>`<tr><td>${it.name}</td><td>${u(+it.amount||0)}</td><td class="rp-wrap">${it.note||""}</td></tr>`).join("")}
+      <tr class="rp-strong"><td>Total</td><td>${u(M.setupCost)}</td><td></td></tr></table>`:""}
+    <h2>Cash flow — annual</h2>
+    <table class="rp-t">
+      <tr><th></th>${M.setupCost||M.seedIn?"<th>Pre-launch</th>":""}${Ys.map(i=>`<th>${yLab(i)}</th>`).join("")}</tr>
+      <tr><td>EBITDA</td>${M.setupCost||M.seedIn?`<td${neg(-M.setupCost)}>${u(-M.setupCost)}</td>`:""}${Ys.map(i=>`<td${neg(yr(M.ebitda,i))}>${u(yr(M.ebitda,i))}</td>`).join("")}</tr>
+      ${row("Corporate tax",[...(M.setupCost||M.seedIn?[0]:[]),...Ys.map(i=>-yr(M.corpTax,i))])}
+      ${row("Platform capex",[...(M.setupCost||M.seedIn?[0]:[]),...Ys.map(i=>-yr(M.opex.platformCapex,i))])}
+      ${row("Licence &amp; certification upfronts",[...(M.setupCost||M.seedIn?[0]:[]),...Ys.map(i=>-yr(M.opex.licUpfront,i))])}
+      ${row("Payment-provider reserve (working capital)",[...(M.setupCost||M.seedIn?[0]:[]),...Ys.map(i=>-yr(M.reserveDelta,i))])}
+      ${row("<b>Operating cash flow</b>",[...(M.setupCost||M.seedIn?[-M.setupCost]:[]),...Ys.map(i=>yr(M.netcf,i))],{cls:"rp-strong"})}
+      ${row("Funding in",[...(M.setupCost||M.seedIn?[M.seedIn]:[]),...Ys.map(i=>yr(M.fundingIn,i))])}
+      ${row("<b>Closing cash</b>",[...(M.setupCost||M.seedIn?[M.openCash]:[]),...Ys.map(i=>ye(M.cash,i))],{cls:"rp-total"})}
+    </table>
+    <div class="rp-grid2">
+      <div><h3>Cash balance (monthly)</h3><div id="rpc-cash" class="rp-chart"></div></div>
+      <div><h3>Operating cash flow (monthly)</h3><div id="rpc-ncf" class="rp-chart"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rp-hdr">Lucky Rain · Operating metrics</div>
+    <h2>Key operating metrics — annual</h2>
+    <table class="rp-t">
+      ${yearCols()}
+      ${row("New depositors (FTDs)",Ys.map(i=>yr(M.agg.ftds,i)),{f:fmt.num})}
+      ${row("Active depositors (year-end month)",Ys.map(i=>ye(M.agg.actives,i)),{f:fmt.num})}
+      ${row("Deposits",Ys.map(i=>yr(M.agg.deposits,i)))}
+      ${row("NGR per active depositor / month",Ys.map(i=>yr(M.agg.ngr,i)/Math.max(1,yr(M.agg.actives,i))),{f:v=>fmt.usd(v,0)})}
+      ${row("Marketing, all-in (CPA + revshare + brand)",Ys.map(i=>yr(M.mktTotal,i)))}
+      ${row("Marketing as % of GGR",Ys.map(i=>yr(M.mktTotal,i)/Math.max(1,yr(M.agg.ggr,i))),{f:v=>fmt.pct(v,1)})}
+      ${row("Blended CAC (paid budgets ÷ all FTDs)",Ys.map(i=>yr(M.agg.marketing,i)/Math.max(1,yr(M.agg.ftds,i))),{f:v=>fmt.usd(v,0)})}
+      ${row("Headcount (year-end)",Ys.map(i=>heads(Math.min(N,i*12+12))),{f:v=>String(v)})}
+      ${row("Payroll (loaded)",Ys.map(i=>yr(M.opex.personnel,i)))}
+    </table>
+    <h2>Unit economics by market</h2>
+    <table class="rp-t">
+      <tr><th>Market</th><th>CPA aff / media</th><th>Eff. CAC</th><th>GGR / active / mo</th><th>NGR LTV 36 mo</th><th>Contribution LTV 36 mo</th><th>LTV ÷ CAC</th><th>Payback</th><th>FTDs ${N} mo</th><th>Spend ${N} mo</th><th>Y${NY} NGR</th></tr>
+      ${perGeo.map(g=>{ const G=A.geos.find(x=>x.id===g.id)||{}; const c36=g.unit.cumContrib[Math.min(36,N)-1];
+        return `<tr><td>${g.name}</td><td>$${G.cpaAff} / $${G.cpaMedia}</td><td>${fmt.usd(g.unit.effCAC,0)}</td><td>${fmt.usd(g.ggrPerActive,0)}</td><td>${fmt.usd(g.unit.ltvNGR36,0)}</td><td>${fmt.usd(c36,0)}</td><td>${fmt.x(g.unit.effCAC>0?c36/g.unit.effCAC:0)}</td><td>${g.unit.payback!=null?"M"+(g.unit.payback+1):"—"}</td><td>${fmt.num(sum(g.ftds))}</td><td>${u(sum(g.spend))}</td><td>${u(yr(g.ngr,lastY))}</td></tr>`; }).join("")}
+    </table>
+    <div class="rp-grid2">
+      <div><h3>Active depositors (monthly)</h3><div id="rpc-act" class="rp-chart"></div></div>
+      <div><h3>Team by department (year-end headcount)</h3>
+        <table class="rp-t rp-small">${yearCols()}${teamRows}<tr class="rp-strong"><td>Total</td>${Ys.map(i=>`<td>${heads(Math.min(N,i*12+12))}</td>`).join("")}</tr></table></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rp-hdr">Lucky Rain · Sensitivities &amp; assumptions</div>
+    <h2>Sensitivity analysis</h2>
+    <p class="rp-p">Each line changes one assumption and recomputes the full plan.</p>
+    <table class="rp-t">
+      <tr><th>Scenario</th><th>${N}-mo EBITDA</th><th>Y${NY} EBITDA</th><th>Y${NY} NGR</th><th>Peak cash need</th><th>Break-even</th><th>Lowest cash</th></tr>
+      ${sensRows}
+    </table>
+    <h2>Key assumptions</h2>
+    <div class="rp-grid2">
+      <table class="rp-t rp-left rp-small">
+        <tr><th>Assumption</th><th>Value</th></tr>
+        <tr><td>Bonus cost (% of GGR)</td><td>${A.global.bonusPctGGR}%${geos.some(g=>g.bonusPct!=null&&g.bonusPct!=="")?" (market overrides: "+geos.filter(g=>g.bonusPct!=null&&g.bonusPct!=="").map(g=>g.name+" "+g.bonusPct+"%").join(", ")+")":""}</td></tr>
+        <tr><td>Fraud &amp; bonus abuse (% of GGR)</td><td>${A.global.fraudPctGGR}%</td></tr>
+        <tr><td>Affiliate volume on revenue share</td><td>${A.global.rsShareAff}% (at ${A.global.affRevsharePct}% of NGR)</td></tr>
+        <tr><td>Organic depositors (% of paid)</td><td>${A.global.organicStartPct??5}% → ${A.global.organicPct}% by M${A.global.organicRampMonths??36}</td></tr>
+        <tr><td>Retention × affiliate / media / organic</td><td>${A.global.retMultAff} / ${A.global.retMultMedia} / ${A.global.retMultOrganic}</td></tr>
+        <tr><td>CPA scale elasticity</td><td>${A.global.cpaElasticity}</td></tr>
+        <tr><td>Scale-up</td><td>×${A.global.scaleMult} at M${A.global.scaleMonth}</td></tr>
+        <tr><td>Expansion phase</td><td>${A.global.expGrowth?`${A.global.expGrowth}%/mo M${A.global.expMonth}–M${A.global.expEnd}, then ${A.global.expGrowth2||0}%/mo`:"off"}</td></tr>
+        <tr><td>Brand spend</td><td>$${fmt.num(A.global.brandMonthly)}/mo from M${A.global.brandStartMonth}${A.global.brandPct?`; ${A.global.brandPct}% of performance marketing from M${A.global.brandPctStart}`:""}</td></tr>
+        <tr><td>Payroll load / bonus attainment</td><td>${A.payrollLoad}% / ${A.bonusAttainPct}%</td></tr>
+        <tr><td>Corporate tax</td><td>${A.corpTaxPct}% of EBIT (loss carry-forward)</td></tr>
+        <tr><td>Payment-provider reserve held</td><td>${A.wc.reserveMonths} months</td></tr>
+        <tr><td>Licences</td><td>${A.licenses.filter(l=>l.enabled).map(l=>`${l.name}: ${u(+l.upfront||0)} upfront, ${u(+l.annual||0)}/yr`).join("; ")||"—"}</td></tr>
+      </table>
+      <table class="rp-t rp-small">
+        <tr><th>Game</th><th>Source</th><th>RTP</th><th>Provider fee</th><th>Mix</th></tr>
+        ${A.games.map(g=>`<tr><td>${g.name}</td><td>${g.source==="own"?"In-house":"Provider"}</td><td>${g.rtp}%</td><td>${g.rs}%</td><td>${g.mix}%</td></tr>`).join("")}
+      </table>
+    </div>
+    <h3>Market parameters</h3>
+    <table class="rp-t rp-small">
+      <tr><th>Market</th><th>Aff CPA</th><th>Media CPA</th><th>Media %</th><th>Bet ×</th><th>Hrs/mo</th><th>Ret. M1/M3/M6</th><th>Hold</th><th>Tax</th><th>Bonus</th><th>Dep. fee</th><th>Reserve</th><th>Mkt start</th><th>Launch budget</th><th>Cap</th></tr>
+      ${geos.map(g=>`<tr><td>${g.name}</td><td>$${g.cpaAff}</td><td>$${g.cpaMedia}</td><td>${g.mediaSharePct}%</td><td>${g.betMult}</td><td>${g.hours}</td><td>${g.m1}/${g.m3}/${g.m6}%</td><td>${g.hold}%</td><td>${g.tax}%</td><td>${g.bonusPct!=null&&g.bonusPct!==""?g.bonusPct:A.global.bonusPctGGR}%</td><td>${g.feeDep}%</td><td>${g.resPct}%</td><td>M${g.mkStart}</td><td>${u(g.mkInit)}</td><td>${u(g.mkCap)}</td></tr>`).join("")}
+    </table>
+    <div class="rp-note">Lucky Rain business plan summary · generated ${dstr} · figures are model outputs, not forecasts or guarantees.</div>
+  </section>`;
+
+  // charts (SVG)
+  const W=640;
+  xyChart(document.getElementById("rpc-pl"),[{name:"Net revenue (NGR)",color:sColor(0),values:M.agg.ngr},{name:"EBITDA",color:sColor(2),values:M.ebitda}],{w:W,h:250});
+  xyChart(document.getElementById("rpc-mkt"),perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.spend})),{w:W,h:250,stacked:true});
+  xyChart(document.getElementById("rpc-cash"),[{name:"Cash",color:sColor(0),values:M.cash,kind:"area"}],{w:W,h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map(f=>({t:Math.round(f.month)-1,label:roundShort(f,0)}))});
+  xyChart(document.getElementById("rpc-ncf"),[{name:"Operating cash flow",color:sColor(2),values:M.netcf,kind:"bar"}],{w:W,h:250});
+  xyChart(document.getElementById("rpc-act"),perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.actives})),{w:W,h:250,stacked:true,fmt:v=>fmt.num(v)});
+}
+function printReport(){
+  const r=document.documentElement, prevTheme=r.dataset.theme, prevTitle=document.title;
+  r.dataset.theme="light";                       // print always in light colours
+  buildReport();
+  document.title="Lucky Rain - Business Plan Summary - "+new Date().toISOString().slice(0,10);
+  const restore=()=>{ document.title=prevTitle; if(prevTheme) r.dataset.theme=prevTheme; else delete r.dataset.theme;
+    if(prevTheme==="dark") renderTab(activeTab); window.removeEventListener("afterprint",restore); };
+  window.addEventListener("afterprint",restore);
+  setTimeout(()=>window.print(),150);
+}
+document.getElementById("btnReport").onclick=printReport;
 </script>
+<div id="report"></div>
 </body>
 </html>
