@@ -384,7 +384,7 @@ defaultAssumptions = function(){
 
 let A = defaultAssumptions();
 let M = null, MPM = null, MG = null;   // computed models: casino, prediction markets, group
-let SIM = {on:false, cpaMult:1, retMult:1, betMult:1, mktMult:1, bonusPct:null, holdMult:1, rsMult:1};
+let SIM = {on:false, cpaMult:1, retMult:1, betMult:1, mktMult:1, bonusPct:null, holdMult:1, rsMult:1, teamMult:1};
 let simLabels={};
 
 /* ============================================================
@@ -444,11 +444,14 @@ function headsAt(p, t){ // t is 1-based month
   const y = Math.max(0,Math.floor((t-launchM())/12));              // one headcount per plan year (later years repeat the last entry)
   return +p.h[Math.min(y, p.h.length-1)]||0;
 }
-function personnelAt(A, t){
+function personnelAt(A, t, teamMult){
   const load=1+(A.payrollLoad||0)/100;
   const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
+  const tm=(teamMult==null?1:+teamMult);
   let v=0, heads=0;
-  for(const p of A.personnel){ const h=headsAt(p,t); heads+=h; v+=h*(p.salary+(+p.bonus||0)*attain); }
+  for(const p of A.personnel){ let h=headsAt(p,t);
+    if(tm!==1 && t>=launchM()+24){ const y2=+p.h[Math.min(1,p.h.length-1)]||0; h=Math.max(0,Math.round(y2+(h-y2)*tm)); }   // simulation: scale hiring beyond plan year 2
+    heads+=h; v+=h*(p.salary+(+p.bonus||0)*attain); }
   return {cost:v*load, heads};
 }
 function launchM(){ return Math.max(1, +((typeof A!=='undefined'&&A&&A.meta&&A.meta.launchMonth)||1)); }
@@ -681,7 +684,7 @@ function computeCore(A, sim, thr){
   let minFree=Infinity, minFreeMonth=0, minCashGross=Infinity;
   const K=Math.max(0,Math.round(A.wc.reserveMonths||0));
   for(let t=0;t<N;t++){
-    const per=personnelAt(A,t+1);
+    const per=personnelAt(A,t+1,S.teamMult);
     opex.personnel[t]=per.cost; opex.heads[t]=per.heads;
     opex.hosting[t]=hostingAt(A.cogs,t+1);
     opex.software[t]=(t+1>=A.cogs.softwareStartMonth)?A.cogs.softwareMonthly:0;
@@ -2620,7 +2623,7 @@ function renderCash(){
 function renderSim(){
   const el=document.getElementById("tab-sim");
   el.innerHTML=`<h2>Simulation</h2>
-  <p class="sub">Stress the plan without touching base assumptions. Presets or sliders; everything compares against the base scenario. Remember the VIP reality: top 1% of players = 35–60% of GGR, so real months are lumpier than any smooth model — the bear case is the honest planning floor.</p>
+  <p class="sub">Stress the plan without touching base assumptions. Presets or sliders; everything compares against the base scenario. Remember the VIP reality: top 1% of players = 35–60% of GGR, so real months are lumpier than any smooth model. <b>Bear</b> is a tough market (CPA +10%, retention \u221210%, bonus 20%, hold \u22125%, revshare +10%) with management responding: hiring beyond year 2 at half the plan and the expansion throttled by the self-funding guard \u2014 the planning floor. Anything worse than that is a \u201cstop and re-plan\u201d world, not a scenario to run on.</p>
   <div class="toolbar"><div class="seg" id="presetSeg">
     <button data-p="base">Base</button><button data-p="bull">Bull</button><button data-p="bear">Bear</button>
   </div><span class="badge" id="simBadge"></span></div>
@@ -2637,7 +2640,8 @@ function renderSim(){
     ["betMult","Player value ×  (engagement · VIP mix · game mix)",0.5,2,0.05],
     ["mktMult","Marketing budget ×",0.3,2,0.05],
     ["holdMult","Deposit hold ×",0.6,1.4,0.05],
-    ["rsMult","Affiliate revshare ×",0.5,1.5,0.05]
+    ["rsMult","Affiliate revshare ×",0.5,1.5,0.05],
+    ["teamMult","Team growth after year 2 ×  (management response)",0.3,1.5,0.05]
   ];
   simLabels={};
   defs.forEach(([k,label,mn,mx,st])=>{
@@ -2661,9 +2665,10 @@ function renderSim(){
   el.querySelectorAll("#presetSeg button").forEach(b=>{
     b.onclick=()=>{
       const p=b.dataset.p;
-      if(p==="base") Object.assign(SIM,{cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1});
-      if(p==="bull") Object.assign(SIM,{cpaMult:0.85,retMult:1.15,betMult:1.10,mktMult:1.25,bonusPct:16,holdMult:1.05,rsMult:1});
-      if(p==="bear") Object.assign(SIM,{cpaMult:1.30,retMult:0.85,betMult:0.90,mktMult:0.80,bonusPct:22,holdMult:0.9,rsMult:1.1});
+      if(p==="base") Object.assign(SIM,{cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1,teamMult:1});
+      if(p==="bull") Object.assign(SIM,{cpaMult:0.85,retMult:1.15,betMult:1.10,mktMult:1.25,bonusPct:16,holdMult:1.05,rsMult:1,teamMult:1});
+      // bear = a tough market with management responding: CPA +10%, retention −10%, bonus 20%, hold −5%, revshare +10%; hiring beyond year 2 at half plan, expansion throttled by the guard
+      if(p==="bear") Object.assign(SIM,{cpaMult:1.10,retMult:0.90,betMult:1,mktMult:1,bonusPct:20,holdMult:0.95,rsMult:1.1,teamMult:0.5});
       renderSim();
     };
   });
@@ -2675,9 +2680,12 @@ function runSim(){
   const base=M;
   const sc=compute(A,SIM);
   const N=sc.N;
-  const isBase=SIM.cpaMult===1&&SIM.retMult===1&&SIM.betMult===1&&SIM.mktMult===1&&SIM.bonusPct===null&&SIM.holdMult===1&&SIM.rsMult===1;
+  const isBase=SIM.cpaMult===1&&SIM.retMult===1&&SIM.betMult===1&&SIM.mktMult===1&&SIM.bonusPct===null&&SIM.holdMult===1&&SIM.rsMult===1&&(SIM.teamMult==null||SIM.teamMult===1);
   const badge=document.getElementById("simBadge");
-  if(badge) badge.textContent=isBase?"showing base scenario":"custom scenario vs base";
+  const PRESETS={bull:{cpaMult:0.85,retMult:1.15,betMult:1.10,mktMult:1.25,bonusPct:16,holdMult:1.05,rsMult:1,teamMult:1},bear:{cpaMult:1.10,retMult:0.90,betMult:1,mktMult:1,bonusPct:20,holdMult:0.95,rsMult:1.1,teamMult:0.5}};
+  const which=isBase?"base":(Object.keys(PRESETS).find(k=>Object.keys(PRESETS[k]).every(x=>Math.abs((+SIM[x]||0)-(+PRESETS[k][x]||0))<1e-9))||null);
+  if(badge) badge.textContent=isBase?"showing base scenario":(which?which+" scenario vs base":"custom scenario vs base");
+  document.querySelectorAll("#presetSeg button").forEach(b=>b.classList.toggle("on",b.dataset.p===which));
   // append the actual global figure each multiplier produces
   (()=>{
     const Ns=sc.N;
@@ -2704,11 +2712,11 @@ function runSim(){
   }
   kEl.innerHTML=
     tile("Cumulative EBITDA ("+N+" mo)",sc.cumEbitdaArr[N-1],base.cumEbitdaArr[base.N-1],v=>fmt.usd(v),true)+
-    tile("Y3 GGR run-rate",sc.agg.ggr[N-1]*12,base.agg.ggr[base.N-1]*12,v=>fmt.usd(v),true)+
+    tile("GGR run-rate at M"+N,sc.agg.ggr[N-1]*12,base.agg.ggr[base.N-1]*12,v=>fmt.usd(v),true)+
     tile("Peak funding need",sc.peakNeed,base.peakNeed,v=>fmt.usd(v),false)+
     `<div class="tile"><div class="lbl">Break-even</div><div class="val">${sc.breakeven!=null?"M"+(sc.breakeven+1):"—"}</div><div class="delta">base ${base.breakeven!=null?"M"+(base.breakeven+1):"—"}</div></div>`+
-    tile("Cash at M36",sc.cash[N-1],base.cash[base.N-1],v=>fmt.usd(v),true)+
-    tile("Actives at M36",sc.agg.actives[N-1],base.agg.actives[base.N-1],v=>fmt.num(v),true);
+    tile("Cash at M"+N,sc.cash[N-1],base.cash[base.N-1],v=>fmt.usd(v),true)+
+    tile("Actives at M"+N,sc.agg.actives[N-1],base.agg.actives[base.N-1],v=>fmt.num(v),true);
   const cEl=document.getElementById("ch-simcash");
   if(cEl) xyChart(cEl,[
     {name:"Base",color:sColor(0),values:base.cash},
