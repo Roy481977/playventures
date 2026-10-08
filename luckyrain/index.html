@@ -78,6 +78,39 @@
   .f input,.f select{font:inherit;padding:6px 8px;border:1px solid var(--grid);border-radius:8px;background:var(--page);color:var(--ink-1);width:100%}
   .f input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
   .f .unit{font-size:10.5px;color:var(--ink-3)}
+  /* ---------- Assumptions page ---------- */
+  #tab-assumptions .f input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+  #tab-assumptions .f input.edited,#tab-assumptions table input.edited{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+  .asm-bar{position:sticky;top:var(--hdr-h,64px);z-index:40;background:var(--page);margin:0 -4px 14px;padding:10px 4px 10px;border-bottom:1px solid var(--grid)}
+  .asm-idx{display:flex;flex-wrap:nowrap;gap:4px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
+  .asm-idx::-webkit-scrollbar{display:none}
+  .asm-idx a{font-size:11.5px;color:var(--ink-2);text-decoration:none;padding:4px 9px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .asm-idx a:hover{border-color:var(--grid);background:var(--surface-1)}
+  .asm-idx a.on{background:var(--accent);color:#fff}
+  .asm-idx a b{font-variant-numeric:tabular-nums;margin-right:4px;opacity:.75}
+  .asm-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:900px){.asm-kpis{grid-template-columns:repeat(3,1fr)}}
+  .asm-kpis .k{background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:6px 11px;display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;gap:0 8px}
+  .asm-kpis .k .l{font-size:10.5px;color:var(--ink-3);flex-basis:100%}
+  .asm-kpis .k .v{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .asm-kpis .k .d{font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .asm-kpis .k .d.up{color:var(--good-text)} .asm-kpis .k .d.down{color:var(--crit)}
+  #tab-assumptions .card{scroll-margin-top:calc(var(--hdr-h,64px) + var(--asm-bar-h,110px) + 10px);padding:18px 20px 16px}
+  #tab-assumptions .card > h3{display:flex;align-items:baseline;gap:10px;font-size:14.5px;margin-bottom:6px;flex-wrap:wrap}
+  #tab-assumptions .card > h3 .num{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:7px;background:var(--accent);color:#fff;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  #tab-assumptions .card > h3 .tag{font-weight:450;color:var(--ink-2);font-size:12.5px}
+  #tab-assumptions details.why{margin:0 0 12px}
+  #tab-assumptions details.why summary{cursor:pointer;font-size:11.5px;color:var(--ink-3);list-style:none;display:inline-flex;align-items:center;gap:6px;padding:2px 0;user-select:none}
+  #tab-assumptions details.why summary::-webkit-details-marker{display:none}
+  #tab-assumptions details.why summary::before{content:"\25B8";font-size:10px;transition:transform .15s}
+  #tab-assumptions details.why[open] summary::before{transform:rotate(90deg)}
+  #tab-assumptions details.why .note{margin:6px 0 0;padding:10px 12px;border-left:2px solid var(--grid);background:var(--page);border-radius:0 8px 8px 0}
+  #tab-assumptions .fields{gap:12px 16px}
+  #tab-assumptions .fields .f label{font-size:11.5px;line-height:1.25;min-height:2.5em;display:flex;align-items:flex-end}
+  .geotbl tr.grp th{position:static;text-align:center;color:var(--ink-3);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--axis);background:var(--page)}
+  .geotbl tr.grp th:first-child{position:sticky;left:0;z-index:3;background:var(--surface-1)}
+  .geotbl tr.grp th+th{border-left:1px solid var(--grid)}
+  #tab-assumptions .tiles{margin-bottom:8px}
   /* ---------- Tables ---------- */
   .twrap{overflow-x:auto;border:1px solid var(--grid);border-radius:10px}
   table{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -1321,7 +1354,16 @@ function normalizeRaise75(){   // once, 8-Oct-2026 (Roy): $7.5M raise 0.5/2.0/2.
   split("Risk & fraud analysts",12,1,16);
 }
 function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); normalizeTax(); normalizeLatam(); normalizeDeck(); normalizeShift(); normalizeCerts(); normalizePre500(); normalizeRaise75(); M=compute(A,null); }
-function refresh(){ recompute(); renderTab(activeTab); }
+function refresh(){
+  // keep the input you are typing in focused across the re-render (the tab is rebuilt from the model)
+  const el=document.activeElement, tab=el&&el.closest?el.closest(".tab"):null; let idx=-1, raw=null, sel=null;
+  if(tab && (el.tagName==="INPUT"||el.tagName==="SELECT")){ idx=[...tab.querySelectorAll("input,select")].indexOf(el); raw=el.value; try{ sel=[el.selectionStart,el.selectionEnd]; }catch(e){} }
+  recompute(); renderTab(activeTab);
+  if(idx>=0){ const n=[...tab.querySelectorAll("input,select")][idx]; if(n){ if(n.type==="number"&&raw!==null&&String(parseFloat(raw))!==raw&&!isNaN(parseFloat(raw))) n.value=raw; n.focus({preventScroll:true}); try{ if(sel&&sel[0]!=null) n.setSelectionRange(sel[0],sel[1]); }catch(e){} } }
+}
+const EDITED=new WeakMap();   // obj -> Set(keys) edited since load/save; survives re-renders
+function markEdited(obj,key,inp){ let st=EDITED.get(obj); if(!st){ st=new Set(); EDITED.set(obj,st); } st.add(key); if(inp) inp.classList.add("edited"); }
+function isEdited(obj,key){ const st=EDITED.get(obj); return !!(st&&st.has(key)); }
 
 /* debounce for input-driven recompute */
 let _t=null;
@@ -1333,7 +1375,8 @@ function numInput(obj,key,opts){
   const inp=document.createElement("input");
   inp.type="number"; inp.value=obj[key];
   if(opts.step)inp.step=opts.step; if(opts.min!=null)inp.min=opts.min;
-  inp.addEventListener("input",()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ obj[key]=v; queueRefresh(); } });
+  if(isEdited(obj,key)) inp.classList.add("edited");
+  inp.addEventListener("input",()=>{ const v=parseFloat(inp.value); if(!isNaN(v)){ obj[key]=v; markEdited(obj,key,inp); queueRefresh(); } });
   return inp;
 }
 function field(labelTxt,inputEl,unit){
@@ -1514,7 +1557,8 @@ function mixTotalBar(getVals, onRescale){
 function buildGeoEditor(){
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>GEO KPIs — market parameters</h3><p class="note">Aff CPA = per affiliate-CPA-deal FTD; Media CPA = per media-buy FTD; Media % = budget share to media buying — kept low: no whitehat Google/Meta without a recognized local license; media = push/native/PWA/ASO with ban-churn overhead priced into the CPA · bet mult & hrs/mo calibrate ARPU vs the Tier-1 game engine · M1/M3/M6 = % of an FTD cohort still depositing after 1/3/6 months (curve interpolates, decays beyond M6) · hold = GGR as % of deposits · reserve % = PSP rolling reserve withheld on deposits (working capital, released after ${A.wc.reserveMonths} months).</p>
-  <div class="twrap"><table class="editable geotbl"><thead><tr>
+  <div class="twrap"><table class="editable geotbl"><thead>
+    <tr class="grp"><th colspan="2"></th><th colspan="3">Acquisition</th><th colspan="2">Play</th><th colspan="3">Retention (% still depositing)</th><th colspan="3">Economics</th><th colspan="3">Payments</th><th colspan="4">Marketing budget</th><th colspan="2"></th></tr><tr>
     <th>On</th><th>GEO</th><th>Aff CPA $</th><th>Media CPA $</th><th>Media %</th><th>Bet mult</th><th>Hrs/mo</th><th>M1 %</th><th>M3 %</th><th>M6 %</th><th>Hold %</th><th>Tax % GGR</th><th>Bonus % GGR</th><th>Fee dep %</th><th>Fee wd %</th><th>Reserve %</th><th>Mkt start</th><th>Mkt $ init/mo</th><th>Growth %/mo</th><th>Cap $/mo</th><th>Mix</th><th></th>
   </tr></thead><tbody></tbody></table></div>`;
   const tb=card.querySelector("tbody");
@@ -1712,16 +1756,18 @@ function buildLicenseEditor(){
 
 function buildSetupEditor(){
   const S=A.setup||(A.setup={enabled:true,months:3,items:[]});
-  const seed=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
-  const tot=setupTotal(A);
+  const inPlan=!!S.inPlan, nS=Math.max(1,+S.months||3);
+  const seed=A.funding.filter(f=>Math.round(+f.month)<=(inPlan?1:0)).reduce((a,f)=>a+(+f.amount||0),0);
+  const tot=S.enabled?(S.items||[]).reduce((a,i)=>a+(+i.amount||0),0):0;
+  const left=inPlan?((M&&M.freeCash)?M.freeCash[Math.min(M.N-1,nS-1)]:seed-tot):seed-tot;
   const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the pre-seed (${setupLabel()})</h3><p class="note">${S.inPlan?`M1\u2013M${S.months} of the plan, before launch at M${launchM()}: buy the licensed company, legal, first operational hires, content and platform agreements. Funded by the pre-seed, which lands at M1. The items run through the P&amp;L as \u201cPre-launch setup\u201d (spread evenly over the ${S.months} months); the company purchase is booked as an investment with the licence upfronts.`:`The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the pre-seed (a funding round with month 0); whatever is left opens the cash line at M1, when the seed lands. These costs come before the P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.`}</p>
   <div class="twrap"><table class="editable"><thead><tr><th style="text-align:left">Item</th><th>Amount $</th><th style="text-align:left">What it covers</th><th></th></tr></thead><tbody></tbody></table></div>
   <button class="ghost-btn addbtn">+ Add item</button>
-  <div class="tiles" style="margin-top:12px">
+  <div class="tiles mini" style="margin-top:12px">
     <div class="tile"><div class="lbl">Setup budget</div><div class="val">${fmt.usd(tot)}</div><div class="delta">${S.months} months pre-launch</div></div>
-    <div class="tile"><div class="lbl">Pre-seed round</div><div class="val">${fmt.usd(seed)}</div><div class="delta">${seed?"edit the amount in the funding table above":"add a round with month 0"}</div></div>
-    <div class="tile"><div class="lbl">Left at launch</div><div class="val">${fmt.usd(seed-tot)}</div><div class="delta">${seed-tot<0?"\u26a0 seed too small \u2014 raise it or trim the setup":"opening cash at M1"}</div></div>
+    <div class="tile"><div class="lbl">Pre-seed round</div><div class="val">${fmt.usd(seed)}</div><div class="delta">${seed?"edit the amount in the funding table above":(inPlan?"add a round landing at M1":"add a round with month 0")}</div></div>
+    <div class="tile"><div class="lbl">Free cash at launch</div><div class="val">${fmt.usd(left)}</div><div class="delta">${left<0?"\u26a0 pre-seed too small \u2014 raise it or trim the setup":(inPlan?"end of the setup months, before the seed lands":"opening cash at M1")}</div></div>
   </div><div class="fields" style="margin-top:12px"></div>`;
   const tb=card.querySelector("tbody");
   S.items.forEach((it,ii)=>{
@@ -1749,7 +1795,8 @@ function buildSetupEditor(){
 function renderAssumptions(){
   const el=document.getElementById("tab-assumptions");
   el.innerHTML=`<h2>Assumptions</h2>
-  <p class="sub">The single source of truth — every input in the model lives on this page (personnel & salaries live on the Team &amp; Assumptions tab), and the results flow from it. Prefilled from Aug-2026 industry research (full sourced write-up saved in your project as <em>assumptions-research.md</em>). Changes recalculate everything instantly; when you're happy, scroll to the bottom and save as the new default.</p>
+  <p class="sub">Every input in the model, in one place (people and salaries are on the Team tab). Edit a number and everything recomputes; the strip below shows what it does to the plan. Open \u201cWhy these numbers\u201d under any section for the research behind it. Save at the bottom when you are happy.</p>
+  <div class="asm-bar"><div class="asm-idx" id="asm-idx"></div><div class="asm-kpis" id="asm-kpis"></div></div>
   <div id="asm"></div>`;
   const root=el.querySelector("#asm");
   const addCard=(html,fieldsDefs,noteClass)=>{
@@ -1819,7 +1866,7 @@ function renderAssumptions(){
     field("Expansion growth (%/month)",numInput(A.global,"expGrowth",{step:0.5,min:0}),"13%/mo \u2248 \u00d74.3 a year; 0 = budgets stay at their caps"),
     field("Expansion fast growth until (month)",numInput(A.global,"expEnd",{step:1,min:1})),
     field("Growth after that (%/month)",numInput(A.global,"expGrowth2",{step:0.5,min:0}),"mature-brand growth"),
-    field("Self-funding guard: keep free cash \u2265 months of spend",numInput(A.global,"expGuardMonths",{step:0.5,min:0}),"from the expansion month, the extra budget is only spent while free cash stays above this many months of total spend (opex + marketing); below it the expansion is throttled, never below the base curve. 0 = off. Turns a worse-CPA world into a smaller profitable business instead of a cash hole"),
+    field("Self-funding guard: keep free cash \u2265 months of spend",numInput(A.global,"expGuardMonths",{step:0.5,min:0}),"the extra expansion budget is spent only while free cash stays above this many months of total spend; below that it is throttled (never under the base curve). 0 = off"),
     field("CPA scale elasticity",numInput(A.global,"cpaElasticity",{step:0.05,min:0}),"CPA rises as (budget ÷ month-12 budget)^this once a market spends past its M12 level. 0 = flat CPA; 0.10 ≈ +7% CPA at 2× budget, +15% at 4×; 0.15 ≈ +11% / +23%")
   ]);
 
@@ -1891,6 +1938,62 @@ function renderAssumptions(){
     {name:"Personnel (loaded)",color:sColor(0),values:M.opex.personnel.slice()},
     {name:"Total fixed cost base",color:sColor(1),values:fixed}
   ],{h:240});
+  dressAssumptions(el);
+}
+/* Assumptions page furniture: numbered sections with a one-line tagline, research notes folded away,
+   a sticky section index and a live impact strip (vs the numbers loaded / last saved). */
+const ASM_SECTIONS=[
+  [/funding rounds/i,"Funding rounds & horizon","when the money lands; the Cash and Funding tabs read from here","Funding"],
+  [/pre-launch setup/i,"Pre-launch setup","Oct\u2013Dec 2026, paid by the pre-seed","Setup"],
+  [/game library/i,"Game library","mix, RTP and provider fees \u2192 GGR per player-hour and content cost","Games"],
+  [/market parameters/i,"Markets","per-market acquisition, play, retention, economics, payments and budgets","Markets"],
+  [/acquisition structure/i,"Acquisition & growth path","channels, organic, scale-up, expansion phase and its guard","Acquisition"],
+  [/bonus, promo/i,"Bonus & risk","bonus cost, fraud, jackpots","Bonus & risk"],
+  [/platform & technology/i,"Platform & technology","capex, hosting, software, aggregator, KYC","Tech"],
+  [/variable ops/i,"Operations & G&A","support, tools, legal, office, contingency, tax","Ops & G&A"],
+  [/^licenses/i,"Licences & certification","licence fees, game and RNG certification, dated schedule","Licences"],
+  [/payments/i,"Payment reserves & fees","PSP rolling reserve and fee compression","Payments"],
+  [/house bankroll/i,"House bankroll & hot-wallet float","cash held, not spent \u2014 drives free cash","Reserves"],
+  [/resulting cost base/i,"Resulting cost base","what the inputs above add up to","Cost base"],
+];
+let ASM_BASE=null;
+function asmKpis(){ const sum=(a,i,j)=>a.slice(i,j).reduce((x,y)=>x+y,0), N=M.N;
+  return {eb5:M.cumEbitdaArr[N-1], y5:sum(M.agg.ngr,Math.max(0,N-12),N), be:M.breakeven, peak:M.peakNeed, minFree:M.minCash}; }
+function dressAssumptions(el){
+  const cards=[...el.querySelectorAll("#asm > .card")]; const idx=el.querySelector("#asm-idx"); let n=0; const links=[];
+  cards.forEach(c=>{ const h=c.querySelector(":scope > h3"); if(!h) return;
+    const title=h.textContent.replace(/^\s*\d+[ab]?\s*\u00b7\s*/,"").trim();
+    const def=ASM_SECTIONS.find(([re])=>re.test(title)); const isSummary=def&&/cost base/i.test(def[1]);
+    const label=def?def[1]:title, tag=def?def[2]:"", short=def?def[3]:title;
+    if(!isSummary) n++;
+    c.id="asm-s"+(isSummary?"end":n);
+    h.innerHTML=`${isSummary?"":`<span class="num">${n}</span>`}<span>${label}</span>${tag?`<span class="tag">\u2014 ${tag}</span>`:""}`;
+    const note=h.nextElementSibling;
+    if(note && note.classList.contains("note") && note.textContent.length>150){
+      const d=document.createElement("details"); d.className="why"; d.innerHTML=`<summary>Why these numbers</summary>`;
+      note.parentNode.insertBefore(d,note); d.appendChild(note);
+    }
+    links.push(`<a href="#${c.id}" data-for="${c.id}" title="${label}">${isSummary?"":`<b>${n}</b>`}${short}</a>`);
+  });
+  idx.innerHTML=links.join("");
+  idx.querySelectorAll("a").forEach(a=>a.addEventListener("click",e=>{ e.preventDefault(); const t=document.getElementById(a.dataset.for); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); }));
+  // sticky offset = header height
+  const hdr=document.querySelector("header"); if(hdr) document.documentElement.style.setProperty("--hdr-h",hdr.offsetHeight+"px");
+  const bar=el.querySelector(".asm-bar"); if(bar) requestAnimationFrame(()=>document.documentElement.style.setProperty("--asm-bar-h",bar.offsetHeight+"px"));
+  // live KPI strip vs baseline
+  const k=asmKpis(); if(!ASM_BASE) ASM_BASE=k;
+  const box=el.querySelector("#asm-kpis");
+  const cal=t=>{ const sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1, ab=(smc-1)+t; return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][((ab%12)+12)%12]+" "+(sy+Math.floor(ab/12)); };
+  const money=(l,v,b,goodUp)=>{ const d=v-b, cls=Math.abs(d)<1?"":(d>0)===goodUp?"up":"down"; return `<div class="k"><span class="l">${l}</span><span class="v">${fmt.usd(v,1)}</span><span class="d ${cls}">${Math.abs(d)<1?"as loaded":(d>0?"+":"\u2212")+fmt.usd(Math.abs(d),1)+" vs loaded"}</span></div>`; };
+  const beD=(k.be==null?null:k.be)-(ASM_BASE.be==null?null:ASM_BASE.be);
+  box.innerHTML=money("60-month EBITDA",k.eb5,ASM_BASE.eb5,true)+money("Year-5 net revenue",k.y5,ASM_BASE.y5,true)
+    +`<div class="k"><span class="l">EBITDA break-even</span><span class="v">${k.be!=null?"M"+(k.be+1):"\u2014"}</span><span class="d ${!beD?"":(beD<0?"up":"down")}">${k.be!=null?cal(k.be):""}${beD?" \u00b7 "+(beD>0?"+":"")+beD+" mo":""}</span></div>`
+    +money("Peak cash need",k.peak,ASM_BASE.peak,false)+money("Lowest free cash",k.minFree,ASM_BASE.minFree,true);
+  // highlight the section in view
+  if(!el._asmScroll){ el._asmScroll=true; const upd=()=>{ if(activeTab!=="assumptions") return; const cs=getComputedStyle(document.documentElement), y=(parseFloat(cs.getPropertyValue("--hdr-h"))||64)+(parseFloat(cs.getPropertyValue("--asm-bar-h"))||110)+16; let cur=null;
+      el.querySelectorAll("#asm > .card[id]").forEach(c=>{ if(c.getBoundingClientRect().top<=y) cur=c.id; });
+      el.querySelectorAll("#asm-idx a").forEach(a=>a.classList.toggle("on",a.dataset.for===cur)); };
+    window.addEventListener("scroll",upd,{passive:true}); upd(); }
 }
 
 /* ============================================================
@@ -2633,7 +2736,7 @@ const _btnSD=document.getElementById("btnSaveDefault"); if(_btnSD) _btnSD.onclic
   const json=JSON.stringify(A,null,2);
   try{
     const res=await persistDefaults(json);
-    if(res.mode==="db"){ showDefToast("Saved as the new Lucky Rain default \u2014 everyone with the Lucky Rain password now sees these numbers. Previous versions are kept."); return; }
+    if(res.mode==="db"){ ASM_BASE=null; if(typeof EDITED!=="undefined"){ /* edited markers reset by re-render after reload of baseline */ } showDefToast("Saved as the new Lucky Rain default \u2014 everyone with the Lucky Rain password now sees these numbers. Previous versions are kept."); return; }
   }catch(e){ window._saveErr=String(e&&e.message||e); }
   const blob=new Blob([json],{type:"application/json"});
   const a=document.createElement("a");
