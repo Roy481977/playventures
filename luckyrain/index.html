@@ -195,6 +195,7 @@
   <div id="tab-cohorts" class="tab"></div>
   <div id="tab-pnl" class="tab"></div>
   <div id="tab-finance" class="tab"></div>
+  <div id="tab-funding" class="tab"></div>
   <div id="tab-cash" class="tab"></div>
   <div id="tab-sim" class="tab"></div>
   <footer>
@@ -204,7 +205,7 @@
       <select id="selVersions" style="display:none;font:inherit;font-size:13px;padding:8px"></select>
       <button class="ghost-btn" id="btnLoadVersion" style="display:none;font-size:13px;padding:9px 18px">Load this version</button>
     </div>
-    <div>All figures USD · 60-month horizon · Jan-2027 launch · Lucky Rain — crypto-first casino · Curaçao (CGA) B2C licence · no gaming duty · fixed fees + substance $85K/yr · all assumptions editable</div>
+    <div>All figures USD · 60-month horizon from Oct 2026 · Jan-2027 launch · Lucky Rain — crypto-first casino · Curaçao (CGA) B2C licence · no gaming duty · fixed fees + substance $85K/yr · all assumptions editable</div>
   </footer>
 </main>
 <div class="tip" id="tip"></div>
@@ -389,7 +390,7 @@ function gameHourly(games, betMult, mixOv){
   return {turn:turn*betMult, ggr:ggr*betMult, content:content*betMult, per, contentPct: ggr>0?content/ggr:0};
 }
 
-function marketingSpend(g, t, mktMult, glob){ // t is 1-based month
+function marketingSpend(g, t, mktMult, glob, thr){ // t is 1-based month; thr = guard throttle per month (0..1), optional
   if(t < g.mkStart) return 0;
   const curve = tt => Math.min(g.mkInit*Math.pow(1+g.mkGrowth/100, tt-g.mkStart), g.mkCap);   // launch ramp, capped
   let v;
@@ -399,6 +400,7 @@ function marketingSpend(g, t, mktMult, glob){ // t is 1-based month
   if(E && t>=E){
     const end = +glob.expEnd || 9999;
     v = curve(E-1) * Math.pow(1+glob.expGrowth/100, Math.min(t,end)-E+1) * Math.pow(1+(+glob.expGrowth2||0)/100, Math.max(0,t-end));
+    if(thr && thr[t-1]!=null && thr[t-1]<1) v = Math.max(curve(t), v*thr[t-1]);   // self-funding guard: expansion only as far as trailing gross profit pays for it
   } else v = curve(t);
   if(glob && glob.scaleMonth && t>=glob.scaleMonth) v*= (glob.scaleMult||1); // post-ROI-proof scale-up
   return v*mktMult;
@@ -406,7 +408,7 @@ function marketingSpend(g, t, mktMult, glob){ // t is 1-based month
 
 function headsAt(p, t){ // t is 1-based month
   if(t < p.start) return 0;
-  const y = Math.floor((t-1)/12);              // one headcount per plan year (later years repeat the last entry)
+  const y = Math.max(0,Math.floor((t-launchM())/12));              // one headcount per plan year (later years repeat the last entry)
   return +p.h[Math.min(y, p.h.length-1)]||0;
 }
 function personnelAt(A, t){
@@ -416,11 +418,13 @@ function personnelAt(A, t){
   for(const p of A.personnel){ const h=headsAt(p,t); heads+=h; v+=h*(p.salary+(+p.bonus||0)*attain); }
   return {cost:v*load, heads};
 }
+function launchM(){ return Math.max(1, +((typeof A!=='undefined'&&A&&A.meta&&A.meta.launchMonth)||1)); }
 function platformCapexAt(pl, t){
-  return (t>=1 && t<=pl.capexMonths) ? pl.capexTotal/pl.capexMonths : 0;
+  const s0=+pl.startMonth||1;
+  return (t>=s0 && t<s0+pl.capexMonths) ? pl.capexTotal/pl.capexMonths : 0;
 }
 function amortAt(pl, t){
-  const s=pl.capexMonths+1, e=pl.capexMonths+pl.amortMonths;
+  const s0=+pl.startMonth||1, s=s0+pl.capexMonths, e=s0-1+pl.capexMonths+pl.amortMonths;
   return (t>=s && t<=e) ? pl.capexTotal/pl.amortMonths : 0;
 }
 function hostingAt(c, t){
@@ -453,7 +457,33 @@ const CHANNELS=[
 ];
 
 /* Core model computation. sim = multipliers or null */
+/* Expansion self-funding guard: the expansion budget (above the base, capped curve) is only spent while free cash
+   stays above a floor of N months of total spend (opex + marketing). Below the floor the expansion is throttled in
+   proportion; at the floor and above it runs in full. Iterates the core model because spend and cash depend on each other. */
+function guardThrottle(A, R, prev){
+  const G=A.global; if(!G || G.expGuard===false || !(G.expMonth&&G.expGrowth)) return null;
+  const months=(G.expGuardMonths!=null?+G.expGuardMonths:0.5); if(!(months>0)) return null;
+  const N=R.N, E=Math.max(1,+G.expMonth)-1;
+  const thr=Array(N).fill(1); let changed=false;
+  for(let t=E;t<N;t++){
+    const burn=R.mktTotal[t]+R.opexTotal[t]; const floor=months*burn;
+    const fc=R.freeCash[t-1!=null&&t>0?t-1:t];
+    const p=prev?prev[t]:1;
+    let want = floor>0 ? fc/floor : 1;                 // 1 at/above the floor, proportionally less below it
+    want = Math.min(1, Math.max(0, want));
+    const v = prev ? p+0.5*(want-p) : want;           // damped
+    thr[t]=v; if(Math.abs(v-p)>0.002) changed=true;
+  }
+  return (prev||changed) ? {thr,changed} : null;
+}
 function compute(A, sim){
+  let R=computeCore(A,sim,null), g=guardThrottle(A,R,null);
+  if(!g) return R;
+  let thr=g.thr;
+  for(let it=0;it<14;it++){ R=computeCore(A,sim,thr); const n=guardThrottle(A,R,thr); if(!n||!n.changed) break; thr=n.thr; }
+  R.guardThr=thr; return R;
+}
+function computeCore(A, sim, thr){
   const S = sim || {cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1};
   const N = A.meta.months;
   const bonusPct = (S.bonusPct!=null?S.bonusPct:A.global.bonusPctGGR)/100;
@@ -462,7 +492,7 @@ function compute(A, sim){
   const orgTarget = (A.global.organicPct!=null?A.global.organicPct:15)/100;
   const orgStart = (A.global.organicStartPct!=null?A.global.organicStartPct:5)/100;
   const orgRamp = Math.max(1, +(A.global.organicRampMonths!=null?A.global.organicRampMonths:36));
-  const orgAt = t => (t+1>=orgRamp || orgRamp<=1) ? orgTarget : orgStart + (orgTarget-orgStart)*t/(orgRamp-1);
+  const orgAt = t => { const L=launchM()-1; if(t+1>=orgRamp || orgRamp-1<=L) return orgTarget; return orgStart + (orgTarget-orgStart)*Math.max(0,t-L)/(orgRamp-1-L); };
   const rsShare = clamp((A.global.rsShareAff!=null?A.global.rsShareAff:40),0,90)/100;
 
   const geos = A.geos.filter(g=>g.enabled);
@@ -489,7 +519,7 @@ function compute(A, sim){
     const bpG = (S.bonusPct==null && g.bonusPct!=null && g.bonusPct!=="" && !isNaN(+g.bonusPct)) ? (+g.bonusPct)/100 : bonusPct;
 
     const spend=Array(N).fill(0);
-    for(let t=0;t<N;t++) spend[t]=marketingSpend(g, t+1, S.mktMult, A.global);
+    for(let t=0;t<N;t++) spend[t]=marketingSpend(g, t+1, S.mktMult, A.global, thr);
 
     // channel-level FTDs: budget splits into media buy + affiliate CPA; revshare
     // affiliates add players at no upfront cost; organic rides on paid volume (global %)
@@ -497,7 +527,7 @@ function compute(A, sim){
     // CPA scale curve: above the market's reference budget (its month-12 base-plan spend),
     // average CPA rises as (spend ÷ reference)^elasticity — diminishing returns on scale.
     const cpaEl = A.global.cpaElasticity==null ? 0.10 : +A.global.cpaElasticity;
-    const cpaRef = +(g.cpaRefSpend||0) || marketingSpend(g, 12, 1, A.global);
+    const cpaRef = +(g.cpaRefSpend||0) || marketingSpend(g, 12+launchM()-1, 1, A.global);
     const cpaScale=Array(N).fill(1);
     for(let t=0;t<N;t++){
       const sf = (cpaEl>0 && cpaRef>0 && spend[t]>cpaRef) ? Math.pow(spend[t]/cpaRef, cpaEl) : 1;
@@ -594,7 +624,7 @@ function compute(A, sim){
   const Z=()=>Array(N).fill(0);
   const opex={ personnel:Z(), heads:Z(), hosting:Z(), software:Z(), aggregator:Z(), antifraud:Z(),
     legal:Z(), office:Z(), travel:Z(), gaMisc:Z(), contingency:Z(),
-    platformCapex:Z(), amort:Z(), licAnnual:Z(), licUpfront:Z(), kyc:Z(), support:Z(),
+    platformCapex:Z(), amort:Z(), licAnnual:Z(), licUpfront:Z(), setup:Z(), kyc:Z(), support:Z(),
     crmTools:Z(), brand:Z(), fraud:Z() };
   const grossProfit=Z(), mktTotal=Z(), contribAfterMkt=Z(), opexTotal=Z(),
         ebitda=Z(), ebit=Z(), corpTax=Z(), netIncome=Z(), cash=Z(), netcf=Z(), cumEbitdaArr=Z(),
@@ -606,7 +636,8 @@ function compute(A, sim){
   for(const f of A.funding){ const m=Math.round(+f.month)-1; if(m>=0&&m<N) fundingIn[m]+=(+f.amount||0); }
   // pre-launch setup period (month 0): seed round in, setup budget out, before M1
   const seedIn=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
-  const setupCost=setupTotal(A);
+  const setupInPlan=!!(A.setup&&A.setup.inPlan), setupCost=setupInPlan?0:setupTotal(A);
+  const L0=launchM()-1;
   const totalFunding=fundingIn.reduce((a,b)=>a+b,0)+seedIn;
   let bal=seedIn-setupCost, cumOp=-setupCost, maxNeed=setupCost, breakeven=null, minCash=Infinity, minCashMonth=0, cumEbitda=0, cumTaxable=0;
   const openCash=bal;
@@ -622,16 +653,23 @@ function compute(A, sim){
     opex.hosting[t]=hostingAt(A.cogs,t+1);
     opex.software[t]=(t+1>=A.cogs.softwareStartMonth)?A.cogs.softwareMonthly:0;
     opex.aggregator[t]=(t+1>=(A.cogs.aggregatorStartMonth||1))?A.cogs.aggregatorMin:0;
-    opex.antifraud[t]=A.cogs.antifraudMonthly;
-    opex.legal[t]=A.ga.legal; opex.office[t]=A.ga.office; opex.travel[t]=A.ga.travel; opex.gaMisc[t]=A.ga.misc;
+    const live=(t+1>=L0+1);   // running costs start at launch; the setup months are budgeted line by line
+    opex.antifraud[t]=live?A.cogs.antifraudMonthly:0;
+    opex.legal[t]=live?A.ga.legal:0; opex.office[t]=live?A.ga.office:0; opex.travel[t]=live?A.ga.travel:0; opex.gaMisc[t]=live?A.ga.misc:0;
+    // pre-launch setup inside the plan: company purchase = investment (with licence upfronts); the rest is opex spread over the setup months
+
     opex.platformCapex[t]=platformCapexAt(A.platform,t+1);
     opex.amort[t]=amortAt(A.platform,t+1);
     const lc=licenseCost(A.licenses,t+1);
     const cc=certCost(A.certs,t+1);
     opex.licAnnual[t]=lc.annual+cc.monthly; opex.licUpfront[t]=lc.upfront+cc.upfront;
+    // pre-launch setup inside the plan: company purchase = investment (with licence upfronts); the rest is opex spread over the setup months
+    opex.setup[t]=0;
+    if(setupInPlan && A.setup.enabled && t<Math.max(1,+A.setup.months||3)){ const nS=Math.max(1,+A.setup.months||3);
+      (A.setup.items||[]).forEach(it=>{ if(/purchase|acqui/i.test(it.name||"")){ if(t===0) opex.licUpfront[t]+=(+it.amount||0); } else opex.setup[t]+=(+it.amount||0)/nS; }); }
     opex.kyc[t]=agg.ftds[t]*A.global.kycPerFTD;
     opex.support[t]=agg.actives[t]*A.global.supportPerActive;
-    opex.crmTools[t]=A.global.crmMonthly+A.global.toolsMonthly;
+    opex.crmTools[t]=live?A.global.crmMonthly+A.global.toolsMonthly:0;
     opex.brand[t]= (t+1>=A.global.brandStartMonth)? Math.max(A.global.brandMonthly*S.mktMult, (t+1>=(+A.global.brandPctStart||9999)? (+A.global.brandPct||0)/100*agg.marketing[t] : 0)) : 0;
     opex.fraud[t]=agg.ggr[t]*(A.global.fraudPctGGR/100);
     // COGS: direct cost of delivering the gaming service
@@ -642,10 +680,10 @@ function compute(A, sim){
     mktTotal[t]=agg.marketing[t]+agg.affrs[t]+opex.brand[t];
     contribAfterMkt[t]=grossProfit[t]-mktTotal[t];
     // Opex below the line
-    const opexSub=opex.personnel[t]+opex.support[t]+opex.crmTools[t]+opex.antifraud[t]
+    const opexSub=opex.personnel[t]+opex.setup[t]+opex.support[t]+opex.crmTools[t]+opex.antifraud[t]
       +opex.legal[t]+opex.office[t]+opex.travel[t]+opex.gaMisc[t]
       +opex.licAnnual[t]+opex.fraud[t];
-    opex.contingency[t]=opexSub*((A.ga.contingencyPct||0)/100);
+    opex.contingency[t]=(opexSub-opex.setup[t])*((A.ga.contingencyPct||0)/100);   // setup budget carries its own contingency line
     opexTotal[t]=opexSub+opex.contingency[t];
     ebitda[t]=contribAfterMkt[t]-opexTotal[t];
     ebit[t]=ebitda[t]-opex.amort[t];
@@ -1116,7 +1154,7 @@ function heatmap(el, rows, cols, get, opts){
    UI — tabs, rendering, binding
    ============================================================ */
 const TABS=[
-  ["dashboard","Dashboard"],["assumptions","Assumptions"],
+  ["dashboard","Dashboard"],["funding","Funding"],["assumptions","Assumptions"],
   ["games","Games"],["geos","GEOs"],["marketing","Marketing"],["cohorts","Cohorts"],
   ["pnl","P&L"],["finance","Finance"],["cash","Cash"],
   ["team","Team"],["milestones","Milestones"],["sim","Simulate"]
@@ -1145,7 +1183,7 @@ function normalizeLicences(){   // runs before every compute, so older saved num
 function setupTotal(A){ const S=A.setup; if(!S||!S.enabled) return 0; return (S.items||[]).reduce((a,i)=>a+(+i.amount||0),0); }
 function setupLabel(){ const S=A.setup||{}, n=Math.max(1,+S.months||3), sy=A.meta.startYear||2027, smc=A.meta.startCalMonth||1;
   const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const ab=(sy*12+smc-1)-n, ae=(sy*12+smc-1)-1;
+  const ab=S.inPlan?(sy*12+smc-1):(sy*12+smc-1)-n, ae=ab+n-1;
   return MO[ab%12]+(Math.floor(ab/12)!==Math.floor(ae/12)?" "+Math.floor(ab/12):"")+"\u2013"+MO[ae%12]+" "+Math.floor(ae/12); }
 function roundShort(f,i){ const n=String(f.name||"").split(/\s+[\u2014\u2013-]\s+/)[0].trim().replace(/\s+extension$/i," ext."); return n||("R"+(i+1)); }
 function roundWhen(f){ return Math.round(+f.month)<=0 ? "Setup ("+setupLabel()+")" : "Month "+f.month; }
@@ -1227,7 +1265,6 @@ function normalizeLatam(){   // once, Oct-2026 (Roy): Mexico/Chile affiliate CPA
 }
 function normalizeDeck(){   // once, 8-Oct-2026 (investor deck): seed $2.5M, round names, bankroll + float, start Jan 2027
   if(A.meta.migDeck1) return; A.meta.migDeck1=true;
-  if(+A.meta.startYear===2026 && +A.meta.startCalMonth===10){ A.meta.startYear=2027; A.meta.startCalMonth=1; }   // M1 = launch, Jan 2027
   const f1=A.funding.find(f=>Math.round(+f.month)===1), f6=A.funding.find(f=>Math.round(+f.month)===6), f12=A.funding.find(f=>Math.round(+f.month)===12);
   if(f1){ f1.amount=2500000; if(!/bankroll/i.test(f1.note||"")) f1.note=(f1.note||"").replace(/\.\s*$/,"")+" \u2014 plus the house bankroll (reserve) carried from day one."; }
   if(f6) f6.name="Seed extension \u2014 Prove";
@@ -1237,7 +1274,53 @@ function normalizeDeck(){   // once, 8-Oct-2026 (investor deck): seed $2.5M, rou
   Object.assign(A.wc,{brEnabled:true,br1:275000,br1From:1,br2:300000,br2From:6,br3:400000,br3From:25,brDynFrom:37,brDynDays:2,floatDays:3});
   A.meta.note="Lucky Rain (frozen copy, Oct-2026, maintained separately from the Rain plan): crypto-first casino \u2014 ~75-80% of GGR via crypto rails (Crypto global, India, SEA), originals-led game mix, low payment costs, no rolling reserves on crypto; Brazil disabled on weak ROI, togglable.";
 }
-function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); normalizeTax(); normalizeLatam(); normalizeDeck(); M=compute(A,null); }
+function normalizeShift(){   // once, 8-Oct-2026 (Roy): plan starts Oct 2026 (costs from day one); launch / first marketing stays Jan 2027 = M4
+  if(A.meta.migShift3) return; A.meta.migShift3=true;
+  if(+A.meta.startYear===2026 && +A.meta.startCalMonth===10 && A.meta.launchMonth>1) return;   // already shifted
+  const D=3, sh=(o,k)=>{ if(o && o[k]!=null && o[k]!=="" && !isNaN(+o[k])) o[k]=+o[k]+D; };
+  A.meta.startYear=2026; A.meta.startCalMonth=10; A.meta.launchMonth=1+D;
+  A.geos.forEach(g=>sh(g,"mkStart"));
+  A.personnel.forEach(p=>sh(p,"start"));
+  A.funding.forEach(f=>{ if(Math.round(+f.month)<=0) f.month=1; else f.month=+f.month+D; });   // pre-seed lands M1 (Oct 2026)
+  ["scaleMonth","expMonth","expEnd","brandStartMonth","brandPctStart","organicRampMonths"].forEach(k=>sh(A.global,k));
+  A.licenses.forEach(l=>sh(l,"startMonth"));
+  if(A.certs){ sh(A.certs,"startMonth"); sh(A.certs,"rngMonth"); }
+  ["hostingStartMonth","softwareStartMonth","aggregatorStartMonth"].forEach(k=>sh(A.cogs,k));
+  A.platform.startMonth=(+A.platform.startMonth||1)+D;
+  ["br1From","br2From","br3From","brDynFrom"].forEach(k=>sh(A.wc,k));
+  if(A.setup){ A.setup.inPlan=true; A.setup.months=D; }
+}
+function normalizeCerts(){   // own-game + RNG certification went missing from saved numbers (lr2 bake) — restore once, at launch
+  if(A.meta.migCerts) return; A.meta.migCerts=true;
+  if(!A.certs) A.certs={enabled:true,initialGames:10,gamesPerMonth:1,costPerGame:5000,startMonth:launchM(),rngCost:15000,rngMonth:launchM()};
+}
+function normalizePre500(){   // once, 8-Oct-2026 (Roy): pre-seed $350K -> $500K, also covers initial launch marketing
+  if(A.meta.migPre500) return; A.meta.migPre500=true;
+  const f=A.funding.find(x=>/pre-?seed/i.test(x.name||"")) || [...A.funding].sort((x,y)=>x.month-y.month)[0];
+  if(f){ f.amount=500000; if(!/marketing/i.test(f.note||"")) f.note=(f.note||"").replace(/\.\s*$/,"")+" \u2014 plus the initial launch marketing."; }
+  A.funding.forEach(x=>{ if(!x.note) return;   // month references in the notes follow the Oct-2026 start
+    x.note=x.note.replace("Funds M6\u2013M11, including the M11 marketing scale-up.","Funds M9\u2013M14 (Jun\u2013Nov 2027), including the M14 (Nov 2027) marketing scale-up.")
+                 .replace("EBITDA break-even (~M21)","EBITDA break-even (~M23, Aug 2028)"); });
+}
+function normalizeRaise75(){   // once, 8-Oct-2026 (Roy): $7.5M raise 0.5/2.0/2.0/3.0, Series A closes M14 with the scale-up; lean-but-safe hiring
+  if(A.meta.migRaise75) return; A.meta.migRaise75=true;
+  const by=m=>A.funding.find(f=>Math.round(+f.month)===m);
+  const f4=by(4), f9=by(9), f15=by(15)||by(14);
+  if(f4){ f4.amount=2000000; f4.note="Lands at launch (Jan 2027). Funds the first 5 months live (Jan\u2013May 2027): platform build, core team, first marketing in every market \u2014 enough to produce real cohort data \u2014 plus the house bankroll (reserve) carried from day one."; }
+  if(f9){ f9.amount=2000000; f9.note="Raised on 5 months of live cohorts (CPA, retention, payback by market). Funds Jun\u2013Oct 2027 (M9\u2013M13), up to the scale-up."; }
+  if(f15){ f15.month=14; f15.amount=3000000; f15.name="Series A \u2014 Scale ($3M+)";
+    f15.note="Closes Nov 2027 (M14) and funds the \u00d72 marketing scale-up directly; raised from Aug 2027 on 7 months of live cohorts. Minimum $3M carries the business through EBITDA break-even (~M23, Aug 2028) with a cash buffer, no further raise needed. Sized up if the numbers are good \u2014 which we expect \u2014 to expedite growth: see the accelerated path ($10M Series A, \u00d73 step, expansion from day one) on the Funding tab. Modelled at the $3M minimum."; }
+  // lean-but-safe hiring: volume roles start with volume (everything else unchanged)
+  const later={"VIP managers":14,"CRM executives":16,"Data analysts":14,"Media buyers":12,"Finance & admin":10,"Game devs (in-house studio)":10};
+  A.personnel.forEach(q=>{ if(later[q.role]!=null && +q.start<later[q.role]) q.start=later[q.role]; });
+  const split=(role,first,firstHeads,restFrom)=>{ const i=A.personnel.findIndex(q=>q.role===role); if(i<0) return; const q=A.personnel[i];
+    if(A.personnel.some(x=>x.role===role+" (from scale-up)")) return;
+    const rest={...q, role:role+" (from scale-up)", start:restFrom, h:q.h.map(x=>Math.max(0,x-firstHeads)), note:"Remaining hires once volume justifies them. "+(q.note||"")};
+    q.start=first; q.h=q.h.map(()=>firstHeads); A.personnel.splice(i+1,0,rest); };
+  split("Payment ops & payouts",9,1,14);
+  split("Risk & fraud analysts",12,1,16);
+}
+function recompute(){ normalizeLicences(); normalizePlan(); normalizeSeed(); normalizeCanada(); normalizeFunding(); normalizeExpansion(); normalizeTax(); normalizeLatam(); normalizeDeck(); normalizeShift(); normalizeCerts(); normalizePre500(); normalizeRaise75(); M=compute(A,null); }
 function refresh(){ recompute(); renderTab(activeTab); }
 
 /* debounce for input-driven recompute */
@@ -1316,7 +1399,7 @@ function renderDashboard(){
     M.perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.ggr})), {stacked:true,h:250});
   xyChart(document.getElementById("ch-cash"),
     [{name:"Cash balance",color:sColor(0),values:M.cash,kind:"area"}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>1).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("ch-ebitda"),
     [{name:"EBITDA",color:sColor(2),values:M.ebitda,kind:"bar"}],{h:250});
   const marginPct=M.agg.ggr.map((g,t)=>g>1000?clamp(100*M.ebitda[t]/g,-60,60):-60);
@@ -1632,7 +1715,7 @@ function buildSetupEditor(){
   const seed=A.funding.filter(f=>Math.round(+f.month)<=0).reduce((a,f)=>a+(+f.amount||0),0);
   const tot=setupTotal(A);
   const card=document.createElement("div"); card.className="card";
-  card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the pre-seed (${setupLabel()})</h3><p class="note">The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the pre-seed (a funding round with month 0); whatever is left opens the cash line at M1, when the seed lands. These costs come before the 60-month P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.</p>
+  card.innerHTML=`<h3>Pre-launch setup \u2014 funded by the pre-seed (${setupLabel()})</h3><p class="note">${S.inPlan?`M1\u2013M${S.months} of the plan, before launch at M${launchM()}: buy the licensed company, legal, first operational hires, content and platform agreements. Funded by the pre-seed, which lands at M1. The items run through the P&amp;L as \u201cPre-launch setup\u201d (spread evenly over the ${S.months} months); the company purchase is booked as an investment with the licence upfronts.`:`The ${S.months} months before M1: buy the licensed company, legal, first operational hires, content and platform agreements. Paid from the pre-seed (a funding round with month 0); whatever is left opens the cash line at M1, when the seed lands. These costs come before the P&amp;L, so they are not in EBITDA \u2014 they are in total cash need and in the Cash tab.`}</p>
   <div class="twrap"><table class="editable"><thead><tr><th style="text-align:left">Item</th><th>Amount $</th><th style="text-align:left">What it covers</th><th></th></tr></thead><tbody></tbody></table></div>
   <button class="ghost-btn addbtn">+ Add item</button>
   <div class="tiles" style="margin-top:12px">
@@ -1716,6 +1799,7 @@ function renderAssumptions(){
   if(A.global.cpaElasticity==null) A.global.cpaElasticity=0.10;
   if(A.global.organicStartPct==null) A.global.organicStartPct=5;
   if(A.global.organicRampMonths==null) A.global.organicRampMonths=36;
+  if(A.global.expGuardMonths==null) A.global.expGuardMonths=0.5;
   addCard(`<h3>4 · Acquisition structure — channels</h3><p class="note">Per-GEO channel pricing lives in the GEO table (affiliate CPA, media-buy CPA, media share of budget). Globals here: revshare-deal share of affiliate volume, organic uplift, and per-channel retention quality (affiliate ~1.05× the GEO base, media-buy ~0.85×, organic ~1.25× — each channel ages on its own cohort curve). Research: affiliates drive 30–60% of new players; revshare norm 25–45% of NGR; streamers ~£5–6 back per £1. ⚠ Media buying is structurally limited for an offshore/Curaçao license: Google & Meta only certify advertisers with recognized local licenses, so "media" here means push/pop/native networks (PropellerAds/RichAds-class), PWA & webview apps, ASO and Telegram — or blackhat cloaking with account-ban churn. Media CPAs are prefilled with that overhead and media share is capped low; affiliates and streamers carry the volume.</p>`,[
     field("Affiliate FTDs on revshare / hybrid deals (%)",numInput(A.global,"rsShareAff",{step:5,min:0}),"rest are fixed CPA/QCPA deals (paid from the GEO budgets). Revshare players cost nothing upfront but pay affiliates a % of their NGR for life. Plan: mainly fixed deals, 10%"),
     field("Affiliate revshare (% of NGR)",numInput(A.global,"affRevsharePct",{step:1})),
@@ -1735,6 +1819,7 @@ function renderAssumptions(){
     field("Expansion growth (%/month)",numInput(A.global,"expGrowth",{step:0.5,min:0}),"13%/mo \u2248 \u00d74.3 a year; 0 = budgets stay at their caps"),
     field("Expansion fast growth until (month)",numInput(A.global,"expEnd",{step:1,min:1})),
     field("Growth after that (%/month)",numInput(A.global,"expGrowth2",{step:0.5,min:0}),"mature-brand growth"),
+    field("Self-funding guard: keep free cash \u2265 months of spend",numInput(A.global,"expGuardMonths",{step:0.5,min:0}),"from the expansion month, the extra budget is only spent while free cash stays above this many months of total spend (opex + marketing); below it the expansion is throttled, never below the base curve. 0 = off. Turns a worse-CPA world into a smaller profitable business instead of a cash hole"),
     field("CPA scale elasticity",numInput(A.global,"cpaElasticity",{step:0.05,min:0}),"CPA rises as (budget ÷ month-12 budget)^this once a market spends past its M12 level. 0 = flat CPA; 0.10 ≈ +7% CPA at 2× budget, +15% at 4×; 0.15 ≈ +11% / +23%")
   ]);
 
@@ -1801,7 +1886,7 @@ function renderAssumptions(){
   root.appendChild(chc);
   const N=M.N;
   const fixed=Array.from({length:N},(_,t)=>M.opex.personnel[t]+M.opex.hosting[t]+M.opex.software[t]+M.opex.aggregator[t]
-    +M.opex.crmTools[t]+M.opex.antifraud[t]+M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]+M.opex.licAnnual[t]);
+    +M.opex.crmTools[t]+M.opex.antifraud[t]+M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]+M.opex.licAnnual[t]+M.opex.setup[t]);
   xyChart(document.getElementById("ch-costbase"),[
     {name:"Personnel (loaded)",color:sColor(0),values:M.opex.personnel.slice()},
     {name:"Total fixed cost base",color:sColor(1),values:fixed}
@@ -1954,7 +2039,7 @@ function renderTeam(){
   const at=(t)=>personnelAt(A,t);
   const m1=at(1), m12=at(12), m24=at(24), m36=at(Math.min(36,N));
   const attain=(A.bonusAttainPct!=null?A.bonusAttainPct:0)/100;
-  const wk1=A.personnel.filter(p=>phaseOf(p)==="core" && (+p.start||1)<=1 && (+(p.h||[])[0]||0)>0);  // live: core phase + starts M1 + Y1 heads > 0
+  const wk1=A.personnel.filter(p=>phaseOf(p)==="core" && (+p.start||1)<=launchM() && (+(p.h||[])[0]||0)>0);  // live: core phase + starts M1 + Y1 heads > 0
   const wk1Cost=wk1.reduce((s,p)=>s+(p.salary+(+p.bonus||0)*attain)*(+p.h[0]||1),0)*load;
   const depts=[...new Set([...DEPT_ORDER.filter(d=>A.personnel.some(p=>(p.dept||"Other")===d)),
     ...A.personnel.map(p=>p.dept||"Other")])];
@@ -2217,6 +2302,7 @@ function renderPnl(){
     {n:"Brand & streamers",a:M.opex.brand,neg:true},
     {n:"Contribution after marketing",a:M.contribAfterMkt,total:true},
     {s:"Operating expenses"},
+    {n:"Pre-launch setup (Oct\u2013Dec 2026)",a:M.opex.setup,neg:true},
     {n:"Personnel (loaded)",a:M.opex.personnel,neg:true},
     {n:"Support ops (outsourced)",a:M.opex.support,neg:true},
     {n:"CRM & martech tools",a:M.opex.crmTools,neg:true},
@@ -2275,7 +2361,7 @@ function renderFinance(){
   const S=(arr,b)=>b.idx.length?b.idx.reduce((s,i)=>s+arr[i],0):null;
   const gaArr=Array.from({length:N},(_,t)=>M.opex.legal[t]+M.opex.office[t]+M.opex.travel[t]+M.opex.gaMisc[t]);
   const persArr=M.opex.personnel;
-  const otherOpex=Array.from({length:N},(_,t)=>M.opex.support[t]+M.opex.crmTools[t]+M.opex.antifraud[t]
+  const otherOpex=Array.from({length:N},(_,t)=>M.opex.setup[t]+M.opex.support[t]+M.opex.crmTools[t]+M.opex.antifraud[t]
     +gaArr[t]+M.opex.licAnnual[t]+M.opex.fraud[t]+M.opex.contingency[t]);
   const cogsArr=M.cogsTotal, smArr=M.mktTotal;
   const capexArr=M.opex.platformCapex, licUpArr=M.opex.licUpfront;
@@ -2399,7 +2485,7 @@ function renderCash(){
   <div class="card"><div class="twrap" style="max-height:480px;overflow:auto"><table id="cashTable"></table></div></div>`;
   xyChart(document.getElementById("ch-cash2"),
     [{name:"Cash",color:sColor(0),values:M.cash,kind:"area"},{name:"Free cash (after bankroll & float)",color:sColor(2),values:M.freeCash}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>1).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("ch-ncf"),
     [{name:"Net CF",color:sColor(2),values:M.netcf,kind:"bar"}],{h:250});
   const tbl=el.querySelector("#cashTable");
@@ -2735,7 +2821,7 @@ function renderGroup(){
      {name:"Shared substance",color:sColor(7),values:G.shared.map(x=>-x)}],{h:250});
   xyChart(document.getElementById("g-cash"),
     [{name:"Group cash",color:sColor(0),values:G.cash,kind:"area"}],
-    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
+    {h:250,marks:rounds.filter(f=>Math.round(+f.month)>1).map((f,i)=>({t:Math.round(f.month)-1,label:roundShort(f,i)}))});
   xyChart(document.getElementById("g-cum"),
     [{name:"Cumulative EBITDA",color:sColor(3),values:G.cumE,kind:"area"}],{h:250});
 
@@ -2787,6 +2873,171 @@ function renderGroup(){
 /* ============================================================
    Router
    ============================================================ */
+
+/* ============================================================
+   TAB: FUNDING ROUNDS — the raise plan in one place
+   (rounds, dates, raise windows, runway, use of funds, scenarios)
+   ============================================================ */
+let SCEN_CACHE=null;
+async function loadScenarios(){
+  if(SCEN_CACHE) return SCEN_CACHE;
+  if(!location.protocol.startsWith("http")) return null;
+  const out={};
+  for(const n of ["base","upside","accelerated"]){ try{ const r=await fetch("scenarios/"+n+".json",{cache:"no-store"}); if(r.ok) out[n]=await r.json(); }catch(e){} }
+  SCEN_CACHE=out; return out;
+}
+function fundingModel(Mx,Ax){
+  Mx=Mx||M; Ax=Ax||A;
+  const N=Mx.N, sum=(a,i,j)=>a.slice(i,j+1).reduce((x,y)=>x+y,0);
+  const sy=Ax.meta.startYear||2027, smc=Ax.meta.startCalMonth||1;
+  const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const cal=t=>{ const ab=(smc-1)+t; return MO[((ab%12)+12)%12]+" "+(sy+Math.floor(ab/12)); };
+  const rounds=[...(Ax.funding||[])].filter(f=>+f.amount>0).sort((a,b)=>a.month-b.month);
+  const be=Mx.breakeven;
+  const held=t=>(Mx.bankroll?Mx.bankroll[t]:0)+(Mx.floatW?Mx.floatW[t]:0);
+  let cum=0;
+  const rows=rounds.map((f,i)=>{
+    const close=Math.max(0,Math.round(+f.month)-1);
+    const last=i===rounds.length-1;
+    const to=last ? Math.min(N-1, Math.max(close, be!=null?be:N-1)) : Math.max(close, Math.round(+rounds[i+1].month)-2);
+    cum+=+f.amount;
+    let low=Infinity, lowT=close; for(let t=close;t<=to;t++){ const v=Mx.freeCash?Mx.freeCash[t]:Mx.cash[t]; if(v<low){low=v;lowT=t;} }
+    const gp=sum(Mx.grossProfit,close,to), mkt=sum(Mx.mktTotal,close,to), pers=sum(Mx.opex.personnel,close,to),
+      setup=Mx.opex.setup?sum(Mx.opex.setup,close,to):0, other=sum(Mx.opexTotal,close,to)-pers-setup,
+      capex=sum(Mx.opex.platformCapex,close,to)+sum(Mx.opex.licUpfront,close,to), tax=sum(Mx.corpTax,close,to),
+      wc=sum(Mx.reserveDelta,close,to)+(held(to)-(close>0?held(close-1):0));
+    const net=gp-mkt-pers-setup-other-capex-tax-wc;
+    return {f, i, close, to, last, raiseFrom:Math.max(0,close-3), cum, low, lowT,
+      use:{gp,mkt,pers,setup,other,capex,tax,wc,net},
+      when:cal(close), raiseWhen:close===0?"Now":(close-3<0?cal(0):cal(close-3)), coverWhen:cal(close)+" – "+cal(to)+(last&&be!=null&&to===be?" (break-even)":"")};
+  });
+  return {rows, cal, be, N, total:Mx.totalFunding, peak:Mx.peakNeed, minFree:Mx.minCash, minFreeT:Mx.minCashMonth};
+}
+function fundingGantt(el, F, opts){
+  opts=opts||{};
+  const rows=F.rows; if(!rows.length){ el.innerHTML=""; return; }
+  const end=Math.min(F.N-1, Math.max((F.be!=null?F.be:0)+4, rows[rows.length-1].close+9));
+  const W=opts.w||1000, rowH=30, padL=190, padR=20, padT=26, yBot=padT+rows.length*rowH, H=yBot+44;
+  const X=t=>padL+(t/(end+1))*(W-padL-padR);
+  const svg=svgEl("svg",{viewBox:`0 0 ${W} ${H}`,role:"img"});
+  // year bands + month ticks
+  for(let t=0;t<=end;t++){ const lab=F.cal(t); if(lab.startsWith("Jan")||t===0){
+      svg.appendChild(svgEl("line",{x1:X(t),x2:X(t),y1:padT-8,y2:yBot+4,stroke:"var(--grid)","stroke-width":1}));
+      const y=svgEl("text",{x:X(t)+3,y:padT-12,fill:"var(--ink-3)","font-size":10}); y.textContent=lab.split(" ")[1]; svg.appendChild(y); } }
+  for(let t=0;t<=end;t+=3){ svg.appendChild(svgEl("line",{x1:X(t),x2:X(t),y1:yBot+4,y2:yBot+8,stroke:"var(--axis)","stroke-width":1})); const m=svgEl("text",{x:X(t),y:yBot+18,"text-anchor":"middle",fill:"var(--ink-3)","font-size":9}); m.textContent=F.cal(t).split(" ")[0]; svg.appendChild(m); }
+  rows.forEach((r,i)=>{
+    const y=padT+i*rowH, c=sColor(i);
+    const nm=svgEl("text",{x:8,y:y+rowH/2+4,fill:"var(--ink-1)","font-size":11.5,"font-weight":650}); nm.textContent=r.f.name.split(/\s+[—–-]\s+/)[0]+" · "+fmt.usd(r.f.amount,2); svg.appendChild(nm);
+    if(r.close>r.raiseFrom) svg.appendChild(svgEl("rect",{x:X(r.raiseFrom),y:y+7,width:Math.max(2,X(r.close)-X(r.raiseFrom)),height:rowH-14,rx:3,fill:c,"fill-opacity":0.18,stroke:c,"stroke-dasharray":"3 3","stroke-opacity":0.7}));
+    svg.appendChild(svgEl("rect",{x:X(r.close),y:y+7,width:Math.max(3,X(Math.min(end,r.to)+1)-X(r.close)),height:rowH-14,rx:3,fill:c,"fill-opacity":0.85}));
+    const lt=svgEl("text",{x:X(r.close)+5,y:y+rowH/2+4,fill:"#fff","font-size":10,"font-weight":600}); lt.textContent=r.when; svg.appendChild(lt);
+  });
+  const mark=(t,label,color)=>{ if(t==null||t<0||t>end) return; const x=X(t);
+    svg.appendChild(svgEl("line",{x1:x,x2:x,y1:padT-4,y2:yBot+24,stroke:color,"stroke-width":1.4,"stroke-dasharray":"4 3"}));
+    const tx=svgEl("text",{x:x+3,y:yBot+36,fill:color,"font-size":10,"font-weight":700}); tx.textContent=label; svg.appendChild(tx); };
+  mark(launchM()-1,"Launch","var(--accent)");
+  if(A.global.scaleMonth) mark(A.global.scaleMonth-1,"Scale-up ×"+A.global.scaleMult,"var(--ink-2)");
+  if(F.be!=null) mark(F.be,"Break-even","var(--good-text)");
+  el.innerHTML=""; el.appendChild(svg);
+  const lg=document.createElement("div"); lg.className="legend";
+  lg.innerHTML=`<div class="it"><span class="sw" style="background:var(--ink-3);opacity:.3"></span>Raise window (start ~3 months before close)</div><div class="it"><span class="sw" style="background:var(--ink-2)"></span>Period the round funds</div>`;
+  el.appendChild(lg);
+}
+function scenarioRows(sc){
+  const rows=[[A.meta&&A.meta.scenario?"This view ("+A.meta.scenario+")":"Plan (saved numbers)",A,M]];
+  if(A.meta&&A.meta.scenario) return [];
+  if(sc&&sc.base) rows.push(["Base \u2014 scale slide (plan rounds)",sc.base,null]);
+  if(sc&&sc.upside) rows.push(["Upside \u2014 scale slide (plan rounds)",sc.upside,null]);
+  if(sc&&sc.accelerated) rows.push(["Accelerated \u2014 $10M Series A (own rounds)",sc.accelerated,null]);
+  return rows.map(([n,Ax,Mx])=>{ let R=Mx; if(!R){ const B=JSON.parse(JSON.stringify(Ax)); if(!(Ax.meta&&Ax.meta.ownFunding)) B.funding=JSON.parse(JSON.stringify(A.funding)); R=compute(B,null); } const F=fundingModel(R,Ax);
+    return {n, raise:R.totalFunding, peak:R.peakNeed, head:R.totalFunding-R.peakNeed, minFree:R.minCash, minT:R.minCashMonth, be:R.breakeven, run60:R.agg.ggr[R.N-1]*12, cal:F.cal, N:R.N}; });
+}
+function accelCompare(acc){
+  if(!acc) return null;
+  const sum=(a,i,j)=>a.slice(i,j).reduce((x,y)=>x+y,0), S0={cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1};
+  const mk=(Ax)=>{ const R=compute(JSON.parse(JSON.stringify(Ax)),null), Rs=compute(JSON.parse(JSON.stringify(Ax)),{...S0,cpaMult:1.2,retMult:0.85}); const N=R.N;
+    const a=[...Ax.funding].sort((x,y)=>x.month-y.month).find(f=>/series a/i.test(f.name||""))||Ax.funding[Ax.funding.length-1];
+    const F=fundingModel(R,Ax); return {R,Rs,N,a,F,Ax,
+      seriesA:+a.amount, total:R.totalFunding, step:Ax.global.scaleMult, expFrom:Ax.global.expMonth,
+      mkt15:R.agg.marketing[Math.min(N-1,14)], mkt36:R.agg.marketing[Math.min(N-1,35)], mkt60:R.agg.marketing[N-1],
+      ngrY4:sum(R.agg.ngr,36,48), ngrY5:sum(R.agg.ngr,48,60), ebY4:sum(R.ebitda,36,48), ebY5:sum(R.ebitda,48,60), eb5:R.cumEbitdaArr[N-1],
+      run60:R.agg.ggr[N-1]*12, act60:R.agg.actives[N-1], be:R.breakeven, peak:R.peakNeed, peakStress:Rs.peakNeed, minStress:Math.min(...Rs.freeCash.slice(Math.max(0,Math.round(+a.month)-1))), beStress:Rs.breakeven, cash60:R.cash[N-1], heads60:R.opex.heads[N-1]}; };
+  return {plan:mk(A), acc:mk(acc)};
+}
+function accelRows(C,u){
+  const P=C.plan, X=C.acc, cal=P.F.cal;
+  const r=(l,a,b)=>[l,a,b];
+  return [
+    r("Series A (Nov 2027)",u(P.seriesA),u(X.seriesA)),
+    r("Total raise",u(P.total),u(X.total)),
+    r("Marketing step at the Series A","\u00d7"+P.step,"\u00d7"+X.step),
+    r("Expansion phase starts",cal(P.expFrom-1),cal(X.expFrom-1)),
+    r("Marketing / month \u2014 Dec 2027",u(P.mkt15),u(X.mkt15)),
+    r("Marketing / month \u2014 Sep 2029",u(P.mkt36),u(X.mkt36)),
+    r("Marketing / month \u2014 Sep 2031",u(P.mkt60),u(X.mkt60)),
+    r("Net revenue Y4 / Y5",u(P.ngrY4)+" / "+u(P.ngrY5),u(X.ngrY4)+" / "+u(X.ngrY5)),
+    r("EBITDA Y4 / Y5",u(P.ebY4)+" / "+u(P.ebY5),u(X.ebY4)+" / "+u(X.ebY5)),
+    r("60-month EBITDA",u(P.eb5),u(X.eb5)),
+    r("GGR run-rate at M60",u(P.run60),u(X.run60)),
+    r("Active depositors at M60",fmt.num(P.act60),fmt.num(X.act60)),
+    r("EBITDA break-even",P.be!=null?cal(P.be):"\u2014",X.be!=null?cal(X.be):"\u2014"),
+    r("Peak cash need (plan case)",u(P.peak),u(X.peak)),
+    r("Peak cash need if CPA +20% and retention \u221215%",u(P.peakStress),u(X.peakStress)),
+    r("\u2026 lowest free cash after the Series A in that case",u(P.minStress),u(X.minStress)),
+    r("Cash at M60",u(P.cash60),u(X.cash60)),
+    r("Headcount at M60",String(P.heads60),String(X.heads60)),
+  ];
+}
+function renderFunding(){
+  const el=document.getElementById("tab-funding");
+  const F=fundingModel(), N=M.N;
+  const u=v=>fmt.usd(v,Math.abs(v)<1e7?2:1);
+  const headroom=F.total-F.peak;
+  el.innerHTML=`<h2>Funding rounds</h2>
+  <p class="sub">The raise plan in one place: when each round closes, when to start raising it, what it funds, and how much free cash is left before the next one. Free cash = cash − house bankroll − hot-wallet float (the PSP reserve already sits outside cash). Amounts and months are edited in Assumptions § 1; everything here recomputes.</p>
+  <div class="tiles">
+    <div class="tile hero"><div class="lbl">Total raise</div><div class="val">${u(F.total)}</div><div class="delta">${F.rows.length} rounds · ${F.rows.length?F.rows[0].when+" – "+F.rows[F.rows.length-1].when:""}</div></div>
+    <div class="tile"><div class="lbl">Peak cash need</div><div class="val">${u(F.peak)}</div><div class="delta">incl. bankroll &amp; float held</div></div>
+    <div class="tile"><div class="lbl">Headroom</div><div class="val ${headroom<0?'neg':''}">${u(headroom)}</div><div class="delta">raise − peak need</div></div>
+    <div class="tile"><div class="lbl">Lowest free cash</div><div class="val ${F.minFree<0?'neg':''}">${u(F.minFree)}</div><div class="delta">${F.cal(F.minFreeT)} (M${F.minFreeT+1})</div></div>
+    <div class="tile"><div class="lbl">EBITDA break-even</div><div class="val">${F.be!=null?F.cal(F.be):"—"}</div><div class="delta">${F.be!=null?"M"+(F.be+1)+" · no raise needed after":""}</div></div>
+  </div>
+  <div class="card"><h3>Rounds and dates</h3>
+    <div class="twrap"><table><thead><tr><th>Round</th><th>Closes</th><th>Start raising</th><th>Amount</th><th>Raised so far</th><th>Funds the period</th><th>Lowest free cash in that period</th></tr></thead><tbody>
+    ${F.rows.map(r=>`<tr><td style="font-weight:650">${r.f.name}</td><td><span class="badge" style="font-size:12px">${r.when}</span> <span style="color:var(--ink-3)">M${r.close+1}</span></td><td>${r.raiseWhen}</td><td style="font-weight:650">${u(+r.f.amount)}</td><td>${u(r.cum)}</td><td style="white-space:nowrap">${r.coverWhen}</td><td class="${r.low<0?'neg':''}">${u(r.low)} <span style="color:var(--ink-3)">${F.cal(r.lowT)}</span></td></tr>
+    <tr><td colspan="7" style="text-align:left;white-space:normal;color:var(--ink-2);font-size:12px;padding-top:0;position:static">${r.f.note||""}</td></tr>`).join("")}
+    <tr style="font-weight:700"><td>Total</td><td></td><td></td><td>${u(F.total)}</td><td></td><td></td><td></td></tr>
+    </tbody></table></div></div>
+  <div class="card"><h3>Timeline</h3><p class="note">Dashed = raise window (start about 3 months before the round closes); solid = the period each round funds. The last round runs to EBITDA break-even; after that the business funds itself.</p><div id="fund-gantt"></div></div>
+  <div class="grid2">
+    <div class="card"><h3>Use of funds by round</h3><p class="note">Over each round's period: what the business earns (gross profit) and where the money goes. Net = change in free cash before the next round lands.</p>
+      <div class="twrap"><table><thead><tr><th style="text-align:left"></th>${F.rows.map(r=>`<th>${r.f.name.split(/\s+[—–-]\s+/)[0]}</th>`).join("")}</tr></thead><tbody>
+      ${[["Gross profit earned","gp",1],["Marketing (CPA, revshare, brand)","mkt",-1],["Personnel","pers",-1],["Pre-launch setup","setup",-1],["Other opex","other",-1],["Platform capex &amp; licence upfronts","capex",-1],["Corporate tax","tax",-1],["Working capital held (bankroll, float, PSP reserve)","wc",-1]]
+        .filter(([,k])=>F.rows.some(r=>Math.abs(r.use[k])>1)).map(([lab,k,sg])=>`<tr><td style="text-align:left">${lab}</td>${F.rows.map(r=>`<td class="${sg*r.use[k]<0?'neg':''}">${fmt.usd(sg*r.use[k])}</td>`).join("")}</tr>`).join("")}
+      <tr style="font-weight:700;border-top:1px solid var(--axis)"><td style="text-align:left">Net cash used</td>${F.rows.map(r=>`<td class="${r.use.net<0?'neg':''}">${fmt.usd(r.use.net)}</td>`).join("")}</tr>
+      <tr><td style="text-align:left;color:var(--ink-3)">Round size</td>${F.rows.map(r=>`<td style="color:var(--ink-3)">${fmt.usd(+r.f.amount)}</td>`).join("")}</tr>
+      </tbody></table></div></div>
+    <div class="card"><h3>Cash and free cash</h3><div class="chart" id="fund-cash"></div></div>
+  </div>
+  <div class="card" id="fund-accel"><h3>After the cohorts: two paths</h3><p class="note">Loading the accelerated plan\u2026</p></div>
+  <div class="card"><h3>Does the raise hold in the scale-slide versions?</h3><p class="note">Same rounds, the three versions used on the deck's scale slide. Headroom = total raise − peak cash need.</p><div class="twrap" id="fund-scen"><p class="note">Loading scenarios…</p></div></div>`;
+  fundingGantt(document.getElementById("fund-gantt"),F);
+  xyChart(document.getElementById("fund-cash"),[{name:"Cash",color:sColor(0),values:M.cash,kind:"area"},{name:"Free cash",color:sColor(2),values:M.freeCash}],
+    {h:250,marks:F.rows.filter(r=>r.close>0).map((r,i)=>({t:r.close,label:roundShort(r.f,i)}))});
+  const drawAccel=sc=>{ const box=document.getElementById("fund-accel"); if(!box) return; const C=accelCompare(sc&&sc.accelerated); if(!C){ box.innerHTML=`<h3>After the cohorts: two paths</h3><p class="note">The accelerated plan loads on the live site.</p>`; return; }
+    const rows=accelRows(C,u);
+    box.innerHTML=`<h3>After the cohorts: two paths</h3>
+    <p class="note">The pre-seed, seed and extension are the same in both. At the Series A (raise from Aug 2027, close Nov 2027) the cohort data decides the path: at or above plan \u2192 the <b>accelerated</b> round. It buys a \u00d7${C.acc.step} marketing step instead of \u00d7${C.plan.step}, the expansion phase from day one and the team a year earlier. Payback is fast, so the bigger step is largely self-funding; the extra capital is the buffer that lets us scale <i>ahead of proof</i> \u2014 it is sized so the accelerated path survives CPA +20% and retention \u221215% together without another raise.</p>
+    <div class="twrap"><table><thead><tr><th style="text-align:left"></th><th>Plan \u2014 $${(C.plan.total/1e6).toFixed(1)}M raise</th><th>Accelerated \u2014 $${(C.acc.total/1e6).toFixed(1)}M raise</th></tr></thead><tbody>
+    ${rows.map(([l,a,b])=>`<tr><td style="text-align:left">${l}</td><td>${a}</td><td style="font-weight:650">${b}</td></tr>`).join("")}</tbody></table></div>
+    <p class="note" style="margin-top:10px"><a class="ghost-btn" href="?scenario=accelerated" style="text-decoration:none">Open the accelerated plan \u2192</a> &nbsp; every tab, read-only; remove <code>?scenario</code> from the address to return.</p>`; };
+  const drawScen=sc=>{ const box=document.getElementById("fund-scen"); if(!box) return; const R=scenarioRows(sc);
+    box.innerHTML=`<table><thead><tr><th style="text-align:left">Version</th><th>Total raise</th><th>Peak cash need</th><th>Headroom</th><th>Lowest free cash</th><th>Break-even</th><th>GGR run-rate, M${N}</th></tr></thead><tbody>
+    ${R.map(x=>`<tr><td style="text-align:left;font-weight:650">${x.n}</td><td>${u(x.raise)}</td><td>${u(x.peak)}</td><td class="${x.head<0?'neg':''}">${u(x.head)}</td><td class="${x.minFree<0?'neg':''}">${u(x.minFree)} <span style="color:var(--ink-3)">${x.cal(x.minT)}</span></td><td>${x.be!=null?x.cal(x.be)+" (M"+(x.be+1)+")":"—"}</td><td>${u(x.run60)}</td></tr>`).join("")}</tbody></table>
+    ${R.length<2?'<p class="note">Scenario files load on the live site.</p>':''}`; };
+  if(SCEN_CACHE){ drawScen(SCEN_CACHE); drawAccel(SCEN_CACHE); } else loadScenarios().then(sc=>{ drawScen(sc); drawAccel(sc); });
+}
+
 function renderTab(id){
   if(!M) recompute();
   if(id==="group")renderGroup();
@@ -2802,6 +3053,7 @@ function renderTab(id){
   else if(id==="pnl")renderPnl();
   else if(id==="finance")renderFinance();
   else if(id==="cash")renderCash();
+  else if(id==="funding")renderFunding();
   else if(id==="sim")renderSim();
 }
 recompute();
@@ -2841,7 +3093,8 @@ function buildReport(){
   const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const cal=t=>{ const ab=(smc-1)+t; return MO[((ab%12)+12)%12]+" "+(sy+Math.floor(ab/12)); };
   const Ys=[...Array(NY).keys()];
-  const yLab=i=>`Y${i+1}<span class="rp-sub">${sy+Math.floor((smc-1+i*12)/12)}</span>`;
+  const yShort=i=>{ const a=cal(i*12).split(" "), b=cal(Math.min(N,i*12+12)-1).split(" "); return smc===1?a[1]:`${a[0]} ${a[1].slice(2)}\u2013${b[0]} ${b[1].slice(2)}`; };
+  const yLab=i=>`Y${i+1}<span class="rp-sub">${yShort(i)}</span>`;
   const u=v=>fmt.usd(v,Math.abs(v)<1e7?2:1), uf=v=>fmt.usd(v,2), pc=(a,b)=>b?fmt.pct(a/b,1):"—";
   const neg=v=>v<0?' class="neg"':'';
   const geos=A.geos.filter(g=>g.enabled), perGeo=M.perGeo;
@@ -2868,6 +3121,7 @@ function buildReport(){
   sens.push(["Player spend −10%",B=>B,{betMult:0.9}]);
   sens.push(["CPA scale elasticity 0.15",B=>{B.global.cpaElasticity=0.15;return B;},null]);
   sens.push(["No expansion phase (budgets stay at caps)",B=>{B.global.expGrowth=0;return B;},null]);
+  sens.push(["CPA +20% without the self-funding guard",B=>{B.global.expGuard=false;return B;},{cpaMult:1.2}]);
   const sensRows=sens.map(([n,f,sim])=>{ const B=f(JSON.parse(JSON.stringify(A)));
     const S=Object.assign({cpaMult:1,retMult:1,betMult:1,mktMult:1,bonusPct:null,holdMult:1,rsMult:1},sim||{});
     const R=compute(B,S); const e=sum(R.ebitda.slice(0,N));
@@ -2877,10 +3131,11 @@ function buildReport(){
   const depts=[...new Set(A.personnel.map(p=>p.dept||"Other"))];
   const teamRows=depts.map(d=>`<tr><td>${d}</td>${Ys.map(i=>`<td>${A.personnel.filter(p=>(p.dept||"Other")===d).reduce((s,p)=>s+headsAt(p,Math.min(N,i*12+12)),0)}</td>`).join("")}</tr>`).join("");
 
+  const F=fundingModel(), SR=scenarioRows(SCEN_CACHE), AC=(A.meta&&A.meta.scenario)?null:accelCompare(SCEN_CACHE&&SCEN_CACHE.accelerated);
   const R=document.getElementById("report");
   R.innerHTML=`
   <section class="rp-cover">
-    <div class="rp-kicker">Business plan summary · ${N}-month plan from ${cal(0)}</div>
+    <div class="rp-kicker">Business plan summary · ${N}-month plan from ${cal(0)} · launch ${cal(launchM()-1)}</div>
     <h1>Lucky Rain</h1>
     <div class="rp-lead">Crypto-first online casino · ${lic} licence · ${geos.length} markets (${geos.map(g=>g.name.replace(/\s*\(.*\)/,"")).join(", ")})</div>
     <div class="rp-tiles">
@@ -2896,7 +3151,7 @@ function buildReport(){
     <h2>Plan at a glance</h2>
     <table class="rp-t">
       <tr><th></th><th>GGR</th><th>Net revenue</th><th>EBITDA</th><th>Margin (NGR)</th><th>New depositors</th><th>Active (year-end)</th><th>Marketing, all-in</th><th>Headcount</th><th>Closing cash</th></tr>
-      ${Ys.map(i=>`<tr><td><b>Y${i+1}</b> <span style="color:#898781">${sy+Math.floor((smc-1+i*12)/12)}</span></td><td>${u(yr(M.agg.ggr,i))}</td><td>${u(yr(M.agg.ngr,i))}</td><td${neg(yr(M.ebitda,i))}>${u(yr(M.ebitda,i))}</td><td>${pc(yr(M.ebitda,i),yr(M.agg.ngr,i))}</td><td>${fmt.num(yr(M.agg.ftds,i))}</td><td>${fmt.num(ye(M.agg.actives,i))}</td><td>${u(yr(M.mktTotal,i))}</td><td>${heads(Math.min(N,i*12+12))}</td><td${neg(ye(M.cash,i))}>${u(ye(M.cash,i))}</td></tr>`).join("")}
+      ${Ys.map(i=>`<tr><td><b>Y${i+1}</b> <span style="color:#898781">${yShort(i)}</span></td><td>${u(yr(M.agg.ggr,i))}</td><td>${u(yr(M.agg.ngr,i))}</td><td${neg(yr(M.ebitda,i))}>${u(yr(M.ebitda,i))}</td><td>${pc(yr(M.ebitda,i),yr(M.agg.ngr,i))}</td><td>${fmt.num(yr(M.agg.ftds,i))}</td><td>${fmt.num(ye(M.agg.actives,i))}</td><td>${u(yr(M.mktTotal,i))}</td><td>${heads(Math.min(N,i*12+12))}</td><td${neg(ye(M.cash,i))}>${u(ye(M.cash,i))}</td></tr>`).join("")}
     </table>
     <h2>Summary</h2>
     <ul class="rp-bullets">
@@ -2906,6 +3161,32 @@ function buildReport(){
       <li><b>Funding.</b> ${rounds.map(f=>`${f.name.split(/\s+[—–-]\s+/)[0]} ${u(f.amount)} (${Math.round(+f.month)<=0?"pre-launch":cal(Math.round(f.month)-1)})`).join(" · ")}. Peak external need ${u(M.peakNeed)} incl. house bankroll and hot-wallet float; lowest free cash ${u(M.minCash)} (M${M.minCashMonth+1}); break-even ${be!=null?"M"+(be+1)+" ("+cal(be)+")":"not reached"}; cash at M${N} ${u(M.cash[N-1])}.</li>
     </ul>
     <div class="rp-note">Generated ${dstr} from the live plan model. All figures in USD. Months are plan months (M1 = ${cal(0)}).</div>
+  </section>
+
+  <section>
+    <div class="rp-hdr">Lucky Rain · Funding rounds</div>
+    <h2>Funding rounds</h2>
+    <p class="rp-p">Total raise ${u(F.total)} in ${F.rows.length} rounds against a peak cash need of ${u(F.peak)} (incl. house bankroll and hot-wallet float held) \u2014 headroom ${u(F.total-F.peak)}. Lowest free cash ${u(F.minFree)} in ${F.cal(F.minFreeT)}. EBITDA break-even ${F.be!=null?F.cal(F.be)+" (M"+(F.be+1)+")":"\u2014"}; no raise needed after it.</p>
+    <table class="rp-t rp-left">
+      <tr><th>Round</th><th>Closes</th><th>Start raising</th><th>Amount</th><th>Cumulative</th><th>Funds the period</th><th>Lowest free cash</th></tr>
+      ${F.rows.map(r=>`<tr><td><b>${r.f.name}</b></td><td>${r.when} (M${r.close+1})</td><td>${r.raiseWhen}</td><td>${u(+r.f.amount)}</td><td>${u(r.cum)}</td><td>${r.coverWhen}</td><td${neg(r.low)}>${u(r.low)} \u00b7 ${F.cal(r.lowT)}</td></tr>`).join("")}
+      <tr class="rp-total"><td>Total</td><td></td><td></td><td>${u(F.total)}</td><td></td><td></td><td></td></tr>
+    </table>
+    <table class="rp-t rp-left rp-small">${F.rows.map(r=>`<tr><td style="width:24%"><b>${r.f.name}</b></td><td class="rp-wrap">${r.f.note||""}</td></tr>`).join("")}</table>
+    <h3>Timeline</h3><div id="rpc-gantt" class="rp-chart"></div>
+    <div class="rp-grid2">
+      <div><h3>Use of funds by round (period each round funds)</h3>
+        <table class="rp-t rp-small"><tr><th></th>${F.rows.map(r=>`<th>${r.f.name.split(/\s+[\u2014\u2013-]\s+/)[0]}</th>`).join("")}</tr>
+        ${[["Gross profit earned","gp",1],["Marketing","mkt",-1],["Personnel","pers",-1],["Pre-launch setup","setup",-1],["Other opex","other",-1],["Capex &amp; licence upfronts","capex",-1],["Corporate tax","tax",-1],["Working capital held","wc",-1]].filter(([,k])=>F.rows.some(r=>Math.abs(r.use[k])>1)).map(([lab,k,sg])=>`<tr><td>${lab}</td>${F.rows.map(r=>`<td${neg(sg*r.use[k])}>${u(sg*r.use[k])}</td>`).join("")}</tr>`).join("")}
+        <tr class="rp-strong"><td>Net cash used</td>${F.rows.map(r=>`<td${neg(r.use.net)}>${u(r.use.net)}</td>`).join("")}</tr>
+        <tr><td>Round size</td>${F.rows.map(r=>`<td>${u(+r.f.amount)}</td>`).join("")}</tr></table></div>
+      <div><h3>After the cohorts: plan vs accelerated</h3>
+        ${AC?`<p class="rp-p">Same pre-seed, seed and extension. At the Series A the cohorts decide: at or above plan \u2192 the accelerated round (\u00d7${AC.acc.step} step, expansion from day one, team a year earlier). Sized to survive CPA +20% and retention \u221215% together.</p>
+        <table class="rp-t rp-small"><tr><th></th><th>Plan</th><th>Accelerated</th></tr>${accelRows(AC,u).map(([l,a,b])=>`<tr><td>${l}</td><td>${a}</td><td><b>${b}</b></td></tr>`).join("")}</table>`:`<p class="rp-p">The accelerated plan loads on the live site.</p>`}
+        <h3>Same rounds, scale-slide versions</h3>
+        ${SR.length?`<table class="rp-t rp-small"><tr><th>Version</th><th>Peak need</th><th>Headroom</th><th>Lowest free cash</th><th>Break-even</th><th>GGR run-rate M${N}</th></tr>
+        ${SR.map(x=>`<tr><td>${x.n}</td><td>${u(x.peak)}</td><td${neg(x.head)}>${u(x.head)}</td><td${neg(x.minFree)}>${u(x.minFree)}</td><td>${x.be!=null?x.cal(x.be):"\u2014"}</td><td>${u(x.run60)}</td></tr>`).join("")}</table>`:`<p class="rp-p">Scenario versions load on the live site.</p>`}</div>
+    </div>
   </section>
 
   <section>
@@ -2926,6 +3207,7 @@ function buildReport(){
       ${row("Affiliate revenue share",annual(M.agg.affrs,1).map(v=>-v))}
       ${row("Brand &amp; sponsorships",annual(M.opex.brand,1).map(v=>-v))}
       ${row("<b>Contribution after marketing</b>",annual(M.contribAfterMkt,1),{cls:"rp-strong"})}
+      ${sum(M.opex.setup)?row("Pre-launch setup",annual(M.opex.setup,1).map(v=>-v)):""}
       ${row("Personnel (loaded)",annual(M.opex.personnel,1).map(v=>-v))}
       ${row("Player support",annual(M.opex.support,1).map(v=>-v))}
       ${row("Fraud &amp; bonus abuse",annual(M.opex.fraud,1).map(v=>-v))}
@@ -2946,12 +3228,7 @@ function buildReport(){
   </section>
 
   <section>
-    <div class="rp-hdr">Lucky Rain · Cash &amp; funding</div>
-    <h2>Funding plan</h2>
-    <table class="rp-t rp-left">
-      <tr><th>Round</th><th>When</th><th>Amount</th><th>Cumulative</th><th>What it funds</th></tr>
-      ${rounds.map((f,i)=>`<tr><td><b>${f.name}</b></td><td>${Math.round(+f.month)<=0?"Pre-launch":"M"+f.month+" · "+cal(Math.round(f.month)-1)}</td><td>${u(f.amount)}</td><td>${u(rounds.slice(0,i+1).reduce((s,x)=>s+(+x.amount||0),0))}</td><td class="rp-wrap">${f.note||""}</td></tr>`).join("")}
-    </table>
+    <div class="rp-hdr">Lucky Rain · Cash flow</div>
     ${M.setupCost?`<h3>Pre-launch setup (${(A.setup&&A.setup.months)||3} months), funded by the pre-seed</h3>
     <table class="rp-t rp-left"><tr><th>Item</th><th>Amount</th><th>Covers</th></tr>
       ${(A.setup.items||[]).map(it=>`<tr><td>${it.name}</td><td>${u(+it.amount||0)}</td><td class="rp-wrap">${it.note||""}</td></tr>`).join("")}
@@ -3010,7 +3287,7 @@ function buildReport(){
   <section>
     <div class="rp-hdr">Lucky Rain · Sensitivities &amp; assumptions</div>
     <h2>Sensitivity analysis</h2>
-    <p class="rp-p">Each line changes one assumption and recomputes the full plan.</p>
+    <p class="rp-p">Each line changes one assumption and recomputes the full plan. The expansion phase carries a self-funding guard: its extra budget is only spent while free cash stays above ${A.global.expGuardMonths} months of total spend, so a worse-than-plan world becomes a smaller profitable business rather than a cash hole (last line shows the same CPA case without the guard).</p>
     <table class="rp-t">
       <tr><th>Scenario</th><th>${N}-mo EBITDA</th><th>Y${NY} EBITDA</th><th>Y${NY} NGR</th><th>Peak cash need</th><th>Break-even</th><th>Lowest free cash</th></tr>
       ${sensRows}
@@ -3050,14 +3327,16 @@ function buildReport(){
 
   // charts (SVG)
   const W=640;
+  fundingGantt(document.getElementById("rpc-gantt"),F,{w:1000});
   xyChart(document.getElementById("rpc-pl"),[{name:"Net revenue (NGR)",color:sColor(0),values:M.agg.ngr},{name:"EBITDA",color:sColor(2),values:M.ebitda}],{w:W,h:250});
   xyChart(document.getElementById("rpc-mkt"),perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.spend})),{w:W,h:250,stacked:true});
-  xyChart(document.getElementById("rpc-cash"),[{name:"Cash",color:sColor(0),values:M.cash,kind:"area"},{name:"Free cash",color:sColor(2),values:M.freeCash}],{w:W,h:250,marks:rounds.filter(f=>Math.round(+f.month)>0).map(f=>({t:Math.round(f.month)-1,label:roundShort(f,0)}))});
+  xyChart(document.getElementById("rpc-cash"),[{name:"Cash",color:sColor(0),values:M.cash,kind:"area"},{name:"Free cash",color:sColor(2),values:M.freeCash}],{w:W,h:250,marks:rounds.filter(f=>Math.round(+f.month)>1).map(f=>({t:Math.round(f.month)-1,label:roundShort(f,0)}))});
   xyChart(document.getElementById("rpc-ncf"),[{name:"Operating cash flow",color:sColor(2),values:M.netcf,kind:"bar"}],{w:W,h:250});
   xyChart(document.getElementById("rpc-act"),perGeo.map((g,i)=>({name:g.name,color:sColor(i),values:g.actives})),{w:W,h:250,stacked:true,fmt:v=>fmt.num(v)});
 }
-function printReport(){
+async function printReport(){
   const r=document.documentElement, prevTheme=r.dataset.theme, prevTitle=document.title;
+  try{ await loadScenarios(); }catch(e){}
   r.dataset.theme="light";                       // print always in light colours
   buildReport();
   document.title="Lucky Rain - Business Plan Summary - "+new Date().toISOString().slice(0,10);
