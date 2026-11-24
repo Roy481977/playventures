@@ -1,15 +1,15 @@
 // Model defaults API (Vercel Blob) — one store, each plan in its own folder.
-// GET  /api/defaults?plan=main|luckyrain|rainpm   -> latest saved assumption set (404 if none yet)
+// GET  /api/defaults?plan=main|luckyrain|rainpm|sweeps -> latest saved assumption set (404 if none yet)
 // GET  /api/defaults?plan=...&list=1              -> version history (newest first)
 // GET  /api/defaults?plan=...&version=<path>      -> one earlier version
 // GET  /api/defaults?diag=1                       -> which storage settings are present (names only, never values)
-// POST /api/defaults?plan=main|luckyrain          -> save new default (timestamped version; history kept)
+// POST /api/defaults?plan=main|luckyrain|sweeps   -> save new default (timestamped version; history kept)
 // Works with both connection styles: BLOB_STORE_ID + automatic Vercel login (new) or BLOB_READ_WRITE_TOKEN (classic),
 // and with both public and private stores.
 import { put, list, get } from '@vercel/blob';
 
 // Own folders inside the store, so a store shared with other apps never mixes their saved numbers.
-const PREFIX = { main: 'playventures/main/v-', luckyrain: 'playventures/luckyrain/v-', rainpm: 'playventures/rainpm/v-' };
+const PREFIX = { main: 'playventures/main/v-', luckyrain: 'playventures/luckyrain/v-', rainpm: 'playventures/rainpm/v-', sweeps: 'playventures/sweeps/v-' };
 
 async function readText(pathname, access) {
   const r = await get(pathname, { access, useCache: false });

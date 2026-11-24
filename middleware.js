@@ -3,6 +3,7 @@
 const MAINS = ['roysentme', '123456'];   // full site (incl. /api and /luckyrain)
 const LUCKY = 'lucky2027';      // Lucky Rain casino plan only
 const RPM = 'predict2026';      // Rain Prediction Markets launch plan only
+const SWEEPS = 'sweeps2027';    // US sweepstakes plan only (/sweeps/)
 
 const loginHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Business Plan</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -55,11 +56,21 @@ export default function middleware(req) {
     }
     return new Response(null, { status: 302, headers: { 'Location': '/luckyrain/' } });
   }
+  const inSweeps = url.pathname === '/sweeps' || url.pathname.startsWith('/sweeps/');
+  if (cookies.includes('rg_auth=' + SWEEPS)) {                 // US sweepstakes plan only
+    if (inSweeps) return;
+    if (url.pathname === '/api/defaults') {                     // read + save, sweeps slot only
+      if (url.searchParams.get('plan') === 'sweeps' && (req.method === 'GET' || req.method === 'POST')) return;
+      return new Response(JSON.stringify({ error: 'read-only access' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(null, { status: 302, headers: { 'Location': '/sweeps/' } });
+  }
   if (url.pathname === '/auth') {
     const pw = url.searchParams.get('pw');
     if (MAINS.includes(pw)) return setCookie(pw, '/');
     if (pw === LUCKY) return setCookie(LUCKY, '/luckyrain/');
     if (pw === RPM) return setCookie(RPM, '/rainpm/');
+    if (pw === SWEEPS) return setCookie(SWEEPS, '/sweeps/');
     return new Response(loginHtml.replace('__ERR__', 'Wrong password'), { status: 401, headers: { 'Content-Type': 'text/html' } });
   }
   return new Response(loginHtml.replace('__ERR__', ''), { status: 401, headers: { 'Content-Type': 'text/html' } });
